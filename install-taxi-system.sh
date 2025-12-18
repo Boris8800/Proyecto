@@ -957,8 +957,6 @@ preflight_checks() {
     echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"; read -r
 }
 
-# Trap for successful completion
-trap print_summary EXIT
 
 # Validate critical environment variables
 validate_env() {
