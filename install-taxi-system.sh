@@ -1,3 +1,18 @@
+# Print installation summary at the end
+print_summary() {
+    echo -e "\n${BLUE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}                 INSTALLATION SUMMARY                   ${NC}"
+    echo -e "${BLUE}════════════════════════════════════════════════════════════════${NC}"
+    if [ -n "${WARNINGS[*]}" ]; then
+        echo -e "${YELLOW}⚠ WARNINGS FOUND:${NC}"
+        for warning in "${WARNINGS[@]}"; do
+            echo "  • $warning"
+        done
+    else
+        echo -e "${GREEN}✅ No warnings found${NC}"
+    fi
+    echo -e "\n${GREEN}✅ Installation check completed at: $(date)${NC}"
+}
 #!/bin/bash
 # --- AUTO CLEANUP OF PREVIOUS INSTALLATION ---
 log_step "Checking for previous taxi-system services/processes..."
@@ -1236,7 +1251,7 @@ check_system_requirements() {
     
     # Check memory
     local mem_total
-    mem_total=$(free -g | awk '/^Mem:/{print $2}')
+    mem_total=$(free -g | awk '/^Mem:/){print $2}')
     if [ "$mem_total" -lt 2 ]; then
         log_warning "Low memory detected: ${mem_total}GB (Recommended: 4GB+)"
     else
@@ -1900,7 +1915,7 @@ coverage/
 dist/
 build/
 .out/
-.next/
+next/
 .cache/
 EOF
 
@@ -2480,11 +2495,17 @@ DOMAIN=yourdomain.com
 SERVER_IP=5.249.164.40
 TIMEZONE=Europe/London
 LOG_LEVEL=info
+NODE_ENV=production
 
 # Database Configuration
-DB_PASSWORD=StrongPassword123!
-REDIS_PASSWORD=RedisSecurePass456!
-MONGO_PASSWORD=MongoSecurePass789!
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=taxi_admin
+DB_PASS=changeme123
+REDIS_HOST=localhost
+REDIS_PORT=6379
+MONGO_HOST=localhost
+MONGO_PORT=27017
 
 # API Security
 JWT_SECRET=VeryLongAndSecureJWTSecretKeyChangeThisInProduction!
@@ -4252,10 +4273,10 @@ check_disk_space() {
     
     if [ "$usage" -gt "$threshold" ]; then
         log_alert "Disk space critical: ${usage}% used"
-        echo -e "${RED}✗${NC} Disk Space (${usage}% used)"
+        echo -e "${RED}✗${NC} Disk Space ($usage% used)"
         return 1
     else
-        echo -e "${GREEN}✓${NC} Disk Space (${usage}% used)"
+        echo -e "${GREEN}✓${NC} Disk Space ($usage% used)"
         return 0
     fi
 }
@@ -4267,10 +4288,10 @@ check_memory() {
     
     if [ "$usage" -gt "$threshold" ]; then
         log_alert "Memory usage critical: ${usage}% used"
-        echo -e "${RED}✗${NC} Memory (${usage}% used)"
+        echo -e "${RED}✗${NC} Memory ($usage% used)"
         return 1
     else
-        echo -e "${GREEN}✓${NC} Memory (${usage}% used)"
+        echo -e "${GREEN}✓${NC} Memory ($usage% used)"
         return 0
     fi
 }
@@ -4282,10 +4303,10 @@ check_cpu() {
     
     if [ "$usage" -gt "$threshold" ]; then
         log_alert "CPU usage critical: ${usage}% used"
-        echo -e "${RED}✗${NC} CPU (${usage}% used)"
+        echo -e "${RED}✗${NC} CPU ($usage% used)"
         return 1
     else
-        echo -e "${GREEN}✓${NC} CPU (${usage}% used)"
+        echo -e "${GREEN}✓${NC} CPU ($usage% used)"
         return 0
     fi
 }
@@ -4363,8 +4384,10 @@ check_system_resources() {
     if (( $(echo "$load_per_core > 1.0" | bc -l) )); then
         log_alert "High load average: $load (per core: $load_per_core)"
         echo -e "${RED}✗${NC} Load Average ($load)"
+        return 1
     else
         echo -e "${GREEN}✓${NC} Load Average ($load)"
+        return 0
     fi
 }
 
@@ -5111,7 +5134,7 @@ check_service_health() {
 generate_report() {
     print_header "MAINTENANCE REPORT"
     
-    local report_file="/home/taxi/logs/maintenance/report_$(date +%Y%m%d).md"
+    local report_file="/home/taxi/logs/maintenance/report_$(date +%Y%m%d_%H%M%S).md"
     
     {
         echo "# Maintenance Report - $(date)"
@@ -5562,118 +5585,114 @@ EOF
 
 run_as_taxi "chmod +x $TAXI_HOME/restart-taxi-system.sh"
 
-print_substep "Creating final documentation..."
-
-# Create README
-cat << 'EOF' | run_as_taxi "tee $TAXI_HOME/README.md"
-# 🚕 Taxi System - Complete Installation
-
-## 📋 Overview
-This is a complete taxi booking and management system with real-time tracking, multiple panels, and full automation.
-
-## 🏗️ Architecture
-- **Frontend:** Vue.js/React PWA Applications
-- **Backend:** Node.js Microservices
-- **Database:** PostgreSQL + Redis + MongoDB
-- **Proxy:** Nginx with SSL
-- **Monitoring:** Netdata, Prometheus, Grafana
-- **Containerization:** Docker Rootless
-
-## 📁 Directory Structure
-```
-/home/taxi
-├── api
-│   ├── auth-service
-│   ├── booking-service
-│   ├── gateway
-│   ├── notification-service
-│   └── tracking-service
-├── backups
-│   ├── daily
-│   ├── monthly
-│   └── weekly
-├── certs
-│   ├── letsencrypt
-│   └── self-signed
-├── config
-│   ├── environment
-│   ├── nginx
-│   └── traefik
-├── data
-│   ├── mongodb
-│   ├── postgres
-│   └── redis
-├── docker
-│   ├── compose
-│   └── secrets
-├── logs
-│   ├── access
-│   ├── application
-│   └── error
-├── scripts
-│   ├── backup
-│   ├── deployment
-│   ├── maintenance
-│   └── monitoring
-└── web
-    ├── admin-panel
-    ├── customer-panel
-    └── driver-panel
-```
-
-## 🚀 Quick Start
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/yourusername/taxi-system.git
-   cd taxi-system
-   ```
-
-2. **Set up environment variables:**
-   - Copy the example environment file:
-     ```bash
-     cp .env.example .env
-     ```
-   - Edit `.env` and set your configuration values.
-
-3. **Start the system:**
-   ```bash
-   sudo -u taxi /home/taxi/start-taxi-system.sh
-   ```
-
-4. **Access the application:**
-   - Admin Panel: [https://admin.yourdomain.com](https://admin.yourdomain.com)
-   - Driver Panel: [https://driver.yourdomain.com](https://driver.yourdomain.com)
-   - Customer Panel: [https://app.yourdomain.com](https://app.yourdomain.com)
-   - API Docs: [https://api.yourdomain.com/docs](https://api.yourdomain.com/docs)
-
-## 📜 Documentation
-- **API Documentation:** [API Docs](https://api.yourdomain.com/docs)
-- **Deployment Guide:** [Deployment Guide](docs/deployment/README.md)
-- **User Manual:** [User Manual](docs/user_manual.md)
-
-## 🔧 Maintenance
-- Regularly check logs in `/home/taxi/logs`
-- Backup data using the backup script: `/home/taxi/scripts/backup/backup.sh`
-- Monitor system health: `/home/taxi/scripts/monitoring/health-check.sh`
-
-## ⚠️ Troubleshooting
-- Common issues and solutions can be found in the `docs/troubleshooting.md` file.
-- For further assistance, contact support@yourdomain.com.
-
-## 📅 Changelog
-- **v2.0** (2024-12-17)
-  - Initial release with complete features.
-  - Docker Rootless support.
-  - Comprehensive monitoring and logging.
-  - Advanced security hardening.
-
-## 📧 Contact
-- For inquiries, please email support@yourdomain.com.
-
-```
+# Create print_summary function
+cat << 'EOF' | run_as_taxi "tee $TAXI_HOME/print_summary.sh"
+#!/bin/bash
+# Print installation summary at the end
+print_summary() {
+    echo -e "\n${BLUE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${BLUE}                 INSTALLATION SUMMARY                   ${NC}"
+    echo -e "${BLUE}════════════════════════════════════════════════════════════════${NC}"
+    if [ -n "${WARNINGS[*]}" ]; then
+        echo -e "${YELLOW}⚠ WARNINGS FOUND:${NC}"
+        for warning in "${WARNINGS[@]}"; do
+            echo "  • $warning"
+        done
+    else
+        echo -e "${GREEN}✅ No warnings found${NC}"
+    fi
+    echo -e "\n${GREEN}✅ Installation check completed at: $(date)${NC}"
+}
 EOF
 
-log_success "Final documentation created"
+run_as_taxi "chmod +x $TAXI_HOME/print_summary.sh"
+
+log_success "Created print_summary function script"
+
+# ==============================================================================
+# PHASE 13: FINAL VERIFICATION & CLEANUP
+# ==============================================================================
+
+print_step "13" "Final Verification & Cleanup"
+
+print_substep "Performing final system checks..."
+
+# Check Docker
+if ! docker info > /dev/null 2>&1; then
+    echo -e "${RED}Docker is not running${NC}"
+    exit 1
+fi
+
+# Check Docker Compose
+if ! docker-compose version > /dev/null 2>&1; then
+    echo -e "${RED}Docker Compose is not available${NC}"
+    exit 1
+fi
+
+# Check environment file
+if [ ! -f "/home/taxi/.env" ]; then
+    echo -e "${YELLOW}Environment file not found, using defaults${NC}"
+fi
+
+# Check services
+local services=(
+    "taxi-postgres"
+    "taxi-redis"
+    "taxi-mongodb"
+    "taxi-api-gateway"
+    "taxi-nginx"
+    "taxi-admin-panel"
+    "taxi-driver-panel"
+    "taxi-customer-panel"
+    "taxi-portainer"
+    "taxi-netdata"
+    "taxi-prometheus"
+    "taxi-grafana"
+)
+
+for service in "${services[@]}"; do
+    if docker ps --format "{{.Names}}" | grep -q "^${service}$"; then
+        echo -e "${GREEN}$service is running${NC}"
+    else
+        echo -e "${RED}$service is not running${NC}"
+    fi
+done
+
+# Check logs
+echo -e "\n${BLUE}Log Excerpts:${NC}"
+tail -n 20 /home/taxi/logs/*.log
+
+# Show final service status
+echo -e "\n${BLUE}Final Service Status:${NC}"
+docker-compose ps
+
+# Show health check
+echo -e "\n${BLUE}Health Check:${NC}"
+if curl -s http://localhost:3000/health > /dev/null; then
+    echo "✓ API Gateway is healthy"
+else
+    echo "✗ API Gateway is not responding"
+fi
+
+# Show important URLs
+echo -e "\n${BLUE}Important URLs:${NC}"
+echo "Admin Panel:    https://localhost/admin"
+echo "Driver Panel:   https://localhost/driver"
+echo "Customer Panel: https://localhost/"
+echo "API Docs:       https://localhost/api/docs"
+echo "Portainer:      http://localhost:9000"
+echo "Netdata:        http://localhost:19999"
+echo ""
+
+echo -e "${GREEN}Taxi System installation and configuration completed successfully!${NC}"
+echo -e "${YELLOW}Remember to configure your domain and SSL certificates.${NC}"
+echo -e "${YELLOW}Review the logs and documentation for any warnings or issues.${NC}"
+echo -e "${YELLOW}Set up a regular maintenance and backup schedule.${NC}"
+echo -e "${YELLOW}For production, ensure security best practices are followed.${NC}"
+echo -e "${YELLOW}Contact support for any issues: support@yourdomain.com${NC}"
+echo -e "${BLUE}==========================================${NC}"
+echo -e "${BLUE}     THANK YOU FOR CHOOSING TAXI SYSTEM   ${NC}"
+echo -e "${BLUE}==========================================${NC}"
 
 
 
