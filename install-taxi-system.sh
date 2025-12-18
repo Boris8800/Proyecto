@@ -471,7 +471,7 @@ main_installer() {
         log_step "Checking disk space..."
         retry_with_backoff "check_disk_space" 3 || { log_step "Disk space check failed."; notify_failure "Disk space check failed."; rollback_installation; exit 1; }
             print_banner "Port Status & Management" "Reviewing and managing open ports required for Taxi System."
-            print_banner "Root Privileges Check" "Ensuring the script is running with root privileges."
+            #!/bin/bash
             print_banner "Root Taxi Process Check" "Checking for any taxi system processes running as root."
         echo -e "${YELLOW}Press any key to continue after reviewing disk space...${NC}"
         read -n 1 -s -r; echo
