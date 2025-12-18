@@ -1028,8 +1028,6 @@ fatal_error() {
 # Date: 2024-12-17
 # ===============================================================================
 
-# Prevent PuTTY/SSH session from closing on error or script exit
-trap 'echo -e "\n${RED}Script finished. Press ENTER to close this window.${NC}"; read' EXIT
 
 # ===================== IMPROVEMENTS SECTION =====================
 # Dry-run mode
