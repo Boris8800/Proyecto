@@ -756,7 +756,7 @@ preflight_checks() {
             echo -e "${YELLOW}Virtualization support: Not detected. If you plan to use containers or VMs, check BIOS/host settings.${NC}"
         fi
     else
-        echo -e "${YELLOW}lscpu not available. Please check virtualization support manually.${NC}"
+        #!/bin/bash
     fi
     echo -e "${YELLOW}Continuing after reviewing kernel and virtualization...${NC}"
 
