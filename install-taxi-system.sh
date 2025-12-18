@@ -1,4 +1,23 @@
-# --- ENVIRONMENT VARIABLE VALIDATION ---
+# --- ENVIRONMENT VARIABLE LOADING & VALIDATION ---
+if [ ! -f .env ]; then
+    echo "[INFO] Archivo .env no encontrado. Creando uno con valores por defecto."
+    cat > .env <<EOF
+ENVIRONMENT=production
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=taxi_admin
+DB_PASS=changeme123
+REDIS_HOST=localhost
+REDIS_PORT=6379
+MONGO_HOST=localhost
+MONGO_PORT=27017
+API_URL=http://localhost:3000
+SSL_ENABLED=true
+EOF
+fi
+echo "[INFO] Cargando variables de entorno desde .env"
+export $(grep -v '^#' .env | xargs)
+
 validate_env_vars() {
     local missing=0
     local vars=(ENVIRONMENT DB_HOST DB_PORT DB_USER DB_PASS REDIS_HOST REDIS_PORT MONGO_HOST MONGO_PORT API_URL SSL_ENABLED)
@@ -13,7 +32,7 @@ validate_env_vars() {
         exit 1
     fi
 }
-    validate_env_vars
+validate_env_vars
 # --- SCALABILITY & DEPLOYMENT FUNCTIONS ---
 scale_stateless_services() {
     log_step "Scaling stateless services horizontally..."
