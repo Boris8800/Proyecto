@@ -526,59 +526,23 @@ check_no_taxi_process_as_root() {
     fi
 
     echo -e "${CYAN}Checking that no taxi system process is running as root...${NC}"
-    # List processes related to taxi system (customize pattern as needed)
     local procs
     procs=$(pgrep -u root -f 'taxi-system|start-taxi-system|stop-taxi-system|restart-taxi-system')
     if [ -n "$procs" ]; then
-        echo -e "${RED}FATAL: Some taxi system processes are running as root!${NC}"
-        echo -e "$procs"
-        echo -e "${PURPLE}───────────────────────────────────────────────${NC}"
-        echo -e "${CYAN}      ROOT TAXI PROCESS MENU${NC}"
-        echo -e "${PURPLE}───────────────────────────────────────────────${NC}"
-        echo -e "${BLUE}  [1]${NC} ${GREEN}Kill these processes automatically and rerun script${NC}"
-        echo -e "${BLUE}  [2]${NC} ${YELLOW}Skip and continue (not recommended)${NC}"
-        echo -e "${BLUE}  [3]${NC} ${RED}Exit script${NC}"
-        echo -e "${PURPLE}───────────────────────────────────────────────${NC}"
-        read -p "${CYAN}Select an option [1-3]: ${NC}" choice
-        case $choice in
-            1)
-                echo -e "${CYAN}Killing processes: $procs${NC}"
-                for pid in $procs; do
-                    kill "$pid" 2>/dev/null || echo "Process $pid already gone"
-                done
-                sleep 1
-                # Verify no taxi processes running as root
-                if pgrep -u root -f taxi-system; then
-                    echo -e "${RED}Some taxi processes are still running as root!${NC}"
-                else
-                    echo -e "${GREEN}OK: no taxi processes running as root${NC}"
-                fi
-                # Check again
-                local still_running
-                still_running=$(pgrep -u root -f 'taxi-system|start-taxi-system|stop-taxi-system|restart-taxi-system')
-                if [ -n "$still_running" ]; then
-                    echo -e "${RED}Some processes could not be killed. Please check manually.${NC}"
-                    echo -e "$still_running"
-                    read -n 1 -s -r; echo
-                    exit 1
-                else
-                    echo -e "${GREEN}All taxi system root processes killed successfully. Continuing...${NC}"
-                    sleep 1
-                    return 0  # Solo continúa con el script, no lo reinicies
-                fi
-                ;;
-            2)
-                echo -e "${YELLOW}Warning: Continuing with root taxi system processes running!${NC}"
-                ;;
-            3)
-                echo -e "${CYAN}Exiting script as requested.${NC}"
-                exit 1
-                ;;
-            *)
-                echo -e "${YELLOW}Invalid choice. Exiting for safety.${NC}"
-                exit 1
-                ;;
-        esac
+        echo -e "${RED}FATAL: Some taxi system processes are running as root! Attempting to kill...${NC}"
+        for pid in $procs; do
+            kill "$pid" 2>/dev/null || echo "Process $pid already gone"
+        done
+        sleep 1
+        local still_running
+        still_running=$(pgrep -u root -f 'taxi-system|start-taxi-system|stop-taxi-system|restart-taxi-system')
+        if [ -n "$still_running" ]; then
+            echo -e "${RED}Some processes could not be killed. Please check manually.${NC}"
+            echo -e "$still_running"
+            exit 1
+        else
+            echo -e "${GREEN}All taxi system root processes killed successfully. Continuing...${NC}"
+        fi
     else
         echo -e "${GREEN}OK: No taxi system process is running as root.${NC}"
     fi
@@ -648,7 +612,7 @@ preflight_checks() {
         echo -e "${YELLOW}Warning: unattended-upgrades is not installed!${NC}"
         WARNINGS+=("unattended-upgrades not installed")
     fi
-    echo -e "${YELLOW}Press ENTER to continue after security checks...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after security checks...${NC}"
 
     # --- System Health Checks ---
     echo -e "${CYAN}System health checks...${NC}"
@@ -676,7 +640,7 @@ preflight_checks() {
     else
         echo -e "${GREEN}No failed systemd services.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after system health checks...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after system health checks...${NC}"
 
     # --- Filesystem Checks ---
     echo -e "${CYAN}Filesystem checks...${NC}"
@@ -695,13 +659,13 @@ preflight_checks() {
     else
         echo -e "${GREEN}/root/.bash_history not present.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after filesystem checks...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after filesystem checks...${NC}"
 
     # Network connectivity and DNS
     echo -e "${CYAN}Checking network connectivity and DNS...${NC}"
     ping -c 1 8.8.8.8 &>/dev/null && echo -e "${GREEN}Internet: OK${NC}" || echo -e "${RED}Internet: FAILED${NC}"
     nslookup google.com &>/dev/null && echo -e "${GREEN}DNS: OK${NC}" || echo -e "${RED}DNS: FAILED${NC}"
-    echo -e "${YELLOW}Press ENTER to continue after network/DNS check...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after network/DNS check...${NC}"
 
     # NTP/Time sync
     echo -e "${CYAN}Checking NTP/time sync...${NC}"
@@ -711,7 +675,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}timedatectl not available. Please check system time manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after NTP check...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after NTP check...${NC}"
 
     # System updates
     echo -e "${CYAN}Checking for system updates...${NC}"
@@ -722,7 +686,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}apt-get not available. Please check for updates manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after update check...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after update check...${NC}"
 
     # System limits (ulimit)
     echo -e "${CYAN}Checking system file descriptor and process limits (ulimit)...${NC}"
@@ -736,7 +700,7 @@ preflight_checks() {
     if [ "$PROC_LIMIT" -lt 4096 ]; then
         echo -e "${YELLOW}Warning: Max user processes limit is low. Consider increasing for production workloads.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing system limits...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after reviewing system limits...${NC}"
 
     # Swap
     echo -e "${CYAN}Checking swap usage and configuration...${NC}"
@@ -750,7 +714,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}Could not determine swap status. Please check manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing swap status...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after reviewing swap status...${NC}"
 
     # Locale & Timezone
     echo -e "${CYAN}Checking system locale and timezone configuration...${NC}"
@@ -764,7 +728,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}timedatectl not available. Please check timezone manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing locale and timezone...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after reviewing locale and timezone...${NC}"
 
     # Kernel & Virtualization
     echo -e "${CYAN}Checking system kernel version and virtualization support...${NC}"
@@ -779,7 +743,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}lscpu not available. Please check virtualization support manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing kernel and virtualization...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after reviewing kernel and virtualization...${NC}"
 
     # Hardware
     echo -e "${CYAN}Checking system hardware (CPU, RAM, disk)...${NC}"
@@ -809,7 +773,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}smartctl not available. Please check disk health manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing hardware info...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after reviewing hardware info...${NC}"
 
     # PCI/USB/Network
     echo -e "${CYAN}Checking PCI/USB devices and network interfaces...${NC}"
@@ -833,7 +797,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}ip command not available. Please check network interfaces manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"; read -r
+    echo -e "${YELLOW}Continuing after reviewing PCI/USB/network info...${NC}"
 }
 
         # --- Filesystem Checks ---
