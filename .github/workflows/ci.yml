@@ -1,0 +1,29 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y shellcheck
+    - name: Syntax Check
+      run: bash -n src/taxi_installer.sh
+    - name: ShellCheck
+      run: shellcheck src/taxi_installer.sh
+    - name: Dry Run Test
+      run: |
+        chmod +x src/taxi_installer.sh
+        ./src/taxi_installer.sh --dry-run
+    - name: Run Tests
+      run: |
+        chmod +x tests/test_installer.sh
+        ./tests/test_installer.sh
