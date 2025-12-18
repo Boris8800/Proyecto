@@ -832,12 +832,12 @@ preflight_checks() {
         else
             echo -e "${GREEN}/root/.bash_history not present.${NC}"
         fi
-        echo -e "${YELLOW}Press ENTER to continue after filesystem checks...${NC}"; read -r
+        echo -e "${YELLOW}Press ENTER to continue after filesystem checks...${NC}"
     # Network connectivity and DNS
     echo -e "${CYAN}Checking network connectivity and DNS...${NC}"
     ping -c 1 8.8.8.8 &>/dev/null && echo -e "${GREEN}Internet: OK${NC}" || echo -e "${RED}Internet: FAILED${NC}"
     nslookup google.com &>/dev/null && echo -e "${GREEN}DNS: OK${NC}" || echo -e "${RED}DNS: FAILED${NC}"
-    echo -e "${YELLOW}Press ENTER to continue after network/DNS check...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after network/DNS check...${NC}"
 
     # NTP/Time sync
     echo -e "${CYAN}Checking NTP/time sync...${NC}"
@@ -847,7 +847,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}timedatectl not available. Please check system time manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after NTP check...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after NTP check...${NC}"
 
     # System updates
     echo -e "${CYAN}Checking for system updates...${NC}"
@@ -858,7 +858,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}apt-get not available. Please check for updates manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after update check...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after update check...${NC}"
 
     # System limits (ulimit)
     echo -e "${CYAN}Checking system file descriptor and process limits (ulimit)...${NC}"
@@ -872,7 +872,7 @@ preflight_checks() {
     if [ "$PROC_LIMIT" -lt 4096 ]; then
         echo -e "${YELLOW}Warning: Max user processes limit is low. Consider increasing for production workloads.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing system limits...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after reviewing system limits...${NC}"
 
     # Swap
     echo -e "${CYAN}Checking swap usage and configuration...${NC}"
@@ -886,7 +886,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}Could not determine swap status. Please check manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing swap status...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after reviewing swap status...${NC}"
 
     # Locale & Timezone
     echo -e "${CYAN}Checking system locale and timezone configuration...${NC}"
@@ -900,7 +900,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}timedatectl not available. Please check timezone manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing locale and timezone...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after reviewing locale and timezone...${NC}"
 
     # Kernel & Virtualization
     echo -e "${CYAN}Checking system kernel version and virtualization support...${NC}"
@@ -915,7 +915,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}lscpu not available. Please check virtualization support manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing kernel and virtualization...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after reviewing kernel and virtualization...${NC}"
 
     # Hardware
     echo -e "${CYAN}Checking system hardware (CPU, RAM, disk)...${NC}"
@@ -945,7 +945,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}smartctl not available. Please check disk health manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing hardware info...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after reviewing hardware info...${NC}"
 
     # PCI/USB/Network
     echo -e "${CYAN}Checking PCI/USB devices and network interfaces...${NC}"
@@ -969,7 +969,7 @@ preflight_checks() {
     else
         echo -e "${YELLOW}ip command not available. Please check network interfaces manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"; read -r
+    echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"
 }
 
 
@@ -985,7 +985,7 @@ validate_env() {
     done
     if [ $missing -eq 1 ]; then
         echo -e "${RED}Please set all required environment variables and re-run the script.${NC}"
-        read -r
+        # read -r removed
         exit 1
     fi
 }
@@ -1005,7 +1005,7 @@ check_disk_space() {
     if [ "$avail" -lt "$min_gb" ]; then
         echo -e "${RED}Warning: Less than ${min_gb}GB disk space available!${NC}"
         echo -e "${YELLOW}Free up space before continuing.${NC}"
-        read -r
+        # read -r removed
         exit 1
     else
         echo -e "${GREEN}Disk space check passed: ${avail}GB available.${NC}"
@@ -1029,7 +1029,7 @@ fatal_error() {
     echo -e "- Check your network connection."
     echo -e "- Ensure all dependencies are installed."
     echo -e "- Review disk space and permissions."
-    read -r
+    # read -r removed
     exit 1
 }
 #!/bin/bash
@@ -1100,23 +1100,23 @@ print_step "0" "Initialization & System Check"
 # Run improvements with pauses
 validate_env || fatal_error "Environment validation failed."
 echo -e "${YELLOW}Press ENTER to continue after reviewing environment validation...${NC}"
-read -r
+# read -r removed
 detect_public_ip
 echo -e "${YELLOW}Press ENTER to continue after reviewing public IP...${NC}"
-read -r
+# read -r removed
 check_disk_space
 echo -e "${YELLOW}Press ENTER to continue after reviewing disk space...${NC}"
-read -r
+# read -r removed
 check_ports
 echo -e "${YELLOW}Press ENTER to continue after reviewing open ports...${NC}"
-read -r
+# read -r removed
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then 
     fatal_error "Please run as root (sudo)"
 fi
 echo -e "${YELLOW}Press ENTER to continue after root check...${NC}"
-read -r
+# read -r removed
 
 
 # Call the main installer logic
@@ -1307,7 +1307,7 @@ print_step "0" "Initialization & System Check"
 if [ "$EUID" -ne 0 ]; then 
     echo -e "${RED}Please run as root (sudo)${NC}"
     echo -e "${YELLOW}Do not close this window. Press ENTER to exit.${NC}"
-    read -r
+    # read -r removed
     exit 1
 fi
 
@@ -1317,7 +1317,7 @@ fi
 
 print_substep "Creating system user and directories..."
 echo -e "${YELLOW}Press ENTER to continue with user and directory creation...${NC}"
-read -r
+# read -r removed
 
 # Create user and home directory if they don't exist
 if ! id "$TAXI_USER" &>/dev/null; then
@@ -1354,18 +1354,18 @@ log_message "Starting Taxi System Complete Installation"
 log_message "Installation log: $INSTALL_LOG"
 log_message "Error log: $ERROR_LOG"
 echo -e "${YELLOW}Press ENTER to continue after logging setup...${NC}"
-read -r
+# read -r removed
 
 
 check_system_requirements
 echo -e "${YELLOW}Press ENTER to continue after system requirements check...${NC}"
-read -r
+# read -r removed
 
 preflight_checks
 print_check_summary
 setup_logging
 echo -e "${YELLOW}Press ENTER to continue after logging system setup...${NC}"
-read -r
+# read -r removed
 
 
 # ==============================================================================
@@ -1558,7 +1558,7 @@ else
 fi
 
 echo -e "${YELLOW}Press ENTER to continue after reviewing kernel and virtualization...${NC}"
-read -r
+# read -r removed
 
 # ==============================================================================
 # PHASE 3: SECURITY HARDENING
