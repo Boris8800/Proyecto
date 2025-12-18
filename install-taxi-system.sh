@@ -1,3 +1,21 @@
+#!/bin/bash
+# --- AUTO CLEANUP OF PREVIOUS INSTALLATION ---
+log_step "Checking for previous taxi-system services/processes..."
+if systemctl list-units --type=service | grep -q "taxi-system.service"; then
+    log_step "Stopping and disabling previous taxi-system.service..."
+    sudo systemctl stop taxi-system.service
+    sudo systemctl disable taxi-system.service
+    sudo systemctl daemon-reload
+fi
+if pgrep -u root -f "taxi-system" >/dev/null; then
+    log_step "Killing previous taxi-system processes running as root..."
+    sudo pkill -u root -f "taxi-system"
+fi
+# --- LOGGING FUNCTIONS ---
+log_step()   { echo -e "\033[1;34m[STEP]\033[0m $1"; }
+log_error()  { echo -e "\033[0;31m[ERROR]\033[0m $1"; }
+log_success(){ echo -e "\033[0;32m[SUCCESS]\033[0m $1"; }
+
 # --- ENVIRONMENT VARIABLE LOADING & VALIDATION ---
 if [ ! -f .env ]; then
     echo "[INFO] Archivo .env no encontrado. Creando uno con valores por defecto."
