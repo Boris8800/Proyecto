@@ -257,57 +257,10 @@ log_ok "Sistema configurado."
     IP=$(hostname -I | awk '{print $1}')
     echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
     echo "🌐 API:         http://$IP:3000"
-    echo "📊 Admin Panel: http://$IP:8080"
-    echo "🐘 PostgreSQL:  $IP:5432"
-    echo "🔴 Redis:       $IP:6379"
+	echo "📊 Admin Panel: http://$IP:8080"
+	echo "🐘 PostgreSQL:  $IP:5432"
+	echo "🔴 Redis:       $IP:6379"
 }
-
-# ===================== STATUS JSON GENERATOR =====================
-generate_status_json() {
-    local timestamp=$(date -Iseconds)
-    local overall_status="healthy"
-    local total_services=0
-    local failed_services=0
-    echo "{"
-    echo "  \"timestamp\": \"$timestamp\"," 
-    echo "  \"overall_status\": \"$overall_status\"," 
-    echo "  \"services_checked\": $total_services,"
-    echo "  \"services_failed\": $failed_services"
-    echo "}"
-}
-
-# ===================== MAIN INSTALLER LOGIC =====================
-main_installer() {
-    # ...existing main_installer code...
-}
-
-# ===================== QUICK INSTALLER =====================
-taxi_quick_installer() {
-    # ...existing taxi_quick_installer code...
-}
-
-# ===================== STATUS JSON GENERATOR =====================
-generate_status_json() {
-    # ...existing generate_status_json code...
-}
-
-# ===================== OTHER UTILS =====================
-# ...other utility functions, if any...
-
-# ===================== ENTRYPOINT =====================
-# Si el primer argumento es --quick, ejecuta taxi_quick_installer y termina
-if [[ "${1:-}" == "--quick" ]]; then
-    taxi_quick_installer
-    exit 0
-fi
-
-# Ejecuta el flujo principal solo si el script es ejecutado directamente
-if [[ "$0" == "$BASH_SOURCE" ]]; then
-        cd /home/taxi/app
-        sudo -u taxi docker-compose --env-file .env up -d
-        log_ok "Servicios Docker en ejecución."
-
-        fi
     done
 
     # 3. SSL certificate and nginx config
