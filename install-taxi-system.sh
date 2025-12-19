@@ -276,15 +276,6 @@ generate_status_json() {
     echo "}"
 }
 
-# ===================== MAIN INSTALLER LOGIC =====================
-main_installer() {
-    # ...existing main_installer code...
-}
-
-# ===================== QUICK INSTALLER =====================
-taxi_quick_installer() {
-    # ...existing taxi_quick_installer code...
-}
 
 # ===================== STATUS JSON GENERATOR =====================
 generate_status_json() {
