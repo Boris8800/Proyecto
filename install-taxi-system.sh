@@ -34,6 +34,29 @@ print_banner() {
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
+        # Comprobación de paquetes rotos antes de instalar dependencias
+        if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
+            echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
+            echo -e "${YELLOW}Sugerencia: ejecuta los siguientes comandos y vuelve a intentar la instalación:${NC}"
+            echo -e "\n  sudo apt-get update"
+            echo -e "  sudo apt-get upgrade -y"
+            echo -e "  sudo apt --fix-broken install -y"
+            echo -e "  sudo dpkg --configure -a"
+            echo -e "  sudo apt-get install -f\n"
+            exit 1
+        fi
+    # Comprobación de paquetes rotos antes de instalar dependencias
+    if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
+        echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
+        echo -e "${YELLOW}Sugerencia: ejecuta los siguientes comandos y vuelve a intentar la instalación:${NC}"
+        echo -e "\n  sudo apt-get update"
+        echo -e "  sudo apt-get upgrade -y"
+        echo -e "  sudo apt --fix-broken install -y"
+        echo -e "  sudo dpkg --configure -a"
+        echo -e "  sudo apt-get install -f\n"
+        exit 1
+    fi
+
     print_banner "Environment Validation" "Checking required environment variables, user, and permissions."
     log_step "Validando configuración..."
     # Aquí iría la validación real de entorno, usuarios, permisos, etc.
@@ -1398,7 +1421,7 @@ run_as_root "ufw allow 19999/tcp comment 'Netdata'"
 run_as_root "ufw --force enable"
 run_as_root "systemctl enable ufw"
 run_as_root "systemctl start ufw"
-log_success "UFW firewall configured"
+log_ok "UFW firewall configurado."
 
 # Configure fail2ban
 print_substep "Configuring fail2ban..."
@@ -1437,7 +1460,7 @@ EOF
 
 run_as_root "systemctl restart fail2ban"
 run_as_root "systemctl enable fail2ban"
-log_success "fail2ban configured"
+log_ok "fail2ban configurado."
 
 # SSH Hardening
 print_substep "Hardening SSH configuration..."
@@ -1477,7 +1500,7 @@ AllowAgentForwarding no
 EOF
 
 run_as_root "systemctl restart sshd"
-log_success "SSH hardened"
+log_ok "SSH hardened."
 
 # Configure automatic security updates
 print_substep "Configuring automatic security updates..."
@@ -1504,7 +1527,7 @@ EOF
 
 run_as_root "systemctl enable unattended-upgrades"
 run_as_root "systemctl start unattended-upgrades"
-log_success "Automatic security updates configured"
+log_ok "Automatic security updates configurado."
 
 # Install and configure ClamAV
 print_substep "Installing antivirus protection..."
@@ -1523,7 +1546,7 @@ DB_UPDATE_EMAIL="no"
 APT_AUTOGEN="yes"
 EOF
 
-log_success "Security hardening complete"
+log_ok "Security hardening complete"
 
 # ==============================================================================
 # PHASE 4: DOCKER ROOTLESS INSTALLATION
@@ -5563,11 +5586,357 @@ fi
 if [[ "$0" == "$BASH_SOURCE" ]]; then
     main_installer "$@"
 fi
+LOG_FILE="/var/log/taxi_installer.log"
 
+# Log step with timestamp
+log_step() {
+    local msg="$1"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $msg" | tee -a "$LOG_FILE"
+}
 
+# Retry command with exponential backoff
+retry_with_backoff() {
+    local max_attempts=${2:-5}
+    local delay=2
+    local attempt=1
+    while [ $attempt -le $max_attempts ]; do
+        log_step "Attempt $attempt: $1"
+        eval "$1" && return 0
+        log_step "Failed attempt $attempt for: $1"
+        sleep $delay
+        delay=$((delay * 2))
+        attempt=$((attempt + 1))
+    done
+    return 1
+}
 
+# Notify by email and Slack
+notify_failure() {
+    local msg="$1"
+    local email="admin@localhost"
+    local slack_webhook="https://hooks.slack.com/services/your/webhook/url"
+    echo "$msg" | mail -s "Taxi Installer Failure" "$email"
+    curl -X POST -H 'Content-type: application/json' --data "{\"text\": \"$msg\"}" "$slack_webhook" >/dev/null 2>&1
+}
 
+# Rollback function
+rollback_installation() {
+    log_step "Starting rollback..."
+    # Example rollback steps (customize as needed)
+    systemctl stop docker-taxi taxi-backup taxi-health 2>/dev/null
+    userdel -r taxi 2>/dev/null
+    rm -rf /opt/taxi-system 2>/dev/null
+    log_step "Rollback completed."
+    notify_failure "Taxi Installer: Rollback executed due to failure."
+}
+# --- UNIT TEST FUNCTION ---
+unit_test_taxi_installer() {
+    local failed=0
+    echo -e "\n${BLUE}==> Running Taxi Installer Unit Tests${NC}\n"
 
+    # 1. Check user 'taxi' exists and has correct permissions
+    if id taxi &>/dev/null; then
+        local taxi_shell
+        taxi_shell=$(getent passwd taxi | cut -d: -f7)
+        if [[ "$taxi_shell" =~ (bash|sh) ]]; then
+            echo -e "${GREEN}✓ User 'taxi' exists and has valid shell.${NC}"
+        else
+            echo -e "${RED}✗ User 'taxi' shell is not valid: $taxi_shell${NC}"
+            failed=1
+        fi
+    else
+        echo -e "${RED}✗ User 'taxi' does not exist.${NC}"
+        failed=1
+    fi
 
+    # 2. Check all target ports are free
+    local ports=(80 443 3000 5432 6379 27017 9000 19999)
+    local port_free=true
+    for port in "${ports[@]}"; do
+        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+            echo -e "${RED}✗ Port $port is still in use.${NC}"
+            port_free=false
+            failed=1
+        else
+            echo -e "${GREEN}✓ Port $port is free.${NC}"
+        fi
+    done
 
+    # 3. Check critical dependencies
+    local deps=(docker docker-compose nginx)
+    for dep in "${deps[@]}"; do
+        if command -v "$dep" &>/dev/null; then
+            echo -e "${GREEN}✓ Dependency '$dep' is installed.${NC}"
+        else
+            echo -e "${RED}✗ Dependency '$dep' is missing.${NC}"
+            failed=1
+        fi
+    done
 
+    # 4. Check systemd services are active
+    local services=(docker-taxi taxi-backup taxi-health)
+    for svc in "${services[@]}"; do
+        if systemctl is-active --quiet "$svc"; then
+            echo -e "${GREEN}✓ Service '$svc' is active.${NC}"
+        else
+            echo -e "${RED}✗ Service '$svc' is not active.${NC}"
+            failed=1
+        fi
+    done
+
+    if [ "$failed" -eq 0 ]; then
+        echo -e "\n${GREEN}All unit tests passed!${NC}"
+        return 0
+    else
+        echo -e "\n${RED}Some unit tests failed. Please review above.${NC}"
+        return 1
+    fi
+}
+set -x  # Enable debug tracing
+# Matar procesos que ocupan puertos específicos
+show_open_ports_menu() {
+    local ports=(80 443 3000 5432 6379 27017 9000 19999)
+    echo -e "${CYAN}Target ports (22/SSH excluded):${NC} ${ports[*]}"
+    echo -e "${BLUE}Port status:${NC}"
+    for port in "${ports[@]}"; do
+        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+            local pids
+            pids=$(lsof -t -i :"$port" 2>/dev/null | sort -u)
+            echo -e "${YELLOW}Port $port OPEN by PID(s): $pids${NC}"
+        else
+            echo -e "${GREEN}Port $port FREE${NC}"
+        fi
+    done
+}
+
+kill_ports() {
+    local ports=(80 443 3000 5432 6379 27017 9000 19999)
+    for port in "${ports[@]}"; do
+        local pids
+        pids=$(lsof -t -i :"$port" 2>/dev/null)
+        if [ -n "$pids" ]; then
+            for pid in ${pids[@]}; do
+                echo -e "${CYAN}Matando proceso $pid en puerto $port...${NC}"
+                kill -9 "$pid" && echo -e "${GREEN}✓ Proceso $pid matado.${NC}" || echo -e "${RED}✗ No se pudo matar $pid.${NC}"
+            done
+        fi
+    done
+    echo -e "${GREEN}Attempt to free target ports completed.${NC}"
+}
+#!/bin/bash
+print_step() {
+    echo -e "\n\033[1;34m==> $1\033[0m\n"
+}
+
+# Main installer logic as a function
+main_installer() {
+    # Comprobación de paquetes rotos antes de instalar dependencias
+    if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
+        echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
+        echo -e "${YELLOW}Sugerencia: ejecuta los siguientes comandos y vuelve a intentar la instalación:${NC}"
+        echo -e "\n  sudo apt-get update"
+        echo -e "  sudo apt-get upgrade -y"
+        echo -e "  sudo apt --fix-broken install -y"
+        echo -e "  sudo dpkg --configure -a"
+        echo -e "  sudo apt-get install -f\n"
+        exit 1
+    fi
+
+    # Comprobación de usuario root
+    if [ "$EUID" -ne 0 ]; then 
+        fatal_error "Please run as root (sudo)"
+    fi
+
+    # Comprobación de sistema operativo
+    if ! grep -q -i "ubuntu" /etc/os-release; then
+        fatal_error "Este script está diseñado para Ubuntu. Distribución detectada: $(grep -i '^id=' /etc/os-release)"
+    fi
+
+    # Comprobación de espacio en disco
+    local min_disk_space=20 # MB
+    local available_space
+    available_space=$(df /home | awk 'NR==2 {print $4}')
+    if [ "$available_space" -lt "$((min_disk_space * 1024))" ]; then
+        fatal_error "Espacio en disco insuficiente. Se requieren al menos $min_disk_space MB."
+    fi
+
+    # Comprobación de memoria RAM
+    local min_ram=2048 # MB
+    local ram
+    ram=$(free -m | awk '/^Mem:/{print $2}')
+    if [ "$ram" -lt "$min_ram" ]; then
+        fatal_error "Se requieren al menos $min_ram MB de RAM. Memoria disponible: ${ram}MB"
+    fi
+
+    # Comprobación de CPU
+    local min_cpus=2
+    local cpu_cores
+    cpu_cores=$(nproc)
+    if [ "$cpu_cores" -lt "$min_cpus" ]; then
+        fatal_error "Se requieren al menos $min_cpus núcleos de CPU. Núcleos disponibles: $cpu_cores"
+    fi
+
+    # Comprobación de conexión a Internet
+    if ! ping -c 1 8.8.8.8 >/dev/null 2>&1; then
+        fatal_error "Se requiere conexión a Internet. Verifica tu conexión y vuelve a intentarlo."
+    fi
+
+    # Comprobación de permisos
+    if [ ! -w /home/taxi ]; then
+        fatal_error "Permisos insuficientes en el directorio de inicio de taxi. Ejecuta: sudo chown -R \$USER:\$USER /home/taxi"
+    fi
+
+    # Comprobación de paquetes rotos
+    if dpkg -l | grep -q '^..r'; then
+        echo -e "${RED}Se han encontrado paquetes rotos. Intenta reparar con:${NC}"
+        echo -e "  sudo apt-get install -f"
+        echo -e "  sudo dpkg --configure -a"
+        exit 1
+    fi
+
+    # Comprobación de dependencias faltantes
+    local missing_deps=()
+    for dep in curl git nginx docker.io docker-compose postgresql redis-server; do
+        if ! command -v "$dep" &>/dev/null; then
+            missing_deps+=("$dep")
+        fi
+    done
+
+    if [ ${#missing_deps[@]} -ne 0 ]; then
+        echo -e "${RED}Faltan dependencias: ${missing_deps[*]}${NC}"
+        echo -e "${YELLOW}Instala las dependencias faltantes y vuelve a intentarlo.${NC}"
+        exit 1
+    fi
+
+    # Comprobación de conflictos de puertos
+    local ports=(80 443 3000 5432 6379 27017 9000 19999)
+    for port in "${ports[@]}"; do
+        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+            echo -e "${RED}El puerto $port ya está en uso. Libera el puerto y vuelve a intentarlo.${NC}"
+            exit 1
+        fi
+    done
+
+    # Comprobación de procesos en segundo plano
+    local taxi_processes
+    taxi_processes=$(pgrep -af taxi)
+    if [ -n "$taxi_processes" ]; then
+        echo -e "${RED}Se encontraron procesos en segundo plano relacionados con 'taxi':${NC}"
+        echo "$taxi_processes"
+        echo -e "${YELLOW}Detén los procesos y vuelve a intentarlo.${NC}"
+        exit 1
+    fi
+
+    # Comprobación de configuración de Nginx
+    if ! nginx -t 2>/dev/null; then
+        echo -e "${RED}Error en la configuración de Nginx. Corrige los errores y vuelve a intentarlo.${NC}"
+        exit 1
+    fi
+
+    # Comprobación de estado de los servicios
+    local services=(docker-taxi taxi-backup taxi-health)
+    for svc in "${services[@]}"; do
+        if ! systemctl is-active --quiet "$svc"; then
+            echo -e "${YELLOW}El servicio '$svc' no está activo. Inicia el servicio y vuelve a intentarlo.${NC}"
+            exit 1
+        fi
+    done
+
+    echo -e "${GREEN}✓ Todas las comprobaciones de preinstalación han sido superadas.${NC}"
+    echo -e "${YELLOW}Presiona ENTER para continuar con la instalación..."
+    read -r
+}
+
+main_installer() {
+    # Comprobación de paquetes rotos antes de instalar dependencias
+    if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
+        echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
+        echo -e "${YELLOW}Sugerencia: ejecuta los siguientes comandos y vuelve a intentar la instalación:${NC}"
+        echo -e "\n  sudo apt-get update"
+        echo -e "  sudo apt-get upgrade -y"
+        echo -e "  sudo apt --fix-broken install -y"
+        echo -e "  sudo dpkg --configure -a"
+        echo -e "  sudo apt-get install -f\n"
+        exit 1
+    fi
+
+    # Comprobación de usuario root
+    if [ "$EUID" -ne 0 ]; then 
+        fatal_error "Please run as root (sudo)"
+    fi
+
+    # Comprobación de sistema operativo
+    if ! grep -q -i "ubuntu" /etc/os-release; then
+        fatal_error "Este script está diseñado para Ubuntu. Distribución detectada: $(grep -i '^id=' /etc/os-release)"
+    fi
+
+    # Comprobación de espacio en disco
+    local min_disk_space=20 # MB
+    local available_space
+    available_space=$(df /home | awk 'NR==2 {print $4}')
+    if [ "$available_space" -lt "$((min_disk_space * 1024))" ]; then
+        fatal_error "Espacio en disco insuficiente. Se requieren al menos $min_disk_space MB."
+    fi
+
+    # Comprobación de memoria RAM
+    local min_ram=2048 # MB
+    local ram
+    ram=$(free -m | awk '/^Mem:/{print $2}')
+    if [ "$ram" -lt "$min_ram" ]; then
+        fatal_error "Se requieren al menos $min_ram MB de RAM. Memoria disponible: ${ram}MB"
+    fi
+
+    # Comprobación de CPU
+    local min_cpus=2
+    local cpu_cores
+    cpu_cores=$(nproc)
+    if [ "$cpu_cores" -lt "$min_cpus" ]; then
+        fatal_error "Se requieren al menos $min_cpus núcleos de CPU. Núcleos disponibles: $cpu_cores"
+    fi
+
+    # Comprobación de conexión a Internet
+    if ! ping -c 1 8.8.8.8 >/dev/null 2>&1; then
+        fatal_error "Se requiere conexión a Internet. Verifica tu conexión y vuelve a intentarlo."
+    fi
+
+    # Comprobación de permisos
+    if [ ! -w /home/taxi ]; then
+        fatal_error "Permisos insuficientes en el directorio de inicio de taxi. Ejecuta: sudo chown -R \$USER:\$USER /home/taxi"
+    fi
+
+    # Comprobación de paquetes rotos
+    if dpkg -l | grep -q '^..r'; then
+        echo -e "${RED}Se han encontrado paquetes rotos. Intenta reparar con:${NC}"
+        echo -e "  sudo apt-get install -f"
+        echo -e "  sudo dpkg --configure -a"
+        exit 1
+    fi
+
+    # Comprobación de dependencias faltantes
+    local missing_deps=()
+    for dep in curl git nginx docker.io docker-compose postgresql redis-server; do
+        if ! command -v "$dep" &>/dev/null; then
+            missing_deps+=("$dep")
+        fi
+    done
+
+    if [ ${#missing_deps[@]} -ne 0 ]; then
+        echo -e "${RED}Faltan dependencias: ${missing_deps[*]}${NC}"
+        echo -e "${YELLOW}Instala las dependencias faltantes y vuelve a intentarlo.${NC}"
+        exit 1
+    fi
+
+    # Comprobación de conflictos de puertos
+    local ports=(80 443 3000 5432 6379 27017 9000 19999)
+    for port in "${ports[@]}"; do
+        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+            echo -e "${RED}El puerto $port ya está en uso. Libera el puerto y vuelve a intentarlo.${NC}"
+            exit 1
+        fi
+    done
+
+    # Comprobación de procesos en segundo plano
+    local taxi_processes
+    taxi_processes=$(pgrep -af taxi)
+    if [ -n "$taxi_processes" ]; then
+        echo -e "${RED}Se encontraron procesos en
