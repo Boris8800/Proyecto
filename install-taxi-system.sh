@@ -16,6 +16,7 @@ print_summary() {
 #!/bin/bash
 # --- AUTO CLEANUP OF PREVIOUS INSTALLATION ---
 log_step "Checking for previous taxi-system services/processes..."
+ 
 if systemctl list-units --type=service | grep -q "taxi-system.service"; then
     log_step "Stopping and disabling previous taxi-system.service..."
     sudo systemctl stop taxi-system.service
@@ -561,7 +562,9 @@ check_no_taxi_process_as_root() {
     else
         echo -e "${GREEN}OK: No taxi system process is running as root.${NC}"
     fi
+
     # Process check complete. Continue without stopping for user input.
+}
 
 
 # Preflight system checks
@@ -738,16 +741,19 @@ preflight_checks() {
     else
         echo -e "${YELLOW}locale command not available. Please check locale manually.${NC}"
     fi
+
     if command -v timedatectl &>/dev/null; then
         echo -e "Current timezone: ${GREEN}$(timedatectl | grep 'Time zone')${NC}"
     else
         echo -e "${YELLOW}timedatectl not available. Please check timezone manually.${NC}"
+    fi
     echo -e "${YELLOW}Continuing after reviewing locale and timezone...${NC}"
     read -r
 
     # Kernel & Virtualization
     echo -e "${CYAN}Checking system kernel version and virtualization support...${NC}"
     echo -e "Kernel version: ${GREEN}$(uname -r)${NC}"
+
     if command -v lscpu &>/dev/null; then
         VIRT=$(lscpu | grep Virtualization | awk '{print $2}')
         if [ -n "$VIRT" ]; then
@@ -779,7 +785,7 @@ preflight_checks() {
         echo -e "Disk info:"
         lsblk -o NAME,SIZE,TYPE,MODEL | sed 's/^/  /'
     else
-        echo -e "${YELLOW}lsblk not available. Please check disk info manually.${NC}"
+        echo -e "${YELLOW}lsblk not available. Please check disk health manually.${NC}"
     fi
     if command -v smartctl &>/dev/null; then
         for disk in $(lsblk -d -n -o NAME); do
@@ -814,205 +820,9 @@ preflight_checks() {
     else
         echo -e "${YELLOW}ip command not available. Please check network interfaces manually.${NC}"
     fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"
-    read -r
-
-        # --- Filesystem Checks ---
-        echo -e "${CYAN}Filesystem checks...${NC}"
-        # World-writable files
-        WW_FILES=$(find /etc /root /home -xdev -type f -perm -0002 2>/dev/null | wc -l)
-        if [ "$WW_FILES" -gt 0 ]; then
-            echo -e "${YELLOW}Warning: $WW_FILES world-writable files found in /etc, /root, /home!${NC}"
-            WARNINGS+=("World-writable files: $WW_FILES")
-        else
-            echo -e "${GREEN}No world-writable files found in /etc, /root, /home.${NC}"
-        fi
-        # .bash_history in /root
-        if [ -f /root/.bash_history ]; then
-            echo -e "${YELLOW}Warning: /root/.bash_history exists. Consider removing for security.${NC}"
-            WARNINGS+=("/root/.bash_history present")
-        else
-            echo -e "${GREEN}/root/.bash_history not present.${NC}"
-        fi
-        echo -e "${YELLOW}Press ENTER to continue after filesystem checks...${NC}"
-    # Network connectivity and DNS
-    echo -e "${CYAN}Checking network connectivity and DNS...${NC}"
-    ping -c 1 8.8.8.8 &>/dev/null && echo -e "${GREEN}Internet: OK${NC}" || echo -e "${RED}Internet: FAILED${NC}"
-    nslookup google.com &>/dev/null && echo -e "${GREEN}DNS: OK${NC}" || echo -e "${RED}DNS: FAILED${NC}"
-    echo -e "${YELLOW}Press ENTER to continue after network/DNS check...${NC}"
-
-    # NTP/Time sync
-    echo -e "${CYAN}Checking NTP/time sync...${NC}"
-    if command -v timedatectl &>/dev/null; then
-        timedatectl status 2>/dev/null | grep 'NTP synchronized' | grep -q yes && echo -e "${GREEN}NTP: OK${NC}" || echo -e "${YELLOW}NTP: NOT ENABLED${NC}"
-        echo -e "Current system time: $(date)"
-    else
-        echo -e "${YELLOW}timedatectl not available. Please check system time manually.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after NTP check...${NC}"
-
-    # System updates
-    echo -e "${CYAN}Checking for system updates...${NC}"
-    if command -v apt-get &>/dev/null; then
-        apt-get update -qq
-        UPGRADABLE=$(apt-get -s upgrade | grep -c '^Inst')
-        [ "$UPGRADABLE" -gt 0 ] && echo -e "${YELLOW}Upgradable packages: $UPGRADABLE${NC}" || echo -e "${GREEN}All packages up to date.${NC}"
-    else
-        echo -e "${YELLOW}apt-get not available. Please check for updates manually.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after update check...${NC}"
-
-    # System limits (ulimit)
-    echo -e "${CYAN}Checking system file descriptor and process limits (ulimit)...${NC}"
-    FD_LIMIT=$(ulimit -n)
-    PROC_LIMIT=$(ulimit -u)
-    echo -e "Open file descriptor limit: ${GREEN}$FD_LIMIT${NC} (recommended: >= 65535)"
-    echo -e "Max user processes limit:   ${GREEN}$PROC_LIMIT${NC} (recommended: >= 4096)"
-    if [ "$FD_LIMIT" -lt 65535 ]; then
-        echo -e "${YELLOW}Warning: File descriptor limit is low. Consider increasing for production workloads.${NC}"
-    fi
-    if [ "$PROC_LIMIT" -lt 4096 ]; then
-        echo -e "${YELLOW}Warning: Max user processes limit is low. Consider increasing for production workloads.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing system limits...${NC}"
-
-    # Swap
-    echo -e "${CYAN}Checking swap usage and configuration...${NC}"
-    if free | grep -q Swap; then
-        SWAP_TOTAL=$(free -h | awk '/Swap:/ {print $2}')
-        SWAP_USED=$(free -h | awk '/Swap:/ {print $3}')
-        echo -e "Swap total: ${GREEN}$SWAP_TOTAL${NC}, used: ${GREEN}$SWAP_USED${NC}"
-        if [ "$SWAP_TOTAL" = "0B" ] || [ "$SWAP_TOTAL" = "0" ]; then
-            echo -e "${YELLOW}Warning: No swap configured. Consider adding swap for better stability under memory pressure.${NC}"
-        fi
-    else
-        echo -e "${YELLOW}Could not determine swap status. Please check manually.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing swap status...${NC}"
-
-    # Locale & Timezone
-    echo -e "${CYAN}Checking system locale and timezone configuration...${NC}"
-    if command -v locale &>/dev/null; then
-        echo -e "Current locale: ${GREEN}$(locale | grep LANG=)${NC}"
-    else
-        echo -e "${YELLOW}locale command not available. Please check locale manually.${NC}"
-    fi
-    if command -v timedatectl &>/dev/null; then
-        echo -e "Current timezone: ${GREEN}$(timedatectl | grep 'Time zone')${NC}"
-    else
-        echo -e "${YELLOW}timedatectl not available. Please check timezone manually.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing locale and timezone...${NC}"
-
-    # Kernel & Virtualization
-    echo -e "${CYAN}Checking system kernel version and virtualization support...${NC}"
-    echo -e "Kernel version: ${GREEN}$(uname -r)${NC}"
-    if command -v lscpu &>/dev/null; then
-        VIRT=$(lscpu | grep Virtualization | awk '{print $2}')
-        if [ -n "$VIRT" ]; then
-            echo -e "Virtualization support: ${GREEN}$VIRT${NC}"
-        else
-            echo -e "${YELLOW}Virtualization support: Not detected. If you plan to use containers or VMs, check BIOS/host settings.${NC}"
-        fi
-    else
-        echo -e "${YELLOW}lscpu not available. Please check virtualization support manually.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing kernel and virtualization...${NC}"
-
-    # Hardware
-    echo -e "${CYAN}Checking system hardware (CPU, RAM, disk)...${NC}"
-    if command -v lscpu &>/dev/null; then
-        echo -e "CPU info:"
-        lscpu | grep -E 'Model name|Socket|Thread|Core|CPU\(' | sed 's/^/  /'
-    else
-        echo -e "${YELLOW}lscpu not available. Please check CPU info manually.${NC}"
-    fi
-    if command -v free &>/dev/null; then
-        echo -e "RAM info:"
-        free -h | sed 's/^/  /'
-    else
-        echo -e "${YELLOW}free not available. Please check RAM info manually.${NC}"
-    fi
-    if command -v lsblk &>/dev/null; then
-        echo -e "Disk info:"
-        lsblk -o NAME,SIZE,TYPE,MODEL | sed 's/^/  /'
-    else
-        echo -e "${YELLOW}lsblk not available. Please check disk info manually.${NC}"
-    fi
-    if command -v smartctl &>/dev/null; then
-        for disk in $(lsblk -d -n -o NAME); do
-            echo -e "SMART health for /dev/$disk:"
-            smartctl -H "/dev/$disk" | grep -E 'SMART overall-health|PASSED|FAILED' | sed 's/^/  /'
-        done
-    else
-        echo -e "${YELLOW}smartctl not available. Please check disk health manually.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing hardware info...${NC}"
-
-    # PCI/USB/Network
-    echo -e "${CYAN}Checking PCI/USB devices and network interfaces...${NC}"
-    if command -v lspci &>/dev/null; then
-        echo -e "PCI devices:"
-        lspci | head -10 | sed 's/^/  /'
-        [ "$(lspci | wc -l)" -gt 10 ] && echo "  ... (more, use lspci to see all)"
-    else
-        echo -e "${YELLOW}lspci not available. Please check PCI devices manually.${NC}"
-    fi
-    if command -v lsusb &>/dev/null; then
-        echo -e "USB devices:"
-        lsusb | head -10 | sed 's/^/  /'
-        [ "$(lsusb | wc -l)" -gt 10 ] && echo "  ... (more, use lsusb to see all)"
-    else
-        echo -e "${YELLOW}lsusb not available. Please check USB devices manually.${NC}"
-    fi
-    if command -v ip &>/dev/null; then
-        echo -e "Network interfaces:"
-        ip -brief addr | sed 's/^/  /'
-    else
-        echo -e "${YELLOW}ip command not available. Please check network interfaces manually.${NC}"
-    fi
-    echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"
-
-
-# Validate critical environment variables
-validate_env() {
-    local missing=0
-    local vars=("TAXI_USER" "TAXI_PASS")
-    for v in "${vars[@]}"; do
-        if [ -z "${!v}" ]; then
-            echo -e "${RED}Missing required variable: $v${NC}"
-            missing=1
-        fi
-    done
-    if [ $missing -eq 1 ]; then
-        echo -e "${RED}Please set all required environment variables and re-run the script.${NC}"
-        # read -r removed
-        exit 1
-    fi
 }
 
-# Detect and display public IP
-detect_public_ip() {
-    local ip
-    ip=$(curl -s ifconfig.me || curl -s ipinfo.io/ip || echo "N/A")
-    echo -e "${GREEN}Detected public IP: $ip${NC}"
-}
-
-# Check available disk space
-check_disk_space() {
-    local min_gb=10
-    local avail
-    avail=$(df --output=avail -BG / | tail -1 | tr -dc '0-9')
-    if [ "$avail" -lt "$min_gb" ]; then
-        echo -e "${RED}Warning: Less than ${min_gb}GB disk space available!${NC}"
-        echo -e "${YELLOW}Free up space before continuing.${NC}"
-        # read -r removed
-        exit 1
-    else
-        echo -e "${GREEN}Disk space check passed: ${avail}GB available.${NC}"
-    fi
-}
-
+# Check for open ports
 # Check for open ports
 check_ports() {
     local ports=(22 80 443 3000 5432 6379 27017 9000 19999)
@@ -5635,8 +5445,7 @@ if [ ! -f "/home/taxi/.env" ]; then
     echo -e "${YELLOW}Environment file not found, using defaults${NC}"
 fi
 
-# Check services
-local services=(
+services=(
     "taxi-postgres"
     "taxi-redis"
     "taxi-mongodb"
@@ -5692,6 +5501,9 @@ echo -e "${YELLOW}Set up a regular maintenance and backup schedule.${NC}"
 echo -e "${YELLOW}For production, ensure security best practices are followed.${NC}"
 echo -e "${YELLOW}Contact support for any issues: support@yourdomain.com${NC}"
 echo -e "${BLUE}==========================================${NC}"
+
+# Ensure all blocks are closed
+exit 0
 echo -e "${BLUE}     THANK YOU FOR CHOOSING TAXI SYSTEM   ${NC}"
 echo -e "${BLUE}==========================================${NC}"
 
