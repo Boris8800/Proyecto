@@ -261,7 +261,6 @@ log_ok "Sistema configurado."
 	echo "🐘 PostgreSQL:  $IP:5432"
 	echo "🔴 Redis:       $IP:6379"
 }
-    done
 
     # 3. SSL certificate and nginx config
     if [ -f /etc/nginx/nginx.conf ]; then
