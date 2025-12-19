@@ -37,11 +37,16 @@ main_installer() {
             # Verifica si hay paquetes retenidos (held) y muestra instrucciones
             HELD=$(apt-mark showhold)
             if [ -n "$HELD" ]; then
-                echo -e "${RED}Detectados paquetes retenidos (held) en el sistema:${NC}"
-                echo "$HELD"
-                echo -e "${YELLOW}Sugerencia: libera los paquetes con:${NC}"
-                echo -e "\n  sudo apt-mark unhold <paquete>\n"
-                exit 1
+                echo -e "${YELLOW}Intentando liberar automáticamente los paquetes retenidos...${NC}"
+                for pkg in $HELD; do
+                    apt-mark unhold "$pkg"
+                done
+                echo -e "${GREEN}Paquetes liberados: $HELD${NC}"
+                echo -e "${YELLOW}Reparando dependencias...${NC}"
+                apt-get update && apt-get upgrade -y
+                apt --fix-broken install -y
+                dpkg --configure -a
+                apt-get install -f
             fi
         # Comprobación de paquetes rotos antes de instalar dependencias
         if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
