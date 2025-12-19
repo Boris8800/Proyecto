@@ -122,25 +122,25 @@ EOF
     [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
     chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
-    log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi << 'NGINX'
-    server {
-        listen 80;
-        server_name _;
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-        location /admin/ {
-            proxy_pass http://localhost:8080/;
-        }
+log_step "Configurando Nginx como proxy..."
+cat > /etc/nginx/sites-available/taxi << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
-    NGINX
-    ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
-    rm -f /etc/nginx/sites-enabled/default
-    nginx -t && systemctl reload nginx
-    log_ok "Sistema configurado."
+    location /admin/ {
+        proxy_pass http://localhost:8080/;
+    }
+}
+NGINX
+ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl reload nginx
+log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
     cd /home/taxi/app
@@ -229,25 +229,25 @@ EOF
     [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
     chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
-    log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi << 'NGINX'
-    server {
-        listen 80;
-        server_name _;
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-        location /admin/ {
-            proxy_pass http://localhost:8080/;
-        }
+log_step "Configurando Nginx como proxy..."
+cat > /etc/nginx/sites-available/taxi << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
-    NGINX
-    ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
-    rm -f /etc/nginx/sites-enabled/default
-    nginx -t && systemctl reload nginx
-    log_ok "Sistema configurado."
+    location /admin/ {
+        proxy_pass http://localhost:8080/;
+    }
+}
+NGINX
+ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl reload nginx
+log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
     cd /home/taxi/app
@@ -5585,25 +5585,25 @@ EOF
         [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
         chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
-        log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi << 'NGINX'
-    server {
-        listen 80;
-        server_name _;
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-        location /admin/ {
-            proxy_pass http://localhost:8080/;
-        }
+log_step "Configurando Nginx como proxy..."
+cat > /etc/nginx/sites-available/taxi << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
-    NGINX
-        ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
-        rm -f /etc/nginx/sites-enabled/default
-        nginx -t && systemctl reload nginx
-        log_ok "Sistema configurado."
+    location /admin/ {
+        proxy_pass http://localhost:8080/;
+    }
+}
+NGINX
+ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
+rm -f /etc/nginx/sites-enabled/default
+nginx -t && systemctl reload nginx
+log_ok "Sistema configurado."
 
         log_step "Levantando servicios Docker..."
         cd /home/taxi/app
