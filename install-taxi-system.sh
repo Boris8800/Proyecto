@@ -349,7 +349,7 @@ if [[ "${1:-}" == "--quick" ]]; then
     exit 0
 fi
 
-if [[ "$0" == "$BASH_SOURCE" ]]; then
+if [[ "${BASH_SOURCE:-$0}" == "$0" ]]; then
     main_installer "$@"
 fi
 LOG_FILE="/var/log/taxi_installer.log"
