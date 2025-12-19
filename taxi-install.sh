@@ -30,7 +30,6 @@ print_banner() {
     echo -e "${CYAN}   $1${NC}"
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
     echo -e "${YELLOW}$2${NC}\n"
-}
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
