@@ -1,5 +1,14 @@
 #!/bin/bash
 set -euo pipefail
+# ===================== COLORES UNIVERSALES =====================
+export RED='\033[0;31m'
+export GREEN='\033[0;32m'
+export YELLOW='\033[1;33m'
+export BLUE='\033[0;34m'
+export PURPLE='\033[0;35m'
+export CYAN='\033[0;36m'
+export NC='\033[0m'
+
 # Verificación de espacio y permisos antes de continuar
 TMPDIR="/tmp"
 SHMDIR="/dev/shm"
@@ -56,9 +65,9 @@ main_installer() {
         # Instala docker-compose manualmente (última versión)
         log_step "Instalando docker-compose..."
         DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d '"' -f 4)
-        curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-        ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+        sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
         log_ok "docker-compose instalado."
 
         # Instala nginx, postgresql y redis
@@ -224,9 +233,9 @@ taxi_quick_installer() {
         # Instala docker-compose manualmente (última versión)
         log_step "Instalando docker-compose..."
         DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d '"' -f 4)
-        curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        chmod +x /usr/local/bin/docker-compose
-        ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+        sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
         log_ok "docker-compose instalado."
 
         # Instala nginx, postgresql y redis
