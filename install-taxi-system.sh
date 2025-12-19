@@ -816,7 +816,6 @@ preflight_checks() {
     fi
     echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"
     read -r
-}
 
         # --- Filesystem Checks ---
         echo -e "${CYAN}Filesystem checks...${NC}"
@@ -973,7 +972,6 @@ preflight_checks() {
         echo -e "${YELLOW}ip command not available. Please check network interfaces manually.${NC}"
     fi
     echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"
-}
 
 
 # Validate critical environment variables
