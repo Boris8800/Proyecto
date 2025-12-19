@@ -32,6 +32,36 @@ print_banner() {
     echo -e "${YELLOW}$2${NC}\n"
 }
 
+# ===================== MAIN INSTALLER LOGIC =====================
+main_installer() {
+    # ...existing main_installer code...
+}
+
+# ===================== QUICK INSTALLER =====================
+taxi_quick_installer() {
+    # ...existing taxi_quick_installer code...
+}
+
+# ===================== STATUS JSON GENERATOR =====================
+generate_status_json() {
+    # ...existing generate_status_json code...
+}
+
+# ===================== OTHER UTILS =====================
+# ...other utility functions, if any...
+
+# ===================== ENTRYPOINT =====================
+# Si el primer argumento es --quick, ejecuta taxi_quick_installer y termina
+if [[ "${1:-}" == "--quick" ]]; then
+    taxi_quick_installer
+    exit 0
+fi
+
+# Ejecuta el flujo principal solo si el script es ejecutado directamente
+if [[ "$0" == "$BASH_SOURCE" ]]; then
+    main_installer "$@"
+fi
+
 # ...existing code...
 # set -x  # Enable debug tracing
 ## set -x  # Enable debug tracing SOLO PARA DEBUG, NO EN PRODUCCIÓN
@@ -76,13 +106,6 @@ print_banner() {
     fi
 
 # ...existing code...
-validate_installation() {
-    local html_report="..."
-    # Función larga pero no retorna nada explícito
-}
-unit_test_taxi_installer() {
-    # ...existing code...
-}
 # === INTEGRACIÓN taxi_quick_installer AL FLUJO PRINCIPAL ===
 main() {
         log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
@@ -183,246 +206,6 @@ NGINX
         sudo -u taxi docker-compose --env-file .env up -d
         log_ok "Servicios Docker en ejecución."
 
-        IP=$(hostname -I | awk '{print $1}')
-        echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
-        echo "🌐 API:         http://$IP:3000"
-        echo "📊 Admin Panel: http://$IP:8080"
-        echo "🐘 PostgreSQL:  $IP:5432"
-        echo "🔴 Redis:       $IP:6379"
-}
-
-test "$0" = "$BASH_SOURCE" && main
-# --- AUTO CLEANUP OF PREVIOUS INSTALLATION ---
-log_step "Checking for previous taxi-system services/processes..."
- 
-if systemctl list-units --type=service | grep -q "taxi-system.service"; then
-    log_step "Stopping and disabling previous taxi-system.service..."
-    sudo systemctl stop taxi-system.service
-    sudo systemctl disable taxi-system.service
-    sudo systemctl daemon-reload
-fi
-if pgrep -u root -f "taxi-system" >/dev/null; then
-    log_step "Killing previous taxi-system processes running as root..."
-    sudo pkill -u root -f "taxi-system"
-fi
-# --- LOGGING FUNCTIONS ---
-log_step()   { echo -e "${BLUE}[STEP]${NC} $1"; }
-log_error()  { echo -e "${RED}[ERROR]${NC} $1"; }
-log_success(){ echo -e "\033[0;32m[SUCCESS]\033[0m $1"; }
-
-# =====================
-# FLUJO PRINCIPAL MODERNO Y FUNCIONAL
-# =====================
-set -euo pipefail
-log_step()   { echo -e "${BLUE}[STEP]${NC} $1"; }
-log_ok()     { echo -e "${GREEN}[OK]${NC} $1"; }
-log_error()  { echo -e "${RED}[ERROR]${NC} $1"; }
-
-main() {
-    log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -qq
-    apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
-    systemctl enable --now docker
-    systemctl enable --now redis-server
-    systemctl enable --now postgresql
-    systemctl enable --now nginx
-    log_ok "Dependencias instaladas."
-
-    log_step "Configurando usuario y directorios..."
-    id taxi &>/dev/null || useradd -m -s /bin/bash taxi
-    mkdir -p /home/taxi/app
-    chown -R taxi:taxi /home/taxi
-
-    log_step "Generando archivo .env..."
-    cat > /home/taxi/app/.env <<EOF
-POSTGRES_PASSWORD=taxipass
-REDIS_PASSWORD=redispass
-API_PORT=3000
-EOF
-    chown taxi:taxi /home/taxi/app/.env
-
-    log_step "Generando docker-compose.yml..."
-    cat > /home/taxi/app/docker-compose.yml <<EOF
-version: '3.8'
-services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_PASSWORD: taxipass
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: always
-
-  redis:
-    image: redis:7
-    command: ["redis-server", "--requirepass", "redispass"]
-    ports:
-      - "6379:6379"
-    restart: always
-
-  api:
-    image: node:18
-    working_dir: /app
-    command: bash -c "npx http-server -p 3000"
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./api:/app
-    restart: always
-
-  admin:
-    image: nginx:alpine
-    ports:
-      - "8080:80"
-    volumes:
-      - ./admin:/usr/share/nginx/html:ro
-    restart: always
-
-volumes:
-  pgdata:
-EOF
-    chown taxi:taxi /home/taxi/app/docker-compose.yml
-
-    log_step "Creando API y Admin de ejemplo..."
-    mkdir -p /home/taxi/app/api /home/taxi/app/admin
-    [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
-    [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
-    chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
-
-    log_step "Configurando Nginx como proxy..."
-    cat > /etc/nginx/sites-available/taxi <<NGINX
-server {
-    listen 80;
-    server_name _;
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-    location /admin/ {
-        proxy_pass http://localhost:8080/;
-    }
-}
-NGINX
-    ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
-    rm -f /etc/nginx/sites-enabled/default
-    nginx -t && systemctl reload nginx
-    log_ok "Sistema configurado."
-
-    log_step "Levantando servicios Docker..."
-    cd /home/taxi/app
-    sudo -u taxi docker-compose --env-file .env up -d
-    log_ok "Servicios Docker en ejecución."
-
-    IP=$(hostname -I | awk '{print $1}')
-    echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
-    echo "🌐 API:         http://$IP:3000"
-    echo "📊 Admin Panel: http://$IP:8080"
-    echo "🐘 PostgreSQL:  $IP:5432"
-    echo "🔴 Redis:       $IP:6379"
-}
-
-# Ejecuta el flujo moderno automáticamente si el script es llamado directamente
-test "$0" = "$BASH_SOURCE" && main
-
-# --- SECURITY CONTROLS FUNCTIONS ---
-scan_docker_images() {
-    log_step "Scanning Docker images for vulnerabilities..."
-    if command -v docker &>/dev/null && command -v trivy &>/dev/null; then
-        docker images --format '{{.Repository}}:{{.Tag}}' | while read img; do
-            trivy image "$img" || log_step "Trivy scan failed for $img"
-        done
-    else
-        log_step "Trivy or Docker not installed. Skipping image scan."
-    fi
-}
-
-static_code_analysis() {
-    log_step "Running static code analysis..."
-    if command -v semgrep &>/dev/null; then
-        semgrep --config=auto js/ || log_step "Semgrep scan failed."
-    else
-        log_step "Semgrep not installed. Skipping static analysis."
-    fi
-}
-
-cis_benchmark() {
-    log_step "Checking CIS benchmark compliance..."
-    if command -v cisofy-lynis &>/dev/null; then
-        cisofy-lynis audit system || log_step "Lynis audit failed."
-    else
-        log_step "Lynis not installed. Skipping CIS benchmark."
-    fi
-    if command -v docker-bench-security &>/dev/null; then
-        docker-bench-security || log_step "Docker CIS benchmark failed."
-    else
-        log_step "docker-bench-security not installed. Skipping Docker CIS benchmark."
-    fi
-}
-
-audit_logs() {
-    log_step "Auditing logs with Wazuh/Security Onion..."
-    if command -v wazuh-control &>/dev/null; then
-        wazuh-control status || log_step "Wazuh audit failed."
-    elif command -v so-status &>/dev/null; then
-        so-status || log_step "Security Onion audit failed."
-    else
-        log_step "Wazuh/Security Onion not installed. Skipping log audit."
-    fi
-}
-
-setup_modsecurity() {
-    log_step "Setting up ModSecurity WAF..."
-    if command -v apt-get &>/dev/null; then
-        apt-get install -y libapache2-mod-security2 || log_step "ModSecurity install failed."
-        a2enmod security2
-        systemctl restart apache2
-        log_step "ModSecurity enabled for Apache."
-    else
-        log_step "apt-get not available. Skipping ModSecurity setup."
-    fi
-}
-# Ejecuta todos los controles de seguridad
-run_security_controls() {
-    scan_docker_images
-    static_code_analysis
-    cis_benchmark
-    audit_logs
-    setup_modsecurity
-}
-# --- INSTALLATION VALIDATION FUNCTION ---
-validate_installation() {
-    local html_report="/tmp/taxi_install_report.html"
-    local result=""
-    echo "<html><head><title>Taxi Installation Report</title></head><body><h1>Taxi Installation Validation</h1><ul>" > "$html_report"
-
-    # 1. Docker containers running and healthy
-    if command -v docker &>/dev/null; then
-        local unhealthy=$(docker ps --format '{{.Names}}' | xargs -r -n1 docker inspect --format '{{.State.Health.Status}}' 2>/dev/null | grep -v healthy)
-        if [ -z "$unhealthy" ]; then
-            result="All Docker containers are running and healthy."
-            echo "<li style='color:green;'>$result</li>" >> "$html_report"
-        else
-            result="Some Docker containers are not healthy: $unhealthy"
-            echo "<li style='color:red;'>$result</li>" >> "$html_report"
-        fi
-    else
-        result="Docker not installed."
-        echo "<li style='color:red;'>$result</li>" >> "$html_report"
-    fi
-
-    # 2. API health checks
-    local apis=("http://localhost/api/health" "http://localhost:8080/api/health")
-    for api in "${apis[@]}"; do
-        if curl -s --max-time 5 "$api" | grep -q 'OK'; then
-            result="API $api responded OK."
-            echo "<li style='color:green;'>$result</li>" >> "$html_report"
-        else
-            result="API $api did not respond OK."
-            echo "<li style='color:red;'>$result</li>" >> "$html_report"
         fi
     done
 
@@ -597,7 +380,7 @@ show_open_ports_menu() {
     for port in "${ports[@]}"; do
         if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
             local pids
-            pids=$(lsof -t -i :$port 2>/dev/null | sort -u)
+            pids=$(lsof -t -i :"$port" 2>/dev/null | sort -u)
             echo -e "${YELLOW}Port $port OPEN by PID(s): $pids${NC}"
         else
             echo -e "${GREEN}Port $port FREE${NC}"
@@ -609,7 +392,7 @@ kill_ports() {
     local ports=(80 443 3000 5432 6379 27017 9000 19999)
     for port in "${ports[@]}"; do
         local pids
-        pids=$(lsof -t -i :$port 2>/dev/null)
+        pids=$(lsof -t -i :"$port" 2>/dev/null)
         if [ -n "$pids" ]; then
             for pid in ${pids[@]}; do
                 echo -e "${CYAN}Matando proceso $pid en puerto $port...${NC}"
@@ -626,14 +409,7 @@ print_step() {
 
 # Main installer logic as a function
 main_installer() {
-        print_banner() {
-            local title="$1"
-            local desc="$2"
-            echo -e "${PURPLE}\n════════════════════════════════════════════════════════════════${NC}"
-            echo -e "${CYAN}   $title${NC}"
-            echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
-            echo -e "${YELLOW}$desc${NC}\n"
-        }
+    # Use global print_banner, do not redefine
     SKIP_ROOT_CHECK=false
     for arg in "$@"; do
         if [ "$arg" = "--skip-root-check" ]; then
@@ -4444,26 +4220,32 @@ generate_status_json() {
             overall_status="unhealthy"
         fi
     done
-    cat <<EOF
-{
-  "timestamp": "$timestamp",
-  "overall_status": "$overall_status",
-  "critical_issues": $critical_issues,
-  "services_checked": $total_services,
-  "services_failed": $failed_services,
-  "system": {
-    "disk_usage": "$(df -h /home | awk 'NR==2 {print $5}')",
-    "memory_usage": "$(free -h | awk '/Mem:/ {print $3 "/" $2}')",
-    "cpu_usage": "$(top -bn1 | grep "Cpu(s)" | awk '{print $2 "%"}')",
-    "load_average": "$(uptime | awk -F'load average:' '{print $2}' | tr -d ' ')",
-    "uptime": "$(uptime -p | sed 's/up //')"
-  },
-  "services": {
-$(for service in "${!failure_count[@]}"; do
-    status=$([ ${failure_count["$service"]} -ge $ALERT_THRESHOLD ] && echo "failed" || echo "healthy")
-    echo "    \"$service\": \"$status\"," 
-done | sed '$ s/,$//')
-  }
+    echo "{"
+    echo "  \"timestamp\": \"$timestamp\"," 
+    echo "  \"overall_status\": \"$overall_status\"," 
+    echo "  \"critical_issues\": $critical_issues,"
+    echo "  \"services_checked\": $total_services,"
+    echo "  \"services_failed\": $failed_services,"
+    echo "  \"system\": {"
+    echo "    \"disk_usage\": \"$(df -h /home | awk 'NR==2 {print $5}')\"," 
+    echo "    \"memory_usage\": \"$(free -h | awk '/Mem:/ {print $3 \"/\" $2}')\"," 
+    echo "    \"cpu_usage\": \"$(top -bn1 | grep 'Cpu(s)' | awk '{print \$2 "%"}')\"," 
+    echo "    \"load_average\": \"$(uptime | awk -F'load average:' '{print $2}' | tr -d ' ')\"," 
+    echo "    \"uptime\": \"$(uptime -p | sed 's/up //')\""
+    echo "  },"
+    echo "  \"services\": {"
+    local first=1
+    for service in "${!failure_count[@]}"; do
+        status=$([ ${failure_count["$service"]} -ge $ALERT_THRESHOLD ] && echo "failed" || echo "healthy")
+        if [[ $first -eq 1 ]]; then
+            first=0
+        else
+            echo -n ","
+        fi
+        echo -n "\n    \"$service\": \"$status\""
+    done
+    echo -e "\n  }"
+    echo "}"
 
 
 run_health_check() {
@@ -5735,10 +5517,16 @@ NGINX
         echo "🔴 Redis:       $IP:6379"
 }
 
+
 # Si el primer argumento es --quick, ejecuta taxi_quick_installer y termina
 if [[ "${1:-}" == "--quick" ]]; then
-        taxi_quick_installer
-        exit 0
+    taxi_quick_installer
+    exit 0
+fi
+
+# Ejecuta el flujo principal solo si el script es ejecutado directamente
+if [[ "$0" == "$BASH_SOURCE" ]]; then
+    main_installer "$@"
 fi
 
 
