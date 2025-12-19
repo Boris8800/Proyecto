@@ -53,6 +53,21 @@ print_banner() {
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
+        # Instala docker-compose manualmente (última versión)
+        log_step "Instalando docker-compose..."
+        DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d '"' -f 4)
+        curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+        ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+        log_ok "docker-compose instalado."
+
+        # Instala nginx, postgresql y redis
+        log_step "Instalando nginx, postgresql y redis..."
+        apt-get install -y nginx postgresql redis-server > /dev/null
+        systemctl enable --now redis-server
+        systemctl enable --now postgresql
+        systemctl enable --now nginx
+        log_ok "nginx, postgresql y redis instalados."
     # Comprobación de paquetes rotos antes de instalar dependencias
     if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
         echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
@@ -82,13 +97,19 @@ main_installer() {
 
     print_banner "Instalando dependencias" "Docker, Docker Compose, Nginx, PostgreSQL, Redis."
     export DEBIAN_FRONTEND=noninteractive
+    # Elimina containerd y docker.io si existen
+    apt-get remove -y containerd docker.io || true
     apt-get update -qq
-    apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
+    apt-get install -y curl git > /dev/null
+    log_ok "Dependencias base instaladas."
+
+    # Instala Docker usando el script oficial
+    log_step "Instalando Docker desde get.docker.com..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sh get-docker.sh
+    rm get-docker.sh
     systemctl enable --now docker
-    systemctl enable --now redis-server
-    systemctl enable --now postgresql
-    systemctl enable --now nginx
-    log_ok "Dependencias instaladas."
+    log_ok "Docker instalado."
 
     log_step "Configurando usuario y directorios..."
     id taxi &>/dev/null || useradd -m -s /bin/bash taxi
@@ -191,15 +212,36 @@ NGINX
 
 # ===================== QUICK INSTALLER =====================
 taxi_quick_installer() {
-    log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
+        # Instala docker-compose manualmente (última versión)
+        log_step "Instalando docker-compose..."
+        DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d '"' -f 4)
+        curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+        ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+        log_ok "docker-compose instalado."
+
+        # Instala nginx, postgresql y redis
+        log_step "Instalando nginx, postgresql y redis..."
+        apt-get install -y nginx postgresql redis-server > /dev/null
+        systemctl enable --now redis-server
+        systemctl enable --now postgresql
+        systemctl enable --now nginx
+        log_ok "nginx, postgresql y redis instalados."
+    log_step "Instalando dependencias base (curl, git)..."
     export DEBIAN_FRONTEND=noninteractive
+    # Elimina containerd y docker.io si existen
+    apt-get remove -y containerd docker.io || true
     apt-get update -qq
-    apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
+    apt-get install -y curl git > /dev/null
+    log_ok "Dependencias base instaladas."
+
+    # Instala Docker usando el script oficial
+    log_step "Instalando Docker desde get.docker.com..."
+    curl -fsSL https://get.docker.com -o get-docker.sh
+    sh get-docker.sh
+    rm get-docker.sh
     systemctl enable --now docker
-    systemctl enable --now redis-server
-    systemctl enable --now postgresql
-    systemctl enable --now nginx
-    log_ok "Dependencias instaladas."
+    log_ok "Docker instalado."
 
     log_step "Configurando usuario y directorios..."
     id taxi &>/dev/null || useradd -m -s /bin/bash taxi
