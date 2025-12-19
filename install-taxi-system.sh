@@ -277,13 +277,6 @@ generate_status_json() {
 }
 
 
-# ===================== STATUS JSON GENERATOR =====================
-generate_status_json() {
-    # ...existing generate_status_json code...
-}
-
-# ===================== OTHER UTILS =====================
-# ...other utility functions, if any...
 
 # ===================== ENTRYPOINT =====================
 # Si el primer argumento es --quick, ejecuta taxi_quick_installer y termina
