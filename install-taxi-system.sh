@@ -1,19 +1,3 @@
-# Print installation summary at the end
-print_summary() {
-    echo -e "\n${BLUE}════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${BLUE}                 INSTALLATION SUMMARY                   ${NC}"
-    echo -e "${BLUE}════════════════════════════════════════════════════════════════${NC}"
-    if [ -n "${WARNINGS[*]}" ]; then
-        echo -e "${YELLOW}⚠ WARNINGS FOUND:${NC}"
-        for warning in "${WARNINGS[@]}"; do
-            echo "  • $warning"
-        done
-    else
-        echo -e "${GREEN}✅ No warnings found${NC}"
-    fi
-    echo -e "\n${GREEN}✅ Installation check completed at: $(date)${NC}"
-}
-#!/bin/bash
 # --- AUTO CLEANUP OF PREVIOUS INSTALLATION ---
 log_step "Checking for previous taxi-system services/processes..."
  
@@ -32,106 +16,124 @@ log_step()   { echo -e "\033[1;34m[STEP]\033[0m $1"; }
 log_error()  { echo -e "\033[0;31m[ERROR]\033[0m $1"; }
 log_success(){ echo -e "\033[0;32m[SUCCESS]\033[0m $1"; }
 
-# --- ENVIRONMENT VARIABLE LOADING & VALIDATION ---
-if [ ! -f .env ]; then
-    echo "[INFO] Archivo .env no encontrado. Creando uno con valores por defecto."
-    cat > .env <<EOF
-ENVIRONMENT=production
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=taxi_admin
-DB_PASS=changeme123
-REDIS_HOST=localhost
-REDIS_PORT=6379
-MONGO_HOST=localhost
-MONGO_PORT=27017
-API_URL=http://localhost:3000
-SSL_ENABLED=true
+# =====================
+# FLUJO PRINCIPAL MODERNO Y FUNCIONAL
+# =====================
+set -euo pipefail
+log_step()   { echo -e "\033[1;34m[STEP]\033[0m $1"; }
+log_ok()     { echo -e "\033[0;32m[OK]\033[0m $1"; }
+log_error()  { echo -e "\033[0;31m[ERROR]\033[0m $1"; }
+
+main() {
+    log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
+    systemctl enable --now docker
+    systemctl enable --now redis-server
+    systemctl enable --now postgresql
+    systemctl enable --now nginx
+    log_ok "Dependencias instaladas."
+
+    log_step "Configurando usuario y directorios..."
+    id taxi &>/dev/null || useradd -m -s /bin/bash taxi
+    mkdir -p /home/taxi/app
+    chown -R taxi:taxi /home/taxi
+
+    log_step "Generando archivo .env..."
+    cat > /home/taxi/app/.env <<EOF
+POSTGRES_PASSWORD=taxipass
+REDIS_PASSWORD=redispass
+API_PORT=3000
 EOF
-fi
-echo "[INFO] Cargando variables de entorno desde .env"
-export $(grep -v '^#' .env | xargs)
+    chown taxi:taxi /home/taxi/app/.env
 
-validate_env_vars() {
-    local missing=0
-    local vars=(ENVIRONMENT DB_HOST DB_PORT DB_USER DB_PASS REDIS_HOST REDIS_PORT MONGO_HOST MONGO_PORT API_URL SSL_ENABLED)
-    for v in "${vars[@]}"; do
-        if [ -z "${!v}" ]; then
-            echo "[ERROR] Missing environment variable: $v"
-            missing=1
-        fi
-    done
-    if [ $missing -eq 1 ]; then
-        echo "[FATAL] Missing required environment variables."
-        exit 1
-    fi
-}
-validate_env_vars
-# --- SCALABILITY & DEPLOYMENT FUNCTIONS ---
-scale_stateless_services() {
-    log_step "Scaling stateless services horizontally..."
-    if command -v docker-compose &>/dev/null; then
-        docker-compose up --scale api=3 --scale frontend=3 -d
-        log_step "Scaled API and frontend to 3 instances each."
-    else
-        log_step "docker-compose not installed. Skipping scaling."
-    fi
-}
+    log_step "Generando docker-compose.yml..."
+    cat > /home/taxi/app/docker-compose.yml <<EOF
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: taxipass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: always
 
-setup_load_balancer() {
-    log_step "Setting up load balancer (HAProxy/Traefik)..."
-    if command -v apt-get &>/dev/null; then
-        apt-get install -y haproxy || log_step "HAProxy install failed."
-        cat <<EOF > /etc/haproxy/haproxy.cfg
-frontend http-in
-    bind *:80
-    default_backend servers
-backend servers
-    server s1 127.0.0.1:8080 check
-    server s2 127.0.0.1:8081 check
+  redis:
+    image: redis:7
+    command: ["redis-server", "--requirepass", "redispass"]
+    ports:
+      - "6379:6379"
+    restart: always
+
+  api:
+    image: node:18
+    working_dir: /app
+    command: bash -c "npx http-server -p 3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./api:/app
+    restart: always
+
+  admin:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./admin:/usr/share/nginx/html:ro
+    restart: always
+
+volumes:
+  pgdata:
 EOF
-        systemctl restart haproxy
-        log_step "HAProxy configured and started."
-    fi
-    if command -v traefik &>/dev/null; then
-        traefik --configFile=/etc/traefik/traefik.yml &
-        log_step "Traefik started."
-    fi
+    chown taxi:taxi /home/taxi/app/docker-compose.yml
+
+    log_step "Creando API y Admin de ejemplo..."
+    mkdir -p /home/taxi/app/api /home/taxi/app/admin
+    [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
+    [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
+    chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
+
+    log_step "Configurando Nginx como proxy..."
+    cat > /etc/nginx/sites-available/taxi <<NGINX
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /admin/ {
+        proxy_pass http://localhost:8080/;
+    }
+}
+NGINX
+    ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
+    rm -f /etc/nginx/sites-enabled/default
+    nginx -t && systemctl reload nginx
+    log_ok "Sistema configurado."
+
+    log_step "Levantando servicios Docker..."
+    cd /home/taxi/app
+    sudo -u taxi docker-compose --env-file .env up -d
+    log_ok "Servicios Docker en ejecución."
+
+    IP=$(hostname -I | awk '{print $1}')
+    echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
+    echo "🌐 API:         http://$IP:3000"
+    echo "📊 Admin Panel: http://$IP:8080"
+    echo "🐘 PostgreSQL:  $IP:5432"
+    echo "🔴 Redis:       $IP:6379"
 }
 
-setup_db_replication() {
-    log_step "Configuring database replication and failover..."
-    # Example for PostgreSQL
-    if command -v psql &>/dev/null; then
-        log_step "Ensure PostgreSQL streaming replication is configured."
-        # Placeholder: actual replication setup requires custom config
-    fi
-}
+# Ejecuta el flujo moderno automáticamente si el script es llamado directamente
+test "$0" = "$BASH_SOURCE" && main
 
-setup_redis_cluster() {
-    log_step "Setting up Redis Cluster..."
-    if command -v redis-server &>/dev/null; then
-        # Placeholder: actual cluster setup requires multiple nodes
-        log_step "Ensure Redis Cluster is configured across nodes."
-    fi
-}
-
-deploy_blue_green_canary() {
-    log_step "Deploying blue-green/canary release..."
-    # Example: blue-green with Docker Compose
-    if command -v docker-compose &>/dev/null; then
-        docker-compose -f docker-compose.blue.yml up -d
-        docker-compose -f docker-compose.green.yml up -d
-        log_step "Blue-green environments deployed."
-    fi
-    # Example: canary with Traefik labels (placeholder)
-    log_step "Canary deployment supported via Traefik labels."
-}
-    scale_stateless_services
-    setup_load_balancer
-    setup_db_replication
-    setup_redis_cluster
-    deploy_blue_green_canary
 # --- SECURITY CONTROLS FUNCTIONS ---
 scan_docker_images() {
     log_step "Scanning Docker images for vulnerabilities..."
@@ -3516,7 +3518,8 @@ app.use(cors({
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'If-Modified-Since', 'Cache-Control', 'Range']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'If-Modified-Since', 'Cache-Control', 'Range', 'Authorization' ],
+    exposedHeaders: ['Content-Length', 'Content-Range']
 }));
 
 app.use(compression());
@@ -3887,6 +3890,7 @@ encrypt_backup() {
     log "Encrypting backup..."
     
     if [ -f "$ENCRYPTION_KEY_FILE" ]; then
+       
         tar -czf - -C "$BACKUP_DIR" . | \
         gpg --batch --yes --passphrase-file "$ENCRYPTION_KEY_FILE" \
             --symmetric --cipher-algo AES256 \
@@ -5419,8 +5423,6 @@ print_summary() {
 EOF
 
 run_as_taxi "chmod +x $TAXI_HOME/print_summary.sh"
-
-log_success "Created print_summary function script"
 
 # =====================
 # TAXI QUICK INSTALLER
