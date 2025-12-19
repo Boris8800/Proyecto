@@ -293,71 +293,9 @@ if [[ "${1:-}" == "--quick" ]]; then
     exit 0
 fi
 
-# Ejecuta el flujo principal solo si el script es ejecutado directamente
 if [[ "$0" == "$BASH_SOURCE" ]]; then
-        cd /home/taxi/app
-        sudo -u taxi docker-compose --env-file .env up -d
-        log_ok "Servicios Docker en ejecución."
-
-        fi
-    done
-
-    # 3. SSL certificate and nginx config
-    if [ -f /etc/nginx/nginx.conf ]; then
-        if nginx -t 2>&1 | grep -q 'successful'; then
-            result="Nginx configuration is valid."
-            echo "<li style='color:green;'>$result</li>" >> "$html_report"
-        else
-            result="Nginx configuration is invalid."
-            echo "<li style='color:red;'>$result</li>" >> "$html_report"
-        fi
-        if openssl x509 -in /etc/ssl/certs/taxi.crt -noout &>/dev/null; then
-            result="SSL certificate is valid."
-            echo "<li style='color:green;'>$result</li>" >> "$html_report"
-        else
-            result="SSL certificate is missing or invalid."
-            echo "<li style='color:red;'>$result</li>" >> "$html_report"
-        fi
-    else
-        result="Nginx not installed or config missing."
-        echo "<li style='color:red;'>$result</li>" >> "$html_report"
-    fi
-
-    # 4. Service connectivity (DB, redis, mongodb)
-    local db_ok redis_ok mongo_ok
-    # PostgreSQL
-    if command -v psql &>/dev/null; then
-        psql -U taxi -c '\q' &>/dev/null && db_ok=true || db_ok=false
-    fi
-    # Redis
-    if command -v redis-cli &>/dev/null; then
-        redis-cli ping | grep -q PONG && redis_ok=true || redis_ok=false
-    fi
-    # MongoDB
-    if command -v mongo &>/dev/null; then
-        mongo --eval 'db.runCommand({ ping: 1 })' | grep -q 'ok' && mongo_ok=true || mongo_ok=false
-    fi
-    if [ "$db_ok" = true ]; then
-        echo "<li style='color:green;'>PostgreSQL connectivity OK.</li>" >> "$html_report"
-    else
-        echo "<li style='color:red;'>PostgreSQL connectivity FAILED.</li>" >> "$html_report"
-    fi
-    if [ "$redis_ok" = true ]; then
-        echo "<li style='color:green;'>Redis connectivity OK.</li>" >> "$html_report"
-    else
-        echo "<li style='color:red;'>Redis connectivity FAILED.</li>" >> "$html_report"
-    fi
-    if [ "$mongo_ok" = true ]; then
-        echo "<li style='color:green;'>MongoDB connectivity OK.</li>" >> "$html_report"
-    else
-        echo "<li style='color:red;'>MongoDB connectivity FAILED.</li>" >> "$html_report"
-    fi
-
-    echo "</ul><hr><small>Generated: $(date)</small></body></html>" >> "$html_report"
-    echo "Validation report generated at $html_report"
-    return 0
-}
-# --- ERROR HANDLING & LOGGING FUNCTIONS ---
+    main_installer "$@"
+fi
 LOG_FILE="/var/log/taxi_installer.log"
 
 # Log step with timestamp
