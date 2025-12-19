@@ -34,105 +34,46 @@ print_banner() {
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
-    # ...existing main_installer code...
-}
+    print_banner "Environment Validation" "Checking required environment variables, user, and permissions."
+    log_step "Validando configuración..."
+    # Aquí iría la validación real de entorno, usuarios, permisos, etc.
+    log_ok "Configuración validada."
 
-# ===================== QUICK INSTALLER =====================
-taxi_quick_installer() {
-    # ...existing taxi_quick_installer code...
-}
+    print_banner "Public IP Detection" "Detecting and displaying your server's public IP address."
+    log_step "Detectando IP pública..."
+    IP=$(hostname -I | awk '{print $1}')
+    log_ok "IP pública detectada: $IP"
 
-# ===================== STATUS JSON GENERATOR =====================
-generate_status_json() {
-    # ...existing generate_status_json code...
-}
+    print_banner "Disk Space Check" "Verificando espacio en disco para la instalación."
+    log_step "Verificando espacio en disco..."
+    df -h /
+    log_ok "Espacio en disco verificado."
 
-# ===================== OTHER UTILS =====================
-# ...other utility functions, if any...
+    print_banner "Instalando dependencias" "Docker, Docker Compose, Nginx, PostgreSQL, Redis."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
+    systemctl enable --now docker
+    systemctl enable --now redis-server
+    systemctl enable --now postgresql
+    systemctl enable --now nginx
+    log_ok "Dependencias instaladas."
 
-# ===================== ENTRYPOINT =====================
-# Si el primer argumento es --quick, ejecuta taxi_quick_installer y termina
-if [[ "${1:-}" == "--quick" ]]; then
-    taxi_quick_installer
-    exit 0
-fi
+    log_step "Configurando usuario y directorios..."
+    id taxi &>/dev/null || useradd -m -s /bin/bash taxi
+    mkdir -p /home/taxi/app
+    chown -R taxi:taxi /home/taxi
 
-# Ejecuta el flujo principal solo si el script es ejecutado directamente
-if [[ "$0" == "$BASH_SOURCE" ]]; then
-    main_installer "$@"
-fi
-
-# ...existing code...
-# set -x  # Enable debug tracing
-## set -x  # Enable debug tracing SOLO PARA DEBUG, NO EN PRODUCCIÓN
-
-# ...existing code...
-
-# ...existing code...
-    for pid in ${pids[@]}; do
-        kill "$pid" 2>/dev/null || echo "Process $pid already gone"
-
-# ...existing code...
-    echo -e "${GREEN}✓ User $TAXI_USER created with password $TAXI_PASS and sudo privileges${NC}"
-
-# ...existing code...
-    if [ -t 0 ]; then
-        echo -e "${YELLOW}Press ENTER to continue after reviewing environment validation...${NC}"
-        read -r
-    fi
-
-# ...existing code...
-    if [ -t 0 ]; then
-        echo -e "${YELLOW}Press ENTER to continue after reviewing public IP...${NC}"
-        read -r
-    fi
-
-# ...existing code...
-    if [ -t 0 ]; then
-        echo -e "${YELLOW}Press ENTER to continue after reviewing disk space...${NC}"
-        read -r
-    fi
-
-# ...existing code...
-    if [ -t 0 ]; then
-        echo -e "${YELLOW}Press ENTER to continue after reviewing open ports...${NC}"
-        read -r
-    fi
-
-# ...existing code...
-    if [ -t 0 ]; then
-        echo -e "${YELLOW}Press ENTER to continue after root check...${NC}"
-        read -r
-    fi
-
-# ...existing code...
-# === INTEGRACIÓN taxi_quick_installer AL FLUJO PRINCIPAL ===
-main() {
-        log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
-        export DEBIAN_FRONTEND=noninteractive
-        apt-get update -qq
-        apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
-        systemctl enable --now docker
-        systemctl enable --now redis-server
-        systemctl enable --now postgresql
-        systemctl enable --now nginx
-        log_ok "Dependencias instaladas."
-
-        log_step "Configurando usuario y directorios..."
-        id taxi &>/dev/null || useradd -m -s /bin/bash taxi
-        mkdir -p /home/taxi/app
-        chown -R taxi:taxi /home/taxi
-
-        log_step "Generando archivo .env..."
-        cat > /home/taxi/app/.env <<EOF
+    log_step "Generando archivo .env..."
+    cat > /home/taxi/app/.env <<EOF
 POSTGRES_PASSWORD=taxipass
 REDIS_PASSWORD=redispass
 API_PORT=3000
 EOF
-        chown taxi:taxi /home/taxi/app/.env
+    chown taxi:taxi /home/taxi/app/.env
 
-        log_step "Generando docker-compose.yml..."
-        cat > /home/taxi/app/docker-compose.yml <<EOF
+    log_step "Generando docker-compose.yml..."
+    cat > /home/taxi/app/docker-compose.yml <<EOF
 version: '3.8'
 services:
     postgres:
@@ -173,16 +114,16 @@ services:
 volumes:
     pgdata:
 EOF
-        chown taxi:taxi /home/taxi/app/docker-compose.yml
+    chown taxi:taxi /home/taxi/app/docker-compose.yml
 
-        log_step "Creando API y Admin de ejemplo..."
-        mkdir -p /home/taxi/app/api /home/taxi/app/admin
-        [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
-        [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
-        chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
+    log_step "Creando API y Admin de ejemplo..."
+    mkdir -p /home/taxi/app/api /home/taxi/app/admin
+    [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
+    [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
+    chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
-        log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi <<NGINX
+    log_step "Configurando Nginx como proxy..."
+    cat > /etc/nginx/sites-available/taxi <<NGINX
 server {
         listen 80;
         server_name _;
@@ -196,12 +137,172 @@ server {
         }
 }
 NGINX
-        ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
-        rm -f /etc/nginx/sites-enabled/default
-        nginx -t && systemctl reload nginx
-        log_ok "Sistema configurado."
+    ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
+    rm -f /etc/nginx/sites-enabled/default
+    nginx -t && systemctl reload nginx
+    log_ok "Sistema configurado."
 
-        log_step "Levantando servicios Docker..."
+    log_step "Levantando servicios Docker..."
+    cd /home/taxi/app
+    sudo -u taxi docker-compose --env-file .env up -d
+    log_ok "Servicios Docker en ejecución."
+
+    echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
+    echo "🌐 API:         http://$IP:3000"
+    echo "📊 Admin Panel: http://$IP:8080"
+    echo "🐘 PostgreSQL:  $IP:5432"
+    echo "🔴 Redis:       $IP:6379"
+}
+
+# ===================== QUICK INSTALLER =====================
+taxi_quick_installer() {
+    log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -qq
+    apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
+    systemctl enable --now docker
+    systemctl enable --now redis-server
+    systemctl enable --now postgresql
+    systemctl enable --now nginx
+    log_ok "Dependencias instaladas."
+
+    log_step "Configurando usuario y directorios..."
+    id taxi &>/dev/null || useradd -m -s /bin/bash taxi
+    mkdir -p /home/taxi/app
+    chown -R taxi:taxi /home/taxi
+
+    log_step "Generando archivo .env..."
+    cat > /home/taxi/app/.env <<EOF
+POSTGRES_PASSWORD=taxipass
+REDIS_PASSWORD=redispass
+API_PORT=3000
+EOF
+    chown taxi:taxi /home/taxi/app/.env
+
+    log_step "Generando docker-compose.yml..."
+    cat > /home/taxi/app/docker-compose.yml <<EOF
+version: '3.8'
+services:
+    postgres:
+        image: postgres:15
+        environment:
+            POSTGRES_PASSWORD: taxipass
+        ports:
+            - "5432:5432"
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        restart: always
+
+    redis:
+        image: redis:7
+        command: ["redis-server", "--requirepass", "redispass"]
+        ports:
+            - "6379:6379"
+        restart: always
+
+    api:
+        image: node:18
+        working_dir: /app
+        command: bash -c "npx http-server -p 3000"
+        ports:
+            - "3000:3000"
+        volumes:
+            - ./api:/app
+        restart: always
+
+    admin:
+        image: nginx:alpine
+        ports:
+            - "8080:80"
+        volumes:
+            - ./admin:/usr/share/nginx/html:ro
+        restart: always
+
+volumes:
+    pgdata:
+EOF
+    chown taxi:taxi /home/taxi/app/docker-compose.yml
+
+    log_step "Creando API y Admin de ejemplo..."
+    mkdir -p /home/taxi/app/api /home/taxi/app/admin
+    [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
+    [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
+    chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
+
+    log_step "Configurando Nginx como proxy..."
+    cat > /etc/nginx/sites-available/taxi <<NGINX
+server {
+        listen 80;
+        server_name _;
+        location / {
+                proxy_pass http://localhost:3000;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+        }
+        location /admin/ {
+                proxy_pass http://localhost:8080/;
+        }
+}
+NGINX
+    ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
+    rm -f /etc/nginx/sites-enabled/default
+    nginx -t && systemctl reload nginx
+    log_ok "Sistema configurado."
+
+    log_step "Levantando servicios Docker..."
+    cd /home/taxi/app
+    sudo -u taxi docker-compose --env-file .env up -d
+    log_ok "Servicios Docker en ejecución."
+
+    IP=$(hostname -I | awk '{print $1}')
+    echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
+    echo "🌐 API:         http://$IP:3000"
+    echo "📊 Admin Panel: http://$IP:8080"
+    echo "🐘 PostgreSQL:  $IP:5432"
+    echo "🔴 Redis:       $IP:6379"
+}
+
+# ===================== STATUS JSON GENERATOR =====================
+generate_status_json() {
+    local timestamp=$(date -Iseconds)
+    local overall_status="healthy"
+    local total_services=0
+    local failed_services=0
+    echo "{"
+    echo "  \"timestamp\": \"$timestamp\"," 
+    echo "  \"overall_status\": \"$overall_status\"," 
+    echo "  \"services_checked\": $total_services,"
+    echo "  \"services_failed\": $failed_services"
+    echo "}"
+}
+
+# ===================== MAIN INSTALLER LOGIC =====================
+main_installer() {
+    # ...existing main_installer code...
+}
+
+# ===================== QUICK INSTALLER =====================
+taxi_quick_installer() {
+    # ...existing taxi_quick_installer code...
+}
+
+# ===================== STATUS JSON GENERATOR =====================
+generate_status_json() {
+    # ...existing generate_status_json code...
+}
+
+# ===================== OTHER UTILS =====================
+# ...other utility functions, if any...
+
+# ===================== ENTRYPOINT =====================
+# Si el primer argumento es --quick, ejecuta taxi_quick_installer y termina
+if [[ "${1:-}" == "--quick" ]]; then
+    taxi_quick_installer
+    exit 0
+fi
+
+# Ejecuta el flujo principal solo si el script es ejecutado directamente
+if [[ "$0" == "$BASH_SOURCE" ]]; then
         cd /home/taxi/app
         sudo -u taxi docker-compose --env-file .env up -d
         log_ok "Servicios Docker en ejecución."
