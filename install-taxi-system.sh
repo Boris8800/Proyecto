@@ -1043,7 +1043,7 @@ fatal_error() {
 
 
 # ===================== IMPROVEMENTS SECTION =====================
-# Dry-run mode
+#!/bin/bash
 DRY_RUN=false
 for arg in "$@"; do
     if [[ "$arg" == "--dry-run" ]]; then
