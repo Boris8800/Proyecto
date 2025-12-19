@@ -34,6 +34,15 @@ print_banner() {
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
+            # Verifica si hay paquetes retenidos (held) y muestra instrucciones
+            HELD=$(apt-mark showhold)
+            if [ -n "$HELD" ]; then
+                echo -e "${RED}Detectados paquetes retenidos (held) en el sistema:${NC}"
+                echo "$HELD"
+                echo -e "${YELLOW}Sugerencia: libera los paquetes con:${NC}"
+                echo -e "\n  sudo apt-mark unhold <paquete>\n"
+                exit 1
+            fi
         # Comprobación de paquetes rotos antes de instalar dependencias
         if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
             echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
