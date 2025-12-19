@@ -4174,7 +4174,7 @@ run_as_taxi "chmod +x $TAXI_HOME/scripts/backup/backup.sh"
 
 # 2. Health Check Script
 cat << 'EOF' | run_as_taxi "tee $TAXI_HOME/scripts/monitoring/health-check.sh"
-#!/bin/bash
+    echo -e "${YELLOW}lscpu not available. Please check virtualization support manually.${NC}"
 # ==============================================================================
 # TAXI SYSTEM - COMPREHENSIVE HEALTH CHECK
 # Version: 2.0
