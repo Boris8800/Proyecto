@@ -69,7 +69,7 @@ main_installer() {
         systemctl enable --now nginx
         log_ok "nginx, postgresql y redis instalados."
     # Comprobación de paquetes rotos antes de instalar dependencias
-    if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
+    if ! apt-get -s install curl git nginx docker-compose postgresql redis-server > /dev/null 2>&1; then
         echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
         echo -e "${YELLOW}Sugerencia: ejecuta los siguientes comandos y vuelve a intentar la instalación:${NC}"
         echo -e "\n  sudo apt-get update"
@@ -78,6 +78,15 @@ main_installer() {
         echo -e "  sudo dpkg --configure -a"
         echo -e "  sudo apt-get install -f\n"
         exit 1
+    fi
+
+    # Verifica si el puerto 80 está ocupado antes de iniciar NGINX
+    if lsof -i :80 | grep LISTEN; then
+        echo -e "${RED}El puerto 80 está ocupado por otro proceso. Deteniendo procesos que usan el puerto 80...${NC}"
+        for pid in $(lsof -t -i :80); do
+            kill -9 $pid
+        done
+        echo -e "${YELLOW}Procesos en el puerto 80 detenidos. Continúa la instalación de NGINX.${NC}"
     fi
 
     print_banner "Environment Validation" "Checking required environment variables, user, and permissions."
