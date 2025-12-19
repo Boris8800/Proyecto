@@ -1,5 +1,24 @@
 #!/bin/bash
 set -euo pipefail
+# Verificación de espacio y permisos antes de continuar
+TMPDIR="/tmp"
+SHMDIR="/dev/shm"
+MINSPACE=100000 # 100MB en KB
+
+check_space() {
+    local dir="$1"
+    local avail=$(df -k "$dir" | awk 'NR==2 {print $4}')
+    if [ "$avail" -lt "$MINSPACE" ]; then
+        echo -e "${RED}Error: No hay suficiente espacio libre en $dir (${avail} KB disponibles).${NC}"
+        exit 23
+    fi
+    if [ ! -w "$dir" ]; then
+        echo -e "${RED}Error: No tienes permisos de escritura en $dir.${NC}"
+        exit 23
+    fi
+}
+check_space "$TMPDIR"
+check_space "$SHMDIR"
 # Debugging solo si --debug o DEBUG=1
 if [[ "${1:-}" == "--debug" || "${DEBUG:-}" == "1" ]]; then
     set -x
