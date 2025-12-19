@@ -123,20 +123,20 @@ EOF
     chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
     log_step "Configurando Nginx como proxy..."
-    cat > /etc/nginx/sites-available/taxi <<NGINX
-server {
+        cat > /etc/nginx/sites-available/taxi << 'NGINX'
+    server {
         listen 80;
         server_name _;
         location / {
-                proxy_pass http://localhost:3000;
-                proxy_set_header Host \$host;
-                proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://localhost:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         location /admin/ {
-                proxy_pass http://localhost:8080/;
+            proxy_pass http://localhost:8080/;
         }
-}
-NGINX
+    }
+    NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
@@ -230,20 +230,20 @@ EOF
     chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
     log_step "Configurando Nginx como proxy..."
-    cat > /etc/nginx/sites-available/taxi <<NGINX
-server {
+        cat > /etc/nginx/sites-available/taxi << 'NGINX'
+    server {
         listen 80;
         server_name _;
         location / {
-                proxy_pass http://localhost:3000;
-                proxy_set_header Host \$host;
-                proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://localhost:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         location /admin/ {
-                proxy_pass http://localhost:8080/;
+            proxy_pass http://localhost:8080/;
         }
-}
-NGINX
+    }
+    NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
@@ -5586,20 +5586,20 @@ EOF
         chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
         log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi <<NGINX
-server {
+        cat > /etc/nginx/sites-available/taxi << 'NGINX'
+    server {
         listen 80;
         server_name _;
         location / {
-                proxy_pass http://localhost:3000;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://localhost:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         location /admin/ {
-                proxy_pass http://localhost:8080/;
+            proxy_pass http://localhost:8080/;
         }
-}
-NGINX
+    }
+    NGINX
         ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
         rm -f /etc/nginx/sites-enabled/default
         nginx -t && systemctl reload nginx

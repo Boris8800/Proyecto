@@ -7,7 +7,6 @@ export YELLOW='\033[1;33m'
 export BLUE='\033[0;34m'
 export PURPLE='\033[0;35m'
 export CYAN='\033[0;36m'
-export NC='\033[0m'
 
 # Verificación de espacio y permisos antes de continuar
 TMPDIR="/tmp"
@@ -38,10 +37,6 @@ fi
 export RED='\033[0;31m'
 export GREEN='\033[0;32m'
 export YELLOW='\033[1;33m'
-export BLUE='\033[0;34m'
-export PURPLE='\033[0;35m'
-export CYAN='\033[0;36m'
-export NC='\033[0m'
 
 # ===================== LOGGING ÚNICO =====================
 log_step()    { echo -e "${BLUE}[STEP]${NC} $1"; }
@@ -57,121 +52,82 @@ print_banner() {
     echo -e "${PURPLE}\n════════════════════════════════════════════════════════════════${NC}"
     echo -e "${CYAN}   $1${NC}"
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${YELLOW}$2${NC}\n"
+    echo -e "${YELLOW}${2:-}${NC}\n"
 }
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
             # Menú interactivo para gestión de NGINX antes de continuar
-            cat > nginx-menu.sh << 'EOF'
-        #!/bin/bash
 
-        while true; do
-            clear
-            echo "=== MENÚ GESTIÓN NGINX ==="
-            echo "1. Ver puertos en uso"
-            echo "2. Ver configuraciones nginx"
-            echo "3. Cambiar puerto 80 → 8080"
-            echo "4. Deshabilitar nginx temporalmente"
-            echo "5. Forzar liberar puerto 80"
-            echo "6. Continuar instalación taxi".
-            echo "7. Salir"
-            echo ""
-            read -p "Opción [1-7]: " opc
-            case $opc in
-                1)
-                    echo "=== PUERTOS EN USO ==="
-                    ss -tulpn | grep ":80\|:443"
-                    lsof -i :80
-                    read -p "Enter para continuar..."
-                    ;;
-                2)
-                    echo "=== CONFIGURACIONES NGINX ==="
-                    grep -n "listen" /etc/nginx/sites-enabled/* 2>/dev/null || echo "No hay configuraciones"
-                    read -p "Enter para continuar..."
-                    ;;
-                3)
-                    echo "Cambiando puerto 80 a 8080..."
-                    sed -i 's/listen 80/listen 8080/g' /etc/nginx/sites-enabled/* 2>/dev/null
-                    nginx -t && systemctl restart nginx
-                    echo "Hecho. Nginx ahora en puerto 8080"
-                    sleep 2
-                    ;;
-                4)
-                    echo "Deshabilitando nginx..."
-                    systemctl stop nginx
-                    systemctl disable nginx
-                    echo "Nginx deshabilitado temporalmente"
-                    sleep 2
-                    ;;
-                5)
-                    echo "Forzando liberación puerto 80..."
-                    fuser -k 80/tcp
-                    systemctl stop nginx
-                    echo "Puerto 80 liberado"
-                    sleep 2
-                    ;;
-                6)
-                    echo "Continuando con instalación taxi..."
-                    break
-                    ;;
-                7)
-                    echo "Saliendo..."
-                    exit 0
-                    ;;
-                *)
-                    echo "Opción inválida"
-                    sleep 1
-                    ;;
-            esac
-        done
-        EOF
+            cat > nginx-menu.sh << 'EOF'
+set +u
+opc=""
+while true; do
+    clear
+    echo "=== MENÚ GESTIÓN NGINX ==="
+    echo "1. Ver puertos en uso"
+    echo "2. Ver configuraciones nginx"
+    echo "3. Cambiar puerto 80 → 8080"
+    echo "4. Deshabilitar nginx temporalmente"
+    echo "5. Forzar liberar puerto 80"
+    echo "6. Continuar instalación taxi."
+    echo "7. Salir"
+    echo ""
+    read -p "Opción [1-7]: " opc
+    case $opc in
+        1)
+            echo "=== PUERTOS EN USO ==="
+            ss -tulpn | grep ":80\|:443"
+            lsof -i :80
+            read -p "Enter para continuar..."
+            ;;
+        2)
+            echo "=== CONFIGURACIONES NGINX ==="
+            sudo chown taxi:taxi /home/taxi/app/docker-compose.yml
+            grep -n "listen" /etc/nginx/sites-enabled/* 2>/dev/null || echo "No hay configuraciones"
+            read -p "Enter para continuar..."
+            ;;
+        3)
+            echo "Cambiando puerto 80 a 8080..."
+            sed -i 's/listen 80/listen 8080/g' /etc/nginx/sites-enabled/* 2>/dev/null
+            nginx -t && systemctl restart nginx
+            echo "Hecho. Nginx ahora en puerto 8080"
+            sleep 2
+            ;;
+        4)
+            echo "Deshabilitando nginx..."
+            systemctl stop nginx
+            systemctl disable nginx
+            echo "Nginx deshabilitado temporalmente"
+            sleep 2
+            ;;
+        5)
+            echo "Forzando liberación puerto 80..."
+            fuser -k 80/tcp
+            systemctl stop nginx
+            echo "Puerto 80 liberado"
+            sleep 2
+            ;;
+        6)
+            echo "Continuando con instalación taxi..."
+            break
+            ;;
+        7)
+            echo "Saliendo..."
+            exit 0
+            ;;
+        *)
+            echo "Opción inválida"
+            sleep 1
+            ;;
+    esac
+done
+EOF
             chmod +x nginx-menu.sh
             ./nginx-menu.sh
+            set -u
         # Instala docker-compose manualmente (última versión)
-        log_step "Instalando docker-compose..."
-        DOCKER_COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep 'tag_name' | cut -d '"' -f 4)
-        sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
-        log_ok "docker-compose instalado."
-
-        # Instala nginx, postgresql y redis
-        log_step "Instalando nginx, postgresql y redis..."
-        apt-get install -y nginx postgresql redis-server > /dev/null
-        systemctl enable --now redis-server
-        systemctl enable --now postgresql
-        systemctl enable --now nginx
-        log_ok "nginx, postgresql y redis instalados."
-    # Comprobación de paquetes rotos antes de instalar dependencias
-    if ! apt-get -s install curl git nginx docker-compose postgresql redis-server > /dev/null 2>&1; then
-        echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
-        echo -e "${YELLOW}Sugerencia: ejecuta los siguientes comandos y vuelve a intentar la instalación:${NC}"
-        echo -e "\n  sudo apt-get update"
-        echo -e "  sudo apt-get upgrade -y"
-        echo -e "  sudo apt --fix-broken install -y"
-        echo -e "  sudo dpkg --configure -a"
-        echo -e "  sudo apt-get install -f\n"
-        exit 1
-    fi
-
-    # Verifica si el puerto 80 está ocupado antes de iniciar NGINX
-    if lsof -i :80 | grep LISTEN; then
-        echo -e "${RED}El puerto 80 está ocupado por otro proceso. Deteniendo procesos que usan el puerto 80...${NC}"
-        for pid in $(lsof -t -i :80); do
-            kill -9 $pid
-        done
-        echo -e "${YELLOW}Procesos en el puerto 80 detenidos. Continúa la instalación de NGINX.${NC}"
-    fi
-
-    print_banner "Environment Validation" "Checking required environment variables, user, and permissions."
-    log_step "Validando configuración..."
-    # Aquí iría la validación real de entorno, usuarios, permisos, etc.
-    log_ok "Configuración validada."
-
-    print_banner "Public IP Detection" "Detecting and displaying your server's public IP address."
-    log_step "Detectando IP pública..."
-    IP=$(hostname -I | awk '{print $1}')
+        echo "version: '3.8'"
     log_ok "IP pública detectada: $IP"
 
     print_banner "Disk Space Check" "Verificando espacio en disco para la instalación."
@@ -196,83 +152,80 @@ main_installer() {
     log_ok "Docker instalado."
 
     log_step "Configurando usuario y directorios..."
-    id taxi &>/dev/null || useradd -m -s /bin/bash taxi
-    mkdir -p /home/taxi/app
-    chown -R taxi:taxi /home/taxi
+    id taxi &>/dev/null || sudo useradd -m -s /bin/bash taxi
+    sudo mkdir -p /home/taxi/app
+    sudo chown -R taxi:taxi /home/taxi
+    sudo chmod u+rwx /home/taxi /home/taxi/app
+    sudo chmod o+rx /home/taxi/app
+    sudo chown -R taxi:taxi /home/taxi
 
     log_step "Generando archivo .env..."
-    cat > /home/taxi/app/.env <<EOF
-POSTGRES_PASSWORD=taxipass
+    sudo mkdir -p /home/taxi/app
+    echo "POSTGRES_PASSWORD=taxipass
 REDIS_PASSWORD=redispass
-API_PORT=3000
-EOF
-    chown taxi:taxi /home/taxi/app/.env
+API_PORT=3000" | sudo tee /home/taxi/app/.env > /dev/null
+    sudo chown taxi:taxi /home/taxi/app/.env
 
     log_step "Generando docker-compose.yml..."
-    cat > /home/taxi/app/docker-compose.yml <<EOF
-version: '3.8'
-services:
-    postgres:
-        image: postgres:15
-        environment:
-            POSTGRES_PASSWORD: taxipass
-        ports:
-            - "5432:5432"
-        volumes:
-            - pgdata:/var/lib/postgresql/data
-        restart: always
-
-    redis:
-        image: redis:7
-        command: ["redis-server", "--requirepass", "redispass"]
-        ports:
-            - "6379:6379"
-        restart: always
-
-    api:
-        image: node:18
-        working_dir: /app
-        command: bash -c "npx http-server -p 3000"
-        ports:
-            - "3000:3000"
-        volumes:
-            - ./api:/app
-        restart: always
-
-    admin:
-        image: nginx:alpine
-        ports:
-            - "8080:80"
-        volumes:
-            - ./admin:/usr/share/nginx/html:ro
-        restart: always
-
-volumes:
-    pgdata:
-EOF
-    chown taxi:taxi /home/taxi/app/docker-compose.yml
+    sudo bash -c 'echo "version: '"'3.8'"'" > /home/taxi/app/docker-compose.yml'
+        sudo chown taxi:taxi /home/taxi/app/docker-compose.yml
+    sudo bash -c 'echo "services:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "  postgres:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    image: postgres:15" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    environment:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      POSTGRES_PASSWORD: taxipass" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    ports:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      - '5432:5432'" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    volumes:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      - pgdata:/var/lib/postgresql/data" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    restart: always" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "  redis:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    image: redis:7" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    command: ['\''redis-server'\'', '\''--requirepass'\'', '\''redispass'\'']" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    ports:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      - '6379:6379'" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    restart: always" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "  api:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    image: node:18" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    working_dir: /app" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    command: bash -c '"'npx http-server -p 3000'"'" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    ports:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      - '3000:3000'" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    volumes:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      - ./api:/app" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    restart: always" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "  admin:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    image: nginx:alpine" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    ports:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      - '8080:80'" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    volumes:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "      - ./admin:/usr/share/nginx/html:ro" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "    restart: always" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "volumes:" >> /home/taxi/app/docker-compose.yml'
+    sudo bash -c 'echo "  pgdata:" >> /home/taxi/app/docker-compose.yml'
+    sudo chown taxi:taxi /home/taxi/app/docker-compose.yml
 
     log_step "Creando API y Admin de ejemplo..."
-    mkdir -p /home/taxi/app/api /home/taxi/app/admin
+    sudo mkdir -p /home/taxi/app/api /home/taxi/app/admin
     [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
     [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
-    chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
+    sudo chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
     log_step "Configurando Nginx como proxy..."
-    cat > /etc/nginx/sites-available/taxi <<NGINX
-server {
+        cat > /etc/nginx/sites-available/taxi << 'NGINX'
+    server {
         listen 80;
         server_name _;
         location / {
-                proxy_pass http://localhost:3000;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://localhost:3000;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         location /admin/ {
-                proxy_pass http://localhost:8080/;
+            proxy_pass http://localhost:8080/;
         }
-}
-NGINX
+    }
+    NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
@@ -338,7 +291,7 @@ POSTGRES_PASSWORD=taxipass
 REDIS_PASSWORD=redispass
 API_PORT=3000
 EOF
-    chown taxi:taxi /home/taxi/app/.env
+    sudo chown taxi:taxi /home/taxi/app/.env
 
     log_step "Generando docker-compose.yml..."
     cat > /home/taxi/app/docker-compose.yml <<EOF
@@ -382,29 +335,29 @@ services:
 volumes:
     pgdata:
 EOF
-    chown taxi:taxi /home/taxi/app/docker-compose.yml
+    sudo chown taxi:taxi /home/taxi/app/docker-compose.yml
 
     log_step "Creando API y Admin de ejemplo..."
     mkdir -p /home/taxi/app/api /home/taxi/app/admin
     [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
     [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
-    chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
+    sudo chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
     log_step "Configurando Nginx como proxy..."
-    cat > /etc/nginx/sites-available/taxi <<NGINX
-server {
+        cat > /etc/nginx/sites-available/taxi << 'NGINX'
+    server {
         listen 80;
         server_name _;
         location / {
-                proxy_pass http://localhost:3000;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://localhost:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         location /admin/ {
-                proxy_pass http://localhost:8080/;
+            proxy_pass http://localhost:8080/;
         }
-}
-NGINX
+    }
+    NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
@@ -5673,20 +5626,20 @@ EOF
         chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
         log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi <<NGINX
-server {
+        cat > /etc/nginx/sites-available/taxi << 'NGINX'
+    server {
         listen 80;
         server_name _;
         location / {
-                proxy_pass http://localhost:3000;
-                proxy_set_header Host $host;
-                proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://localhost:3000;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
         }
         location /admin/ {
-                proxy_pass http://localhost:8080/;
+            proxy_pass http://localhost:8080/;
         }
-}
-NGINX
+    }
+    NGINX
         ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
         rm -f /etc/nginx/sites-enabled/default
         nginx -t && systemctl reload nginx
