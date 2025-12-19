@@ -53,31 +53,6 @@ print_banner() {
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
-            # Verifica si hay paquetes retenidos (held) y muestra instrucciones
-            HELD=$(apt-mark showhold)
-            if [ -n "$HELD" ]; then
-                echo -e "${YELLOW}Intentando liberar automáticamente los paquetes retenidos...${NC}"
-                for pkg in $HELD; do
-                    apt-mark unhold "$pkg"
-                done
-                echo -e "${GREEN}Paquetes liberados: $HELD${NC}"
-                echo -e "${YELLOW}Reparando dependencias...${NC}"
-                apt-get update && apt-get upgrade -y
-                apt --fix-broken install -y
-                dpkg --configure -a
-                apt-get install -f
-            fi
-        # Comprobación de paquetes rotos antes de instalar dependencias
-        if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
-            echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
-            echo -e "${YELLOW}Sugerencia: ejecuta los siguientes comandos y vuelve a intentar la instalación:${NC}"
-            echo -e "\n  sudo apt-get update"
-            echo -e "  sudo apt-get upgrade -y"
-            echo -e "  sudo apt --fix-broken install -y"
-            echo -e "  sudo dpkg --configure -a"
-            echo -e "  sudo apt-get install -f\n"
-            exit 1
-        fi
     # Comprobación de paquetes rotos antes de instalar dependencias
     if ! apt-get -s install curl git nginx docker.io docker-compose postgresql redis-server > /dev/null 2>&1; then
         echo -e "${RED}Detectado un posible problema de dependencias o paquetes rotos en el sistema.${NC}"
