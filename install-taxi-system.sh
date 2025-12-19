@@ -143,6 +143,10 @@ NGINX
     log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
+    # Asegura que el usuario y el directorio existen antes de continuar
+    id taxi &>/dev/null || useradd -m -s /bin/bash taxi
+    mkdir -p /home/taxi/app
+    chown -R taxi:taxi /home/taxi
     cd /home/taxi/app
     sudo -u taxi docker-compose --env-file .env up -d
     log_ok "Servicios Docker en ejecución."
@@ -250,6 +254,10 @@ NGINX
     log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
+    # Asegura que el usuario y el directorio existen antes de continuar
+    id taxi &>/dev/null || useradd -m -s /bin/bash taxi
+    mkdir -p /home/taxi/app
+    chown -R taxi:taxi /home/taxi
     cd /home/taxi/app
     sudo -u taxi docker-compose --env-file .env up -d
     log_ok "Servicios Docker en ejecución."
@@ -3577,7 +3585,7 @@ app.use(cors({
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'If-Modified-Since', 'Cache-Control', 'Range', 'Authorization' ],
-    exposedHeaders: ['Content-Length', 'Content-Range']
+    exposedHeaders: ['Content-Length', 'Content-Range' ]
 }));
 
 app.use(compression());
@@ -5590,6 +5598,10 @@ NGINX
         log_ok "Sistema configurado."
 
         log_step "Levantando servicios Docker..."
+        # Asegura que el usuario y el directorio existen antes de continuar
+        id taxi &>/dev/null || useradd -m -s /bin/bash taxi
+        mkdir -p /home/taxi/app
+        chown -R taxi:taxi /home/taxi
         cd /home/taxi/app
         sudo -u taxi docker-compose --env-file .env up -d
         log_ok "Servicios Docker en ejecución."
