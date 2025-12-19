@@ -1,14 +1,19 @@
 #!/bin/bash
 set -euo pipefail
+# Debugging solo si --debug o DEBUG=1
+if [[ "${1:-}" == "--debug" || "${DEBUG:-}" == "1" ]]; then
+    set -x
+    export DEBUG=1
+fi
 
 # ===================== COLORES UNIVERSALES =====================
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m'
+export RED='\033[0;31m'
+export GREEN='\033[0;32m'
+export YELLOW='\033[1;33m'
+export BLUE='\033[0;34m'
+export PURPLE='\033[0;35m'
+export CYAN='\033[0;36m'
+export NC='\033[0m'
 
 # ===================== LOGGING ÚNICO =====================
 log_step()    { echo -e "${BLUE}[STEP]${NC} $1"; }
@@ -32,30 +37,43 @@ print_banner() {
 ## set -x  # Enable debug tracing SOLO PARA DEBUG, NO EN PRODUCCIÓN
 
 # ...existing code...
-    declare -a WARNINGS=()  # Ensure WARNINGS array is declared
-    # WARNINGS es global, no redeclarar aquí
 
 # ...existing code...
-    for pid in ${pids}; do
+    for pid in ${pids[@]}; do
         kill "$pid" 2>/dev/null || echo "Process $pid already gone"
 
 # ...existing code...
     echo -e "${GREEN}✓ User $TAXI_USER created with password $TAXI_PASS and sudo privileges${NC}"
 
 # ...existing code...
-    # echo -e "${YELLOW}Press ENTER to continue after reviewing environment validation...${NC}"
+    if [ -t 0 ]; then
+        echo -e "${YELLOW}Press ENTER to continue after reviewing environment validation...${NC}"
+        read -r
+    fi
 
 # ...existing code...
-    # echo -e "${YELLOW}Press ENTER to continue after reviewing public IP...${NC}"
+    if [ -t 0 ]; then
+        echo -e "${YELLOW}Press ENTER to continue after reviewing public IP...${NC}"
+        read -r
+    fi
 
 # ...existing code...
-    # echo -e "${YELLOW}Press ENTER to continue after reviewing disk space...${NC}"
+    if [ -t 0 ]; then
+        echo -e "${YELLOW}Press ENTER to continue after reviewing disk space...${NC}"
+        read -r
+    fi
 
 # ...existing code...
-    # echo -e "${YELLOW}Press ENTER to continue after reviewing open ports...${NC}"
+    if [ -t 0 ]; then
+        echo -e "${YELLOW}Press ENTER to continue after reviewing open ports...${NC}"
+        read -r
+    fi
 
 # ...existing code...
-    # echo -e "${YELLOW}Press ENTER to continue after root check...${NC}"
+    if [ -t 0 ]; then
+        echo -e "${YELLOW}Press ENTER to continue after root check...${NC}"
+        read -r
+    fi
 
 # ...existing code...
 validate_installation() {
@@ -65,9 +83,6 @@ validate_installation() {
 unit_test_taxi_installer() {
     # ...existing code...
 }
-taxi_quick_installer() { ... }
-# Para ejecutar el instalador rápido, llama a: taxi_quick_installer
-
 # === INTEGRACIÓN taxi_quick_installer AL FLUJO PRINCIPAL ===
 main() {
         log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
@@ -191,17 +206,17 @@ if pgrep -u root -f "taxi-system" >/dev/null; then
     sudo pkill -u root -f "taxi-system"
 fi
 # --- LOGGING FUNCTIONS ---
-log_step()   { echo -e "\033[1;34m[STEP]\033[0m $1"; }
-log_error()  { echo -e "\033[0;31m[ERROR]\033[0m $1"; }
+log_step()   { echo -e "${BLUE}[STEP]${NC} $1"; }
+log_error()  { echo -e "${RED}[ERROR]${NC} $1"; }
 log_success(){ echo -e "\033[0;32m[SUCCESS]\033[0m $1"; }
 
 # =====================
 # FLUJO PRINCIPAL MODERNO Y FUNCIONAL
 # =====================
 set -euo pipefail
-log_step()   { echo -e "\033[1;34m[STEP]\033[0m $1"; }
-log_ok()     { echo -e "\033[0;32m[OK]\033[0m $1"; }
-log_error()  { echo -e "\033[0;31m[ERROR]\033[0m $1"; }
+log_step()   { echo -e "${BLUE}[STEP]${NC} $1"; }
+log_ok()     { echo -e "${GREEN}[OK]${NC} $1"; }
+log_error()  { echo -e "${RED}[ERROR]${NC} $1"; }
 
 main() {
     log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
@@ -370,11 +385,14 @@ setup_modsecurity() {
         log_step "apt-get not available. Skipping ModSecurity setup."
     fi
 }
+# Ejecuta todos los controles de seguridad
+run_security_controls() {
     scan_docker_images
     static_code_analysis
     cis_benchmark
     audit_logs
     setup_modsecurity
+}
 # --- INSTALLATION VALIDATION FUNCTION ---
 validate_installation() {
     local html_report="/tmp/taxi_install_report.html"
@@ -461,6 +479,7 @@ validate_installation() {
 
     echo "</ul><hr><small>Generated: $(date)</small></body></html>" >> "$html_report"
     echo "Validation report generated at $html_report"
+    return 0
 }
 # --- ERROR HANDLING & LOGGING FUNCTIONS ---
 LOG_FILE="/var/log/taxi_installer.log"
@@ -509,7 +528,7 @@ rollback_installation() {
 # --- UNIT TEST FUNCTION ---
 unit_test_taxi_installer() {
     local failed=0
-    echo -e "\n\033[1;34m==> Running Taxi Installer Unit Tests\033[0m\n"
+    echo -e "\n${BLUE}==> Running Taxi Installer Unit Tests${NC}\n"
 
     # 1. Check user 'taxi' exists and has correct permissions
     if id taxi &>/dev/null; then
@@ -570,7 +589,6 @@ unit_test_taxi_installer() {
     fi
 }
 set -x  # Enable debug tracing
-declare -a WARNINGS=()  # Ensure WARNINGS array is declared
 # Matar procesos que ocupan puertos específicos
 show_open_ports_menu() {
     local ports=(80 443 3000 5432 6379 27017 9000 19999)
@@ -593,7 +611,7 @@ kill_ports() {
         local pids
         pids=$(lsof -t -i :$port 2>/dev/null)
         if [ -n "$pids" ]; then
-            for pid in $pids; do
+            for pid in ${pids[@]}; do
                 echo -e "${CYAN}Matando proceso $pid en puerto $port...${NC}"
                 kill -9 "$pid" && echo -e "${GREEN}✓ Proceso $pid matado.${NC}" || echo -e "${RED}✗ No se pudo matar $pid.${NC}"
             done
@@ -5606,118 +5624,122 @@ run_as_taxi "chmod +x $TAXI_HOME/print_summary.sh"
 # =====================
 # TAXI QUICK INSTALLER
 # =====================
+
+# Para ejecutar el instalador rápido, llama a: taxi_quick_installer
+
+# --- INTEGRACIÓN taxi_quick_installer AL FLUJO PRINCIPAL ---
 taxi_quick_installer() {
-set -euo pipefail
-log_step()   { echo -e "\033[1;34m[STEP]\033[0m $1"; }
-log_ok()     { echo -e "\033[0;32m[OK]\033[0m $1"; }
-log_error()  { echo -e "\033[0;31m[ERROR]\033[0m $1"; }
+        log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
+        systemctl enable --now docker
+        systemctl enable --now redis-server
+        systemctl enable --now postgresql
+        systemctl enable --now nginx
+        log_ok "Dependencias instaladas."
 
-log_step "Instalando dependencias (Docker, Docker Compose, Nginx, PostgreSQL, Redis)..."
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
-apt-get install -y curl git nginx docker.io docker-compose postgresql redis-server > /dev/null
-systemctl enable --now docker
-systemctl enable --now redis-server
-systemctl enable --now postgresql
-systemctl enable --now nginx
-log_ok "Dependencias instaladas."
+        log_step "Configurando usuario y directorios..."
+        id taxi &>/dev/null || useradd -m -s /bin/bash taxi
+        mkdir -p /home/taxi/app
+        chown -R taxi:taxi /home/taxi
 
-log_step "Configurando usuario y directorios..."
-id taxi &>/dev/null || useradd -m -s /bin/bash taxi
-mkdir -p /home/taxi/app
-chown -R taxi:taxi /home/taxi
-
-log_step "Generando archivo .env..."
-cat > /home/taxi/app/.env <<EOF
+        log_step "Generando archivo .env..."
+        cat > /home/taxi/app/.env <<EOF
 POSTGRES_PASSWORD=taxipass
 REDIS_PASSWORD=redispass
 API_PORT=3000
 EOF
-chown taxi:taxi /home/taxi/app/.env
+        chown taxi:taxi /home/taxi/app/.env
 
-log_step "Generando docker-compose.yml..."
-cat > /home/taxi/app/docker-compose.yml <<EOF
+        log_step "Generando docker-compose.yml..."
+        cat > /home/taxi/app/docker-compose.yml <<EOF
 version: '3.8'
 services:
-  postgres:
-    image: postgres:15
-    environment:
-      POSTGRES_PASSWORD: taxipass
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    restart: always
+    postgres:
+        image: postgres:15
+        environment:
+            POSTGRES_PASSWORD: taxipass
+        ports:
+            - "5432:5432"
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        restart: always
 
-  redis:
-    image: redis:7
-    command: ["redis-server", "--requirepass", "redispass"]
-    ports:
-      - "6379:6379"
-    restart: always
+    redis:
+        image: redis:7
+        command: ["redis-server", "--requirepass", "redispass"]
+        ports:
+            - "6379:6379"
+        restart: always
 
-  api:
-    image: node:18
-    working_dir: /app
-    command: bash -c "npx http-server -p 3000"
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./api:/app
-    restart: always
+    api:
+        image: node:18
+        working_dir: /app
+        command: bash -c "npx http-server -p 3000"
+        ports:
+            - "3000:3000"
+        volumes:
+            - ./api:/app
+        restart: always
 
-  admin:
-    image: nginx:alpine
-    ports:
-      - "8080:80"
-    volumes:
-      - ./admin:/usr/share/nginx/html:ro
-    restart: always
+    admin:
+        image: nginx:alpine
+        ports:
+            - "8080:80"
+        volumes:
+            - ./admin:/usr/share/nginx/html:ro
+        restart: always
 
 volumes:
-  pgdata:
+    pgdata:
 EOF
-chown taxi:taxi /home/taxi/app/docker-compose.yml
+        chown taxi:taxi /home/taxi/app/docker-compose.yml
 
-log_step "Creando API y Admin de ejemplo..."
-mkdir -p /home/taxi/app/api /home/taxi/app/admin
-[ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
-[ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
-chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
+        log_step "Creando API y Admin de ejemplo..."
+        mkdir -p /home/taxi/app/api /home/taxi/app/admin
+        [ -f /home/taxi/app/api/index.html ] || echo '<h1>Taxi API funcionando 🚕</h1>' > /home/taxi/app/api/index.html
+        [ -f /home/taxi/app/admin/index.html ] || echo '<h1>Taxi Admin Panel</h1>' > /home/taxi/app/admin/index.html
+        chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
-log_step "Configurando Nginx como proxy..."
-cat > /etc/nginx/sites-available/taxi <<NGINX
+        log_step "Configurando Nginx como proxy..."
+        cat > /etc/nginx/sites-available/taxi <<NGINX
 server {
-    listen 80;
-    server_name _;
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-    location /admin/ {
-        proxy_pass http://localhost:8080/;
-    }
+        listen 80;
+        server_name _;
+        location / {
+                proxy_pass http://localhost:3000;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+        }
+        location /admin/ {
+                proxy_pass http://localhost:8080/;
+        }
 }
 NGINX
-ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
-rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl reload nginx
-log_ok "Sistema configurado."
+        ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
+        rm -f /etc/nginx/sites-enabled/default
+        nginx -t && systemctl reload nginx
+        log_ok "Sistema configurado."
 
-log_step "Levantando servicios Docker..."
-cd /home/taxi/app
-sudo -u taxi docker-compose --env-file .env up -d
-log_ok "Servicios Docker en ejecución."
+        log_step "Levantando servicios Docker..."
+        cd /home/taxi/app
+        sudo -u taxi docker-compose --env-file .env up -d
+        log_ok "Servicios Docker en ejecución."
 
-IP=$(hostname -I | awk '{print $1}')
-echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
-echo "🌐 API:         http://$IP:3000"
-echo "📊 Admin Panel: http://$IP:8080"
-echo "🐘 PostgreSQL:  $IP:5432"
-echo "🔴 Redis:       $IP:6379"
+        IP=$(hostname -I | awk '{print $1}')
+        echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
+        echo "🌐 API:         http://$IP:3000"
+        echo "📊 Admin Panel: http://$IP:8080"
+        echo "🐘 PostgreSQL:  $IP:5432"
+        echo "🔴 Redis:       $IP:6379"
 }
-# Para ejecutar el instalador rápido, llama a: taxi_quick_installer
+
+# Si el primer argumento es --quick, ejecuta taxi_quick_installer y termina
+if [[ "${1:-}" == "--quick" ]]; then
+        taxi_quick_installer
+        exit 0
+fi
 
 
 
