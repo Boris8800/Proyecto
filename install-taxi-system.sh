@@ -3923,7 +3923,7 @@ print_substep "Creating comprehensive utility scripts..."
 
 # 1. Backup Script
 cat << 'EOF' | run_as_taxi "tee $TAXI_HOME/scripts/backup/backup.sh"
-#!/bin/bash
+    echo -e "${YELLOW}lscpu not available. Please check virtualization support manually.${NC}"
 # ==============================================================================
 # TAXI SYSTEM - COMPLETE BACKUP SCRIPT
 # Version: 2.0
