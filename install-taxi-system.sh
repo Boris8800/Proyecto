@@ -742,8 +742,8 @@ preflight_checks() {
         echo -e "Current timezone: ${GREEN}$(timedatectl | grep 'Time zone')${NC}"
     else
         echo -e "${YELLOW}timedatectl not available. Please check timezone manually.${NC}"
-    fi
     echo -e "${YELLOW}Continuing after reviewing locale and timezone...${NC}"
+    read -r
 
     # Kernel & Virtualization
     echo -e "${CYAN}Checking system kernel version and virtualization support...${NC}"
@@ -756,9 +756,10 @@ preflight_checks() {
             echo -e "${YELLOW}Virtualization support: Not detected. If you plan to use containers or VMs, check BIOS/host settings.${NC}"
         fi
     else
-        #!/bin/bash
+        echo -e "${YELLOW}lscpu not available. Please check virtualization support manually.${NC}"
     fi
-    echo -e "${YELLOW}Continuing after reviewing kernel and virtualization...${NC}"
+    echo -e "${YELLOW}Press ENTER to continue after reviewing kernel and virtualization...${NC}"
+    read -r
 
     # Hardware
     echo -e "${CYAN}Checking system hardware (CPU, RAM, disk)...${NC}"
@@ -788,7 +789,8 @@ preflight_checks() {
     else
         echo -e "${YELLOW}smartctl not available. Please check disk health manually.${NC}"
     fi
-    echo -e "${YELLOW}Continuing after reviewing hardware info...${NC}"
+    echo -e "${YELLOW}Press ENTER to continue after reviewing hardware info...${NC}"
+    read -r
 
     # PCI/USB/Network
     echo -e "${CYAN}Checking PCI/USB devices and network interfaces...${NC}"
@@ -812,7 +814,8 @@ preflight_checks() {
     else
         echo -e "${YELLOW}ip command not available. Please check network interfaces manually.${NC}"
     fi
-    echo -e "${YELLOW}Continuing after reviewing PCI/USB/network info...${NC}"
+    echo -e "${YELLOW}Press ENTER to continue after reviewing PCI/USB/network info...${NC}"
+    read -r
 }
 
         # --- Filesystem Checks ---
