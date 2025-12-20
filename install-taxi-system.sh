@@ -1,10 +1,10 @@
 #!/bin/bash
-set -euo pipefail
 
 # Redirect stdin to terminal for piped execution (curl | bash)
-if [ -z "${BASH_SOURCE[0]}" ] || [ "${BASH_SOURCE[0]}" == "$0" ]; then
-    exec </dev/tty 2>/dev/tty
-fi
+# Must be before set -u to avoid unbound variable error
+exec </dev/tty 2>/dev/tty || true
+
+set -euo pipefail
 
 # ===================== COLORES UNIVERSALES =====================
 export RED='\033[0;31m'
