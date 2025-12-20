@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+
 # ===================== COLORES UNIVERSALES =====================
 export RED='\033[0;31m'
 export GREEN='\033[0;32m'
@@ -7,6 +8,7 @@ export YELLOW='\033[1;33m'
 export BLUE='\033[0;34m'
 export PURPLE='\033[0;35m'
 export CYAN='\033[0;36m'
+export NC='\033[0m'
 
 # Verificación de espacio y permisos antes de continuar
 TMPDIR="/tmp"
@@ -27,16 +29,12 @@ check_space() {
 }
 check_space "$TMPDIR"
 check_space "$SHMDIR"
+
 # Debugging solo si --debug o DEBUG=1
 if [[ "${1:-}" == "--debug" || "${DEBUG:-}" == "1" ]]; then
     set -x
     export DEBUG=1
 fi
-
-# ===================== COLORES UNIVERSALES =====================
-export RED='\033[0;31m'
-export GREEN='\033[0;32m'
-export YELLOW='\033[1;33m'
 
 # ===================== LOGGING ÚNICO =====================
 log_step()    { echo -e "${BLUE}[STEP]${NC} $1"; }
@@ -83,7 +81,7 @@ while true; do
             ;;
         2)
             echo "=== CONFIGURACIONES NGINX ==="
-            sudo chown taxi:taxi /home/taxi/app/docker-compose.yml
+            sudo chown taxi:taxi /home/taxi/app/docker-compose.yml 2>/dev/null || true
             grep -n "listen" /etc/nginx/sites-enabled/* 2>/dev/null || echo "No hay configuraciones"
             read -p "Enter para continuar..."
             ;;
@@ -126,8 +124,13 @@ EOF
             chmod +x nginx-menu.sh
             ./nginx-menu.sh
             set -u
-        # Instala docker-compose manualmente (última versión)
-        echo "version: '3.8'"
+
+    # Detectar IP pública
+    log_step "Detectando IP pública..."
+    IP=$(hostname -I | awk '{print $1}')
+    if [ -z "$IP" ]; then
+        IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n1)
+    fi
     log_ok "IP pública detectada: $IP"
 
     print_banner "Disk Space Check" "Verificando espacio en disco para la instalación."
@@ -152,7 +155,13 @@ EOF
     log_ok "Docker instalado."
 
     log_step "Configurando usuario y directorios..."
-    id taxi &>/dev/null || sudo useradd -m -s /bin/bash taxi
+    if ! id taxi &>/dev/null; then
+        if [ "$EUID" -eq 0 ]; then
+            useradd -m -s /bin/bash taxi
+        else
+            sudo useradd -m -s /bin/bash taxi
+        fi
+    fi
     sudo mkdir -p /home/taxi/app
     sudo chown -R taxi:taxi /home/taxi
     sudo chmod u+rwx /home/taxi /home/taxi/app
@@ -212,20 +221,20 @@ API_PORT=3000" | sudo tee /home/taxi/app/.env > /dev/null
     sudo chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
     log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi << 'NGINX'
-    server {
-        listen 80;
-        server_name _;
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_set_header Host $http_host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-        location /admin/ {
-            proxy_pass http://localhost:8080/;
-        }
+cat > /etc/nginx/sites-available/taxi << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
-    NGINX
+    location /admin/ {
+        proxy_pass http://localhost:8080/;
+    }
+}
+NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
@@ -344,20 +353,20 @@ EOF
     sudo chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
     log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi << 'NGINX'
-    server {
-        listen 80;
-        server_name _;
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-        location /admin/ {
-            proxy_pass http://localhost:8080/;
-        }
+cat > /etc/nginx/sites-available/taxi << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
-    NGINX
+    location /admin/ {
+        proxy_pass http://localhost:8080/;
+    }
+}
+NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
     nginx -t && systemctl reload nginx
@@ -373,6 +382,9 @@ EOF
     log_ok "Servicios Docker en ejecución."
 
     IP=$(hostname -I | awk '{print $1}')
+    if [ -z "$IP" ]; then
+        IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n1)
+    fi
     echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
     echo "🌐 API:         http://$IP:3000"
     echo "📊 Admin Panel: http://$IP:8080"
@@ -5626,20 +5638,20 @@ EOF
         chown -R taxi:taxi /home/taxi/app/api /home/taxi/app/admin
 
         log_step "Configurando Nginx como proxy..."
-        cat > /etc/nginx/sites-available/taxi << 'NGINX'
-    server {
-        listen 80;
-        server_name _;
-        location / {
-            proxy_pass http://localhost:3000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-        }
-        location /admin/ {
-            proxy_pass http://localhost:8080/;
-        }
+cat > /etc/nginx/sites-available/taxi << 'NGINX'
+server {
+    listen 80;
+    server_name _;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
     }
-    NGINX
+    location /admin/ {
+        proxy_pass http://localhost:8080/;
+    }
+}
+NGINX
         ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
         rm -f /etc/nginx/sites-enabled/default
         nginx -t && systemctl reload nginx
@@ -6026,4 +6038,15 @@ main_installer() {
     local taxi_processes
     taxi_processes=$(pgrep -af taxi)
     if [ -n "$taxi_processes" ]; then
-        echo -e "${RED}Se encontraron procesos en
+        echo -e "${RED}Se encontraron procesos en segundo plano relacionados con 'taxi':${NC}"        echo "$taxi_processes"
+        echo -e "${YELLOW}Detén los procesos y vuelve a intentarlo.${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}✅ Todas las comprobaciones pasaron exitosamente.${NC}"
+}
+
+# Main execution
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    main_installer "$@"
+fi

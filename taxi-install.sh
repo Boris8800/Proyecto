@@ -30,6 +30,7 @@ print_banner() {
     echo -e "${CYAN}   $1${NC}"
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
     echo -e "${YELLOW}$2${NC}\n"
+}
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
@@ -261,6 +262,10 @@ log_ok "Sistema configurado."
 	echo "🔴 Redis:       $IP:6379"
 }
 
+# ===================== VALIDATION FUNCTION =====================
+validate_installation() {
+    local html_report="${1:-/tmp/taxi-validation.html}"
+    
     # 3. SSL certificate and nginx config
     if [ -f /etc/nginx/nginx.conf ]; then
         if nginx -t 2>&1 | grep -q 'successful'; then
@@ -5580,10 +5585,6 @@ fi
 if [[ "$0" == "$BASH_SOURCE" ]]; then
     main_installer "$@"
 fi
-
-
-
-
 
 
 
