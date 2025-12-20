@@ -99,6 +99,49 @@ check_docker_permissions() {
     fi
 }
 
+# ===================== SYSTEM CLEANUP FUNCTION =====================
+cleanup_system() {
+    echo ""
+    log_step "Starting system cleanup and preparation..."
+    echo ""
+    
+    # Stop all running containers
+    log_step "Stopping Docker containers..."
+    if command -v docker &> /dev/null; then
+        docker-compose -f /home/taxi/docker-compose.yml down 2>/dev/null || true
+        docker stop $(docker ps -q) 2>/dev/null || true
+        docker rm $(docker ps -a -q) 2>/dev/null || true
+        docker rmi $(docker images -q) 2>/dev/null || true
+        docker system prune -a -f 2>/dev/null || true
+        log_ok "Docker cleaned"
+    fi
+    
+    # Stop services
+    log_step "Stopping system services..."
+    systemctl stop nginx 2>/dev/null || true
+    systemctl stop docker 2>/dev/null || true
+    systemctl stop postgresql 2>/dev/null || true
+    systemctl stop redis-server 2>/dev/null || true
+    log_ok "Services stopped"
+    
+    # Remove old installation
+    log_step "Removing old installation files..."
+    rm -rf /home/taxi 2>/dev/null || true
+    rm -rf /var/lib/docker 2>/dev/null || true
+    rm -rf /etc/docker 2>/dev/null || true
+    rm -rf /etc/nginx/sites-available/taxi 2>/dev/null || true
+    rm -rf /etc/nginx/sites-enabled/taxi 2>/dev/null || true
+    log_ok "Old files removed"
+    
+    # Remove taxi user
+    log_step "Removing taxi user..."
+    userdel -r taxi 2>/dev/null || true
+    log_ok "Taxi user removed"
+    
+    echo ""
+    log_ok "System cleanup completed!"
+}
+
 # ===================== ARRAY WARNINGS GLOBAL =====================
 declare -ag WARNINGS=()
 
@@ -215,6 +258,12 @@ EOF
             chmod +x nginx-menu.sh
             ./nginx-menu.sh
             set -u
+
+    # ===================== SYSTEM CLEANUP =====================
+    read -p "Do you want to clean up previous Taxi installation before starting? (y/n): " cleanup_choice
+    if [[ "$cleanup_choice" =~ ^[Yy]$ ]]; then
+        cleanup_system
+    fi
 
     # Detectar IP pública
     log_step "Detectando IP pública..."
