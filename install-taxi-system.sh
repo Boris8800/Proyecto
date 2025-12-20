@@ -320,7 +320,270 @@ check_ports() {
     fi
 }
 
-# ===================== INSTALLATION HELPERS =====================
+# ===================== DASHBOARD CREATION FUNCTIONS =====================
+create_admin_dashboard() {
+    local dashboard_dir="${1:-/home/taxi/app/admin}"
+    local port="${2:-3001}"
+    
+    log_step "Creating Admin Dashboard..."
+    mkdir -p "$dashboard_dir"
+    
+    cat > "$dashboard_dir/index.html" << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxi System - Admin Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card h2 { color: #667eea; margin-bottom: 10px; }
+        .card .value { font-size: 2em; font-weight: bold; color: #333; }
+        .card .label { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .status-online { color: #10b981; }
+        .status-offline { color: #ef4444; }
+        .btn { display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
+        .btn:hover { background: #764ba2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚕 Taxi System Admin Dashboard</h1>
+            <p>Welcome to the Taxi Management System</p>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>👥 Total Drivers</h2>
+                <div class="value">0</div>
+                <div class="label">Active Drivers</div>
+                <a href="/api/drivers" class="btn">View Drivers</a>
+            </div>
+            
+            <div class="card">
+                <h2>👤 Total Users</h2>
+                <div class="value">0</div>
+                <div class="label">Registered Users</div>
+                <a href="/api/users" class="btn">View Users</a>
+            </div>
+            
+            <div class="card">
+                <h2>🚗 Total Rides</h2>
+                <div class="value">0</div>
+                <div class="label">Completed Rides</div>
+                <a href="/api/rides" class="btn">View Rides</a>
+            </div>
+            
+            <div class="card">
+                <h2>💰 Revenue</h2>
+                <div class="value">$0</div>
+                <div class="label">Total Revenue</div>
+                <a href="/api/revenue" class="btn">View Reports</a>
+            </div>
+            
+            <div class="card">
+                <h2>🐳 Docker Status</h2>
+                <div class="value status-online">● Running</div>
+                <div class="label">All Services Online</div>
+            </div>
+            
+            <div class="card">
+                <h2>🔧 System Settings</h2>
+                <div class="label">Configure your Taxi System</div>
+                <a href="/settings" class="btn">Go to Settings</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+    
+    chown -R taxi:taxi "$dashboard_dir"
+    log_ok "Admin Dashboard created at $dashboard_dir"
+}
+
+create_driver_dashboard() {
+    local dashboard_dir="${1:-/home/taxi/app/driver}"
+    local port="${2:-3002}"
+    
+    log_step "Creating Driver Portal..."
+    mkdir -p "$dashboard_dir"
+    
+    cat > "$dashboard_dir/index.html" << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Portal - Taxi System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card h2 { color: #f5576c; margin-bottom: 10px; }
+        .card .value { font-size: 2em; font-weight: bold; color: #333; }
+        .card .label { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #f5576c; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
+        .btn:hover { background: #f093fb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚗 Driver Portal</h1>
+            <p>Manage Your Rides & Earnings</p>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>📊 Today's Earnings</h2>
+                <div class="value">$0</div>
+                <div class="label">Total Earnings</div>
+            </div>
+            
+            <div class="card">
+                <h2>🚖 Active Rides</h2>
+                <div class="value">0</div>
+                <div class="label">Current Trips</div>
+            </div>
+            
+            <div class="card">
+                <h2>⭐ Rating</h2>
+                <div class="value">5.0</div>
+                <div class="label">Driver Rating</div>
+            </div>
+            
+            <div class="card">
+                <h2>📍 Status</h2>
+                <div class="value">Online</div>
+                <div class="label">Toggle Availability</div>
+                <button class="btn">Toggle Status</button>
+            </div>
+            
+            <div class="card">
+                <h2>💳 Payment Method</h2>
+                <div class="label">Manage Payment Info</div>
+                <a href="/payment" class="btn">Update Payment</a>
+            </div>
+            
+            <div class="card">
+                <h2>📱 Documents</h2>
+                <div class="label">Upload Required Documents</div>
+                <a href="/documents" class="btn">View Documents</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+    
+    chown -R taxi:taxi "$dashboard_dir"
+    log_ok "Driver Portal created at $dashboard_dir"
+}
+
+create_customer_dashboard() {
+    local dashboard_dir="${1:-/home/taxi/app/customer}"
+    local port="${2:-3003}"
+    
+    log_step "Creating Customer App..."
+    mkdir -p "$dashboard_dir"
+    
+    cat > "$dashboard_dir/index.html" << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxi App - Book Your Ride</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { color: white; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card h2 { color: #00f2fe; margin-bottom: 10px; }
+        .card .value { font-size: 2em; font-weight: bold; color: #333; }
+        .card .label { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .btn { display: inline-block; padding: 10px 20px; background: #4facfe; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
+        .btn:hover { background: #00f2fe; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚕 Book Your Ride</h1>
+            <p>Quick, Safe, and Reliable Transportation</p>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h2>🎯 Book a Ride</h2>
+                <div class="label">Get a ride in minutes</div>
+                <a href="/book" class="btn">Book Now</a>
+            </div>
+            
+            <div class="card">
+                <h2>🛣️ My Rides</h2>
+                <div class="value">0</div>
+                <div class="label">Total Trips</div>
+                <a href="/rides" class="btn">View History</a>
+            </div>
+            
+            <div class="card">
+                <h2>💰 Payment</h2>
+                <div class="label">Manage Payment Methods</div>
+                <a href="/payment" class="btn">Update Payment</a>
+            </div>
+            
+            <div class="card">
+                <h2>⭐ Reviews</h2>
+                <div class="value">0</div>
+                <div class="label">Your Reviews</div>
+                <a href="/reviews" class="btn">View Reviews</a>
+            </div>
+            
+            <div class="card">
+                <h2>👤 Profile</h2>
+                <div class="label">Update Your Profile</div>
+                <a href="/profile" class="btn">Edit Profile</a>
+            </div>
+            
+            <div class="card">
+                <h2>📞 Support</h2>
+                <div class="label">Need Help?</div>
+                <a href="/support" class="btn">Contact Support</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+EOF
+    
+    chown -R taxi:taxi "$dashboard_dir"
+    log_ok "Customer App created at $dashboard_dir"
+}
+
+create_all_dashboards() {
+    log_step "Creating all web dashboards..."
+    create_admin_dashboard /home/taxi/app/admin 3001
+    create_driver_dashboard /home/taxi/app/driver 3002
+    create_customer_dashboard /home/taxi/app/customer 3003
+    log_ok "All dashboards created successfully"
+}
+
 install_package() {
     local package=$1
     local display_name=${2:-$package}
@@ -374,6 +637,52 @@ run_docker_compose() {
 
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
+    # ===================== PRE-INSTALLATION CLEANUP =====================
+    echo ""
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}TAXI SYSTEM - INSTALLATION WIZARD${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    # Check if previous installation exists
+    if [ -d "/home/taxi" ] || command -v docker &> /dev/null; then
+        log_warn "Existing Taxi installation detected!"
+        echo ""
+        echo "Options:"
+        echo "  1) Clean and reinstall (recommended)"
+        echo "  2) Continue with existing installation"
+        echo "  3) Exit"
+        echo ""
+        read -p "Choose option (1/2/3): " cleanup_option
+        
+        case "$cleanup_option" in
+            1)
+                log_step "Starting system cleanup..."
+                cleanup_system
+                log_ok "System cleaned successfully"
+                ;;
+            2)
+                log_warn "Skipping cleanup. Some services may conflict."
+                ;;
+            3)
+                log_error "Installation cancelled"
+                exit 0
+                ;;
+            *)
+                log_error "Invalid option. Exiting."
+                exit 1
+                ;;
+        esac
+    fi
+    
+    # Pre-installation checks
+    log_step "Running pre-installation checks..."
+    check_root
+    check_ubuntu
+    check_internet
+    check_ports
+    log_ok "All pre-installation checks passed"
+    
             # Menú interactivo para gestión de NGINX antes de continuar
 
             cat > nginx-menu.sh << 'EOF'
@@ -492,6 +801,11 @@ EOF
     sudo chmod u+rwx /home/taxi /home/taxi/app
     sudo chmod o+rx /home/taxi/app
     sudo chown -R taxi:taxi /home/taxi
+
+    # ===================== CREATE WEB DASHBOARDS =====================
+    log_step "Creating web dashboards..."
+    create_all_dashboards
+    log_ok "Web dashboards created"
 
     log_step "Generando archivo .env..."
     sudo mkdir -p /home/taxi/app
