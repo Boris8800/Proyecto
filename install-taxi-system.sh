@@ -902,6 +902,177 @@ run_docker_compose() {
     fi
 }
 
+# ===================== INTERACTIVE MAIN MENU =====================
+show_main_menu() {
+    echo ""
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}         🚕 TAXI SYSTEM - INSTALLATION & MANAGEMENT ${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    # Check system state
+    local has_installation=false
+    local docker_running=false
+    
+    if [ -d "/home/taxi/app" ]; then
+        has_installation=true
+    fi
+    
+    if systemctl is-active --quiet docker; then
+        docker_running=true
+    fi
+    
+    # Display status
+    echo -e "${CYAN}Current Status:${NC}"
+    if [ "$has_installation" = true ]; then
+        echo "  ✅ Taxi System is installed at /home/taxi/app"
+    else
+        echo "  ⚠️  Taxi System not yet installed"
+    fi
+    
+    if [ "$docker_running" = true ]; then
+        echo "  ✅ Docker service is running"
+    else
+        echo "  ⚠️  Docker service is not running"
+    fi
+    echo ""
+    
+    # Main menu
+    echo -e "${CYAN}What would you like to do?${NC}"
+    echo ""
+    echo "  ${GREEN}1)${NC} Fresh Installation (full setup)"
+    echo "  ${GREEN}2)${NC} System Status & Troubleshooting (check what's installed)"
+    echo "  ${GREEN}3)${NC} Start Docker Services (if already installed)"
+    echo "  ${GREEN}4)${NC} Stop Docker Services"
+    echo "  ${GREEN}5)${NC} Clean & Remove Installation"
+    echo "  ${GREEN}6)${NC} View Installation Help"
+    echo "  ${GREEN}7)${NC} Exit"
+    echo ""
+    
+    read -p "Choose an option (1-7): " menu_choice
+    
+    case "$menu_choice" in
+        1)
+            log_info "Starting fresh installation..."
+            main_installer
+            ;;
+        2)
+            log_info "Running system status check..."
+            system_status
+            echo ""
+            read -p "Press Enter to return to menu..."
+            show_main_menu
+            ;;
+        3)
+            if [ "$has_installation" = true ]; then
+                log_step "Starting Docker services..."
+                cd /home/taxi/app && docker-compose up -d
+                log_ok "Services started!"
+                docker ps
+            else
+                log_error "Taxi System is not installed yet. Please run option 1 first."
+                sleep 2
+                show_main_menu
+            fi
+            ;;
+        4)
+            if [ "$has_installation" = true ]; then
+                log_step "Stopping Docker services..."
+                cd /home/taxi/app && docker-compose down
+                log_ok "Services stopped!"
+            else
+                log_error "Taxi System is not installed. Nothing to stop."
+                sleep 2
+                show_main_menu
+            fi
+            ;;
+        5)
+            log_warn "This will remove all Taxi System files and containers!"
+            read -p "Are you sure? Type 'yes' to confirm: " confirm
+            if [ "$confirm" = "yes" ]; then
+                cleanup_system
+                show_main_menu
+            else
+                log_info "Cleanup cancelled"
+                sleep 1
+                show_main_menu
+            fi
+            ;;
+        6)
+            show_help_menu
+            show_main_menu
+            ;;
+        7)
+            log_info "Exiting..."
+            exit 0
+            ;;
+        *)
+            log_error "Invalid option. Please choose 1-7"
+            sleep 1
+            show_main_menu
+            ;;
+    esac
+}
+
+show_help_menu() {
+    echo ""
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}        INSTALLATION HELP & QUICK REFERENCE${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    echo -e "${CYAN}📌 Installation Steps:${NC}"
+    echo "  1. Choose 'Fresh Installation' from main menu"
+    echo "  2. Decide whether to clean previous installation"
+    echo "  3. System will validate prerequisites"
+    echo "  4. Docker and services will be installed"
+    echo "  5. Web dashboards will be created"
+    echo "  6. Installation will complete automatically"
+    echo ""
+    
+    echo -e "${CYAN}🚀 First Time Setup:${NC}"
+    echo "  1. Run: sudo bash install-taxi-system.sh"
+    echo "  2. Select option 1 (Fresh Installation)"
+    echo "  3. Wait for installation to complete"
+    echo "  4. Dashboards will be available at:"
+    echo "     - Admin: http://YOUR_IP:3001"
+    echo "     - Driver: http://YOUR_IP:3002"
+    echo "     - Customer: http://YOUR_IP:3003"
+    echo ""
+    
+    echo -e "${CYAN}🔧 After Installation:${NC}"
+    echo "  - Start services: sudo bash install-taxi-system.sh"
+    echo "    Then choose option 3 (Start Services)"
+    echo "  - Check status: sudo bash install-taxi-system.sh --status"
+    echo "  - Stop services: sudo bash install-taxi-system.sh"
+    echo "    Then choose option 4 (Stop Services)"
+    echo ""
+    
+    echo -e "${CYAN}❌ Troubleshooting:${NC}"
+    echo "  - Can't access dashboards?"
+    echo "    → Run option 2 (Status Check) to diagnose"
+    echo "  - Ports in use?"
+    echo "    → Script will ask to kill conflicting processes"
+    echo "  - Docker won't start?"
+    echo "    → Check with: systemctl status docker"
+    echo ""
+    
+    echo -e "${CYAN}📊 Access Your Dashboard:${NC}"
+    local ip=$(hostname -I | awk '{print $1}')
+    echo "  Admin Dashboard:   http://$ip:3001"
+    echo "  Driver Portal:     http://$ip:3002"
+    echo "  Customer App:      http://$ip:3003"
+    echo "  API:               http://$ip:3000"
+    echo ""
+    
+    echo -e "${CYAN}🛠️ Useful Commands:${NC}"
+    echo "  Check status: sudo bash install-taxi-system.sh --status"
+    echo "  View logs: docker-compose -f /home/taxi/app/docker-compose.yml logs"
+    echo "  Restart all: cd /home/taxi/app && docker-compose restart"
+    echo "  View containers: docker ps"
+    echo ""
+}
+
 # ===================== MAIN INSTALLER LOGIC =====================
 main_installer() {
     # ===================== PRE-INSTALLATION CLEANUP =====================
@@ -6963,26 +7134,33 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
             cleanup_system
             exit 0
             ;;
+        --menu)
+            show_main_menu
+            exit 0
+            ;;
         --help|-h)
             echo -e "${CYAN}Taxi System Installation Script${NC}"
             echo ""
             echo "Usage: sudo bash $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  (no args)           Run full installation"
+            echo "  (no args)           Show interactive menu"
+            echo "  --menu              Show interactive menu"
             echo "  --status|--check    Show system status and troubleshooting tips"
             echo "  --cleanup           Clean previous installation"
             echo "  --help              Show this help message"
             echo ""
             echo "Examples:"
-            echo "  sudo bash $0                    # Start installation"
+            echo "  sudo bash $0                    # Show menu"
+            echo "  sudo bash $0 --menu             # Show menu"
             echo "  sudo bash $0 --status          # Check what's installed"
             echo "  sudo bash $0 --cleanup         # Remove old installation"
             echo ""
             exit 0
             ;;
         *)
-            main_installer "$@"
+            # Show menu by default if no arguments
+            show_main_menu
             ;;
     esac
 fi
