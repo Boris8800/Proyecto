@@ -293,6 +293,61 @@ check_internet() {
     log_ok "Internet connection verified"
 }
 
+# ===================== PORT MANAGEMENT FUNCTIONS =====================
+kill_port() {
+    local port=$1
+    local force=${2:-false}
+    
+    if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+        log_step "Killing process on port $port..."
+        
+        # Get PIDs using the port
+        local pids=$(lsof -t -i :$port 2>/dev/null)
+        
+        if [ -z "$pids" ]; then
+            log_warn "No process found on port $port, but port appears in use"
+            return 1
+        fi
+        
+        # Kill the processes
+        for pid in $pids; do
+            if [[ "$force" == "true" ]]; then
+                kill -9 $pid 2>/dev/null && log_ok "Killed process $pid on port $port" || log_warn "Failed to kill $pid"
+            else
+                kill $pid 2>/dev/null && log_ok "Killed process $pid on port $port" || log_warn "Failed to kill $pid"
+            fi
+        done
+        
+        # Verify port is free
+        sleep 1
+        if ! netstat -tuln 2>/dev/null | grep -q ":$port "; then
+            log_ok "Port $port is now free"
+            return 0
+        else
+            log_warn "Port $port still in use, trying force kill..."
+            for pid in $pids; do
+                kill -9 $pid 2>/dev/null || true
+            done
+            sleep 1
+            return 0
+        fi
+    else
+        log_info "Port $port is already available"
+        return 0
+    fi
+}
+
+kill_all_ports() {
+    local ports=(80 443 3000 3001 3002 3003 5432 27017 6379 9000 19999)
+    log_step "Killing all processes on required ports..."
+    
+    for port in "${ports[@]}"; do
+        kill_port "$port" "false" || true
+    done
+    
+    log_ok "All ports freed"
+}
+
 check_ports() {
     local ports=(80 443 3000 3001 3002 3003 5432 27017 6379 9000 19999)
     local in_use=()
@@ -306,15 +361,38 @@ check_ports() {
     
     if [ ${#in_use[@]} -gt 0 ]; then
         log_warn "Ports in use: ${in_use[*]}"
-        echo "These ports may be used by existing services:"
+        echo ""
+        echo -e "${YELLOW}These ports are currently in use:${NC}"
         for port in "${in_use[@]}"; do
-            lsof -i :$port 2>/dev/null || true
+            echo -e "${YELLOW}Port $port:${NC}"
+            lsof -i :$port 2>/dev/null | awk 'NR>1 {print "  - PID: " $2 ", Process: " $1}' || true
         done
-        read -p "Continue anyway? (y/n): " port_choice
-        if [[ ! "$port_choice" =~ ^[Yy]$ ]]; then
-            log_error "Installation cancelled"
-            exit 1
-        fi
+        echo ""
+        echo "Options:"
+        echo "  1) Kill processes and free ports (RECOMMENDED)"
+        echo "  2) Continue anyway (may cause conflicts)"
+        echo "  3) Exit installation"
+        echo ""
+        read -p "Choose option (1/2/3): " port_choice
+        
+        case "$port_choice" in
+            1)
+                log_step "Freeing up ports..."
+                kill_all_ports
+                log_ok "Ports have been freed"
+                ;;
+            2)
+                log_warn "Continuing with ports in use. Installation may fail."
+                ;;
+            3)
+                log_error "Installation cancelled"
+                exit 1
+                ;;
+            *)
+                log_error "Invalid option. Exiting."
+                exit 1
+                ;;
+        esac
     else
         log_ok "All required ports are available"
     fi
