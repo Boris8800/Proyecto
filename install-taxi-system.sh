@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Redirect stdin to terminal for piped execution (curl | bash)
-# Must be before set -u to avoid unbound variable error
-exec </dev/tty 2>/dev/tty || true
-
 set -euo pipefail
 
 # ===================== COLORES UNIVERSALES =====================
@@ -127,7 +123,7 @@ check_docker_permissions() {
         echo "  2) Skip: Continue without fixing (may fail later)"
         echo "  3) Exit: Stop installation"
         echo ""
-        read -p "Choose option (1/2/3): " docker_option </dev/tty
+        read -p "Choose option (1/2/3): " docker_option
         
         case "$docker_option" in
             1)
@@ -143,7 +139,7 @@ check_docker_permissions() {
                     return 0
                 else
                     log_warn "Docker still not accessible. You may need to log out and back in."
-                    read -p "Continue anyway? (y/n): " continue_opt </dev/tty
+                    read -p "Continue anyway? (y/n): " continue_opt
                     if [[ "$continue_opt" =~ ^[Yy]$ ]]; then
                         return 0
                     else
@@ -687,7 +683,7 @@ check_ports() {
         echo "  2) Continue anyway (may cause conflicts)"
         echo "  3) Exit installation"
         echo ""
-        read -p "Choose option (1/2/3): " port_choice </dev/tty
+        read -p "Choose option (1/2/3): " port_choice
         
         # Trim whitespace
         port_choice=$(echo "$port_choice" | xargs)
@@ -1077,7 +1073,7 @@ show_main_menu() {
     echo "  ${GREEN}7)${NC} Exit"
     echo ""
     
-    read -p "Choose an option (1-7): " menu_choice </dev/tty
+    read -p "Choose an option (1-7): " menu_choice
     
     # Trim whitespace
     menu_choice=$(echo "$menu_choice" | xargs)
@@ -1091,7 +1087,7 @@ show_main_menu() {
             log_info "Running system status check..."
             system_status
             echo ""
-            read -p "Press Enter to return to menu..." </dev/tty
+            read -p "Press Enter to return to menu..."
             show_main_menu
             ;;
         "3"|"3)")
@@ -1119,7 +1115,7 @@ show_main_menu() {
             ;;
         "5"|"5)")
             log_warn "This will remove all Taxi System files and containers!"
-            read -p "Are you sure? Type 'yes' to confirm: " confirm </dev/tty
+            read -p "Are you sure? Type 'yes' to confirm: " confirm
             if [ "$confirm" = "yes" ]; then
                 cleanup_system
                 show_main_menu
@@ -1222,7 +1218,7 @@ main_installer() {
         echo "  2) Continue with existing installation"
         echo "  3) Exit"
         echo ""
-        read -p "Choose option (1/2/3): " cleanup_option </dev/tty
+        read -p "Choose option (1/2/3): " cleanup_option
         
         # Trim whitespace and normalize input
         cleanup_option=$(echo "$cleanup_option" | xargs)
@@ -1271,19 +1267,19 @@ while true; do
     echo "6. Continuar instalación taxi."
     echo "7. Salir"
     echo ""
-    read -p "Opción [1-7]: " opc </dev/tty
+    read -p "Opción [1-7]: " opc
     case $opc in
         1)
             echo "=== PUERTOS EN USO ==="
             ss -tulpn | grep ":80\|:443"
             lsof -i :80
-            read -p "Enter para continuar..." </dev/tty
+            read -p "Enter para continuar..."
             ;;
         2)
             echo "=== CONFIGURACIONES NGINX ==="
             sudo chown taxi:taxi /home/taxi/app/docker-compose.yml 2>/dev/null || true
             grep -n "listen" /etc/nginx/sites-enabled/* 2>/dev/null || echo "No hay configuraciones"
-            read -p "Enter para continuar..." </dev/tty
+            read -p "Enter para continuar..."
             ;;
         3)
             echo "Cambiando puerto 80 a 8080..."
@@ -1327,7 +1323,7 @@ EOF
             set -u
 
     # ===================== SYSTEM CLEANUP =====================
-    read -p "Do you want to clean up previous Taxi installation before starting? (y/n): " cleanup_choice </dev/tty
+    read -p "Do you want to clean up previous Taxi installation before starting? (y/n): " cleanup_choice
     if [[ "$cleanup_choice" =~ ^[Yy]$ ]]; then
         cleanup_system
     fi
@@ -1825,7 +1821,7 @@ main_installer() {
             echo -e "${BLUE}  [2]${NC} ${YELLOW}Refresh port list${NC}"
             echo -e "${BLUE}  [3]${NC} ${CYAN}Continue with installation${NC}"
             echo -e "${PURPLE}───────────────────────────────────────────────${NC}"
-            read -p "${CYAN}Select an option [1-3]: ${NC}" port_choice </dev/tty
+            read -p "${CYAN}Select an option [1-3]: ${NC}" port_choice
             case $port_choice in
                 1)
                     kill_ports
