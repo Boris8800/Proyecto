@@ -684,21 +684,24 @@ check_ports() {
         echo ""
         read -p "Choose option (1/2/3): " port_choice
         
+        # Trim whitespace
+        port_choice=$(echo "$port_choice" | xargs)
+        
         case "$port_choice" in
-            1)
+            "1"|"1)")
                 log_step "Freeing up ports..."
                 kill_all_ports
                 log_ok "Ports have been freed"
                 ;;
-            2)
+            "2"|"2)")
                 log_warn "Continuing with ports in use. Installation may fail."
                 ;;
-            3)
+            "3"|"3)")
                 log_error "Installation cancelled"
                 exit 1
                 ;;
             *)
-                log_error "Invalid option. Exiting."
+                log_error "Invalid option: '$port_choice'. Please choose 1, 2, or 3. Exiting."
                 exit 1
                 ;;
         esac
@@ -1071,19 +1074,22 @@ show_main_menu() {
     
     read -p "Choose an option (1-7): " menu_choice
     
+    # Trim whitespace
+    menu_choice=$(echo "$menu_choice" | xargs)
+    
     case "$menu_choice" in
-        1)
+        "1"|"1)")
             log_info "Starting fresh installation..."
             main_installer
             ;;
-        2)
+        "2"|"2)")
             log_info "Running system status check..."
             system_status
             echo ""
             read -p "Press Enter to return to menu..."
             show_main_menu
             ;;
-        3)
+        "3"|"3)")
             if [ "$has_installation" = true ]; then
                 log_step "Starting Docker services..."
                 cd /home/taxi/app && docker-compose up -d
@@ -1095,7 +1101,7 @@ show_main_menu() {
                 show_main_menu
             fi
             ;;
-        4)
+        "4"|"4)")
             if [ "$has_installation" = true ]; then
                 log_step "Stopping Docker services..."
                 cd /home/taxi/app && docker-compose down
@@ -1106,7 +1112,7 @@ show_main_menu() {
                 show_main_menu
             fi
             ;;
-        5)
+        "5"|"5)")
             log_warn "This will remove all Taxi System files and containers!"
             read -p "Are you sure? Type 'yes' to confirm: " confirm
             if [ "$confirm" = "yes" ]; then
@@ -1118,11 +1124,11 @@ show_main_menu() {
                 show_main_menu
             fi
             ;;
-        6)
+        "6"|"6)")
             show_help_menu
             show_main_menu
             ;;
-        7)
+        "7"|"7)")
             log_info "Exiting..."
             exit 0
             ;;
@@ -1213,21 +1219,24 @@ main_installer() {
         echo ""
         read -p "Choose option (1/2/3): " cleanup_option
         
+        # Trim whitespace and normalize input
+        cleanup_option=$(echo "$cleanup_option" | xargs)
+        
         case "$cleanup_option" in
-            1)
+            "1"|"1)")
                 log_step "Starting system cleanup..."
                 cleanup_system
                 log_ok "System cleaned successfully"
                 ;;
-            2)
+            "2"|"2)")
                 log_warn "Skipping cleanup. Some services may conflict."
                 ;;
-            3)
+            "3"|"3)")
                 log_error "Installation cancelled"
                 exit 0
                 ;;
             *)
-                log_error "Invalid option. Exiting."
+                log_error "Invalid option: '$cleanup_option'. Please choose 1, 2, or 3."
                 exit 1
                 ;;
         esac
