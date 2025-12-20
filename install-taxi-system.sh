@@ -1243,7 +1243,7 @@ main_installer() {
     
             # Menú interactivo para gestión de NGINX antes de continuar
 
-            cat > nginx-menu.sh << 'EOF'
+            cat > /tmp/nginx-menu.sh << 'EOF'
 set +u
 opc=""
 while true; do
@@ -1307,8 +1307,9 @@ while true; do
     esac
 done
 EOF
-            chmod +x nginx-menu.sh
-            ./nginx-menu.sh
+            chmod +x /tmp/nginx-menu.sh
+            bash /tmp/nginx-menu.sh
+            rm -f /tmp/nginx-menu.sh
             set -u
 
     # ===================== SYSTEM CLEANUP =====================
