@@ -42,6 +42,58 @@ log_error()   { echo -e "${RED}[ERROR]${NC} $1" | tee -a "$ERROR_LOG"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC} $1" | tee -a "$LOG_FILE"; }
 log_info()    { echo -e "${CYAN}[INFO]${NC} $1" | tee -a "$LOG_FILE"; }
 
+# ===================== ANIMATION FUNCTIONS =====================
+spinner() {
+    local pid=$1
+    local message=$2
+    local delay=0.1
+    local spinstr='|/-\'
+    
+    echo -ne "${BLUE}${message}${NC} "
+    
+    while kill -0 $pid 2>/dev/null; do
+        for i in $(seq 0 3); do
+            echo -ne "\b${spinstr:$i:1}"
+            sleep $delay
+        done
+    done
+    
+    wait $pid
+    local status=$?
+    
+    if [ $status -eq 0 ]; then
+        echo -ne "\b${GREEN}✓${NC}\n"
+    else
+        echo -ne "\b${RED}✗${NC}\n"
+    fi
+    
+    return $status
+}
+
+# Function to run command with animated progress
+run_with_spinner() {
+    local message=$1
+    shift
+    
+    ("$@" >/dev/null 2>&1) &
+    spinner $! "$message"
+}
+
+# Progress bar function
+show_progress() {
+    local current=$1
+    local total=$2
+    local message=$3
+    local width=40
+    local percentage=$((current * 100 / total))
+    local filled=$((width * current / total))
+    
+    printf "\r${CYAN}[${NC}"
+    printf "%${filled}s" | tr ' ' '='
+    printf "%$((width-filled))s" | tr ' ' '-'
+    printf "${CYAN}]${NC} ${percentage}%% - ${message}"
+}
+
 # ===================== ERROR HANDLING =====================
 trap 'log_error "Script failed at line $LINENO"; exit 1' ERR
 
@@ -166,19 +218,15 @@ install_prerequisites() {
     log_step "PHASE 1: Installing system prerequisites..."
     echo ""
     
-    log_step "Updating system packages..."
-    apt-get update -qq
-    apt-get upgrade -y > /dev/null 2>&1
-    log_ok "System updated"
+    run_with_spinner "Updating system packages" apt-get update -qq
+    run_with_spinner "Upgrading system packages" apt-get upgrade -y
     
-    log_step "Installing dependencies..."
-    apt-get install -y \
+    run_with_spinner "Installing dependencies" apt-get install -y \
         curl wget git vim build-essential \
         apt-transport-https ca-certificates gnupg lsb-release \
         net-tools htop iotop iftop \
         ufw fail2ban rkhunter clamav \
-        unattended-upgrades > /dev/null 2>&1
-    log_ok "Dependencies installed"
+        unattended-upgrades
 }
 
 # ===================== INSTALLATION PHASE 2: DOCKER =====================
@@ -190,22 +238,18 @@ install_docker() {
     if command -v docker &> /dev/null; then
         log_info "Docker already installed"
     else
-        log_step "Installing Docker from official repository..."
-        curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
-        bash /tmp/get-docker.sh > /dev/null 2>&1
+        run_with_spinner "Downloading Docker installer" curl -fsSL https://get.docker.com -o /tmp/get-docker.sh
+        run_with_spinner "Installing Docker CE" bash /tmp/get-docker.sh
         rm /tmp/get-docker.sh
-        log_ok "Docker installed"
     fi
     
-    systemctl enable --now docker
+    run_with_spinner "Enabling Docker service" systemctl enable --now docker
     
     if command -v docker-compose &> /dev/null; then
         log_info "Docker Compose already installed"
     else
-        log_step "Installing Docker Compose..."
-        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        run_with_spinner "Installing Docker Compose" curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         chmod +x /usr/local/bin/docker-compose
-        log_ok "Docker Compose installed"
     fi
     
     # Verify Docker
@@ -220,9 +264,8 @@ install_nginx() {
     log_step "PHASE 3: Installing Nginx..."
     echo ""
     
-    apt-get install -y nginx > /dev/null 2>&1
-    systemctl enable --now nginx
-    log_ok "Nginx installed"
+    run_with_spinner "Installing Nginx web server" apt-get install -y nginx
+    run_with_spinner "Enabling Nginx service" systemctl enable --now nginx
 }
 
 # ===================== INSTALLATION PHASE 4: USER SETUP =====================
@@ -232,25 +275,16 @@ setup_taxi_user() {
     echo ""
     
     if ! id "$TAXI_USER" &>/dev/null; then
-        log_step "Creating taxi user..."
-        useradd -m -s /bin/bash -d "$TAXI_HOME" "$TAXI_USER"
-        log_ok "Taxi user created"
+        run_with_spinner "Creating taxi user account" useradd -m -s /bin/bash -d "$TAXI_HOME" "$TAXI_USER"
     else
         log_info "Taxi user already exists"
     fi
     
-    log_step "Creating application directories..."
-    mkdir -p "$APP_DIR"/{api,admin,driver}
-    mkdir -p "$APP_DIR"/volumes/pgdata
-    mkdir -p "$APP_DIR"/volumes/mongodata
-    mkdir -p "$APP_DIR"/volumes/redisdata
-    mkdir -p "$APP_DIR"/config/nginx
-    mkdir -p "$TAXI_HOME"/{logs,backups,scripts}
+    run_with_spinner "Creating application directories" mkdir -p "$APP_DIR"/{api,admin,driver} "$APP_DIR"/volumes/{pgdata,mongodata,redisdata} "$APP_DIR"/config/nginx "$TAXI_HOME"/{logs,backups,scripts}
     
-    chown -R "$TAXI_USER":"$TAXI_USER" "$TAXI_HOME"
+    run_with_spinner "Setting permissions" chown -R "$TAXI_USER":"$TAXI_USER" "$TAXI_HOME"
     chmod 755 "$TAXI_HOME"
     chmod 755 "$APP_DIR"
-    log_ok "Directories created and configured"
 }
 
 # ===================== INSTALLATION PHASE 5: DOCKER COMPOSE SETUP =====================
@@ -503,8 +537,7 @@ networks:
     driver: bridge
 COMPOSE_EOF
 
-    chown "$TAXI_USER":"$TAXI_USER" "$APP_DIR/docker-compose.yml"
-    log_ok "docker-compose.yml created"
+    run_with_spinner "Configuring Docker Compose permissions" chown "$TAXI_USER":"$TAXI_USER" "$APP_DIR/docker-compose.yml"
 }
 
 # ===================== INSTALLATION PHASE 6: CREATE WEB PANELS =====================
