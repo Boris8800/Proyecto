@@ -209,6 +209,195 @@ cleanup_system() {
     log_ok "System cleanup completed!"
 }
 
+# ===================== TROUBLESHOOTING FUNCTIONS =====================
+check_dashboards() {
+    echo ""
+    echo -e "${CYAN}Checking dashboards...${NC}"
+    
+    local dashboards=("admin" "driver" "customer")
+    for dash in "${dashboards[@]}"; do
+        if [ -f "/home/taxi/app/$dash/index.html" ]; then
+            log_ok "Dashboard found: /home/taxi/app/$dash/index.html"
+        else
+            log_error "Dashboard missing: /home/taxi/app/$dash/index.html"
+        fi
+    done
+}
+
+check_docker_compose() {
+    echo ""
+    echo -e "${CYAN}Checking Docker Compose...${NC}"
+    
+    if [ -f "/home/taxi/app/docker-compose.yml" ]; then
+        log_ok "docker-compose.yml found"
+        log_step "File size: $(du -h /home/taxi/app/docker-compose.yml | cut -f1)"
+    else
+        log_error "docker-compose.yml NOT found"
+        return 1
+    fi
+}
+
+check_env_file() {
+    echo ""
+    echo -e "${CYAN}Checking .env file...${NC}"
+    
+    if [ -f "/home/taxi/app/.env" ]; then
+        log_ok ".env file found"
+        log_info "Environment variables configured:"
+        head -5 /home/taxi/app/.env
+    else
+        log_error ".env file NOT found"
+        return 1
+    fi
+}
+
+check_docker_service() {
+    echo ""
+    echo -e "${CYAN}Checking Docker service...${NC}"
+    
+    if systemctl is-active --quiet docker; then
+        log_ok "Docker service is RUNNING"
+    else
+        log_error "Docker service is NOT running"
+        log_step "Starting Docker service..."
+        systemctl start docker && log_ok "Docker started" || log_error "Failed to start Docker"
+    fi
+}
+
+check_containers() {
+    echo ""
+    echo -e "${CYAN}Checking Docker containers...${NC}"
+    
+    if command -v docker &> /dev/null; then
+        local count=$(docker ps -a -q | wc -l)
+        if [ "$count" -gt 0 ]; then
+            log_ok "Found $count Docker container(s)"
+            docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+        else
+            log_warn "No Docker containers found"
+            log_step "To start containers, run: cd /home/taxi/app && docker-compose up -d"
+        fi
+    else
+        log_error "Docker is not installed"
+    fi
+}
+
+check_ports_status() {
+    echo ""
+    echo -e "${CYAN}Checking port status...${NC}"
+    
+    local ports=(80 443 3000 3001 3002 3003 5432 27017 6379 9000 19999)
+    local listening=0
+    
+    for port in "${ports[@]}"; do
+        if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+            log_ok "Port $port is LISTENING"
+            ((listening++))
+        fi
+    done
+    
+    if [ "$listening" -eq 0 ]; then
+        log_warn "No ports are listening. Start Docker containers with: cd /home/taxi/app && docker-compose up -d"
+    else
+        log_ok "$listening port(s) are listening"
+    fi
+}
+
+check_nginx() {
+    echo ""
+    echo -e "${CYAN}Checking Nginx...${NC}"
+    
+    if command -v nginx &> /dev/null; then
+        log_ok "Nginx is installed"
+        nginx -v
+        
+        if systemctl is-active --quiet nginx; then
+            log_ok "Nginx service is RUNNING"
+        else
+            log_warn "Nginx service is NOT running"
+        fi
+    else
+        log_error "Nginx is not installed"
+    fi
+}
+
+check_taxi_user() {
+    echo ""
+    echo -e "${CYAN}Checking taxi user...${NC}"
+    
+    if id "taxi" &>/dev/null; then
+        log_ok "Taxi user exists"
+        log_info "Taxi home: $(getent passwd taxi | cut -d: -f6)"
+        
+        if [ -d "/home/taxi/app" ]; then
+            log_ok "App directory exists: /home/taxi/app"
+            log_info "Directory size: $(du -sh /home/taxi/app | cut -f1)"
+        else
+            log_error "App directory NOT found"
+        fi
+    else
+        log_error "Taxi user does NOT exist"
+    fi
+}
+
+check_permissions() {
+    echo ""
+    echo -e "${CYAN}Checking file permissions...${NC}"
+    
+    if [ -d "/home/taxi/app" ]; then
+        local owner=$(ls -ld /home/taxi/app | awk '{print $3}')
+        if [ "$owner" = "taxi" ]; then
+            log_ok "Correct owner for /home/taxi/app: $owner"
+        else
+            log_warn "Wrong owner for /home/taxi/app: $owner (should be taxi)"
+            log_step "Fixing permissions..."
+            chown -R taxi:taxi /home/taxi/app && log_ok "Permissions fixed"
+        fi
+    fi
+}
+
+system_status() {
+    echo ""
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}        TAXI SYSTEM - COMPLETE STATUS REPORT${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    
+    check_dashboards
+    check_docker_compose
+    check_env_file
+    check_taxi_user
+    check_permissions
+    check_docker_service
+    check_nginx
+    check_ports_status
+    check_containers
+    
+    echo ""
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}        TROUBLESHOOTING TIPS${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "If dashboards are not loading:"
+    echo "  1. Start Docker containers: cd /home/taxi/app && docker-compose up -d"
+    echo "  2. Check Docker logs: docker-compose logs"
+    echo "  3. Check ports: netstat -tuln | grep -E '3000|3001|3002|3003'"
+    echo ""
+    echo "If Docker containers won't start:"
+    echo "  1. Check Docker status: systemctl status docker"
+    echo "  2. Restart Docker: systemctl restart docker"
+    echo "  3. Check container logs: docker-compose logs -f"
+    echo ""
+    echo "If permissions are wrong:"
+    echo "  1. Fix taxi user: chown -R taxi:taxi /home/taxi"
+    echo "  2. Fix app directory: chown -R taxi:taxi /home/taxi/app"
+    echo ""
+    echo "Access your dashboards:"
+    echo "  - Admin: http://$(hostname -I | awk '{print $1}'):3001"
+    echo "  - Driver: http://$(hostname -I | awk '{print $1}'):3002"
+    echo "  - Customer: http://$(hostname -I | awk '{print $1}'):3003"
+    echo ""
+}
+
 # ===================== ERROR HANDLING & REPORTING =====================
 declare -a INSTALLATION_LOG=()
 LOG_FILE="/tmp/taxi-install-$(date +%Y%m%d_%H%M%S).log"
@@ -6765,5 +6954,35 @@ main_installer() {
 
 # Main execution
 if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
-    main_installer "$@"
+    case "${1:-}" in
+        --status|--check|troubleshoot)
+            system_status
+            exit 0
+            ;;
+        --cleanup)
+            cleanup_system
+            exit 0
+            ;;
+        --help|-h)
+            echo -e "${CYAN}Taxi System Installation Script${NC}"
+            echo ""
+            echo "Usage: sudo bash $0 [OPTIONS]"
+            echo ""
+            echo "Options:"
+            echo "  (no args)           Run full installation"
+            echo "  --status|--check    Show system status and troubleshooting tips"
+            echo "  --cleanup           Clean previous installation"
+            echo "  --help              Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  sudo bash $0                    # Start installation"
+            echo "  sudo bash $0 --status          # Check what's installed"
+            echo "  sudo bash $0 --cleanup         # Remove old installation"
+            echo ""
+            exit 0
+            ;;
+        *)
+            main_installer "$@"
+            ;;
+    esac
 fi
