@@ -41,6 +41,73 @@ log_step()    { echo -e "${BLUE}[STEP]${NC} $1"; }
 log_ok()      { echo -e "${GREEN}[OK]${NC} $1"; }
 log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_info()    { echo -e "${CYAN}[INFO]${NC} $1"; }
+
+# ===================== ANIMATION FUNCTIONS =====================
+spinner() {
+    local pid=$1
+    local message=$2
+    local delay=0.1
+    local spinstr='|/-\'
+    
+    echo -ne "${BLUE}${message}${NC} "
+    while kill -0 $pid 2>/dev/null; do
+        for i in $(seq 0 3); do
+            echo -ne "\b${spinstr:$i:1}"
+            sleep $delay
+        done
+    done
+    wait $pid
+    local status=$?
+    if [ $status -eq 0 ]; then
+        echo -ne "\b${GREEN}✓${NC}\n"
+    else
+        echo -ne "\b${RED}✗${NC}\n"
+    fi
+    return $status
+}
+
+run_with_spinner() {
+    local message=$1
+    shift
+    ("$@" >/dev/null 2>&1) &
+    spinner $! "$message"
+}
+
+show_progress() {
+    local current=$1
+    local total=$2
+    local message=$3
+    local width=40
+    local percentage=$((current * 100 / total))
+    local filled=$((width * current / total))
+    printf "\r${CYAN}[${NC}"
+    printf "%${filled}s" | tr ' ' '='
+    printf "%$((width-filled))s" | tr ' ' '-'
+    printf "${CYAN}]${NC} ${percentage}%% - ${message}"
+}
+
+# ===================== PHASE TRACKING =====================
+CURRENT_PHASE=0
+TOTAL_PHASES=9
+
+start_phase() {
+    local phase_num=$1
+    local phase_name=$2
+    CURRENT_PHASE=$phase_num
+    echo ""
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}PHASE $phase_num/$TOTAL_PHASES: $phase_name${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+}
+
+end_phase() {
+    local phase_name=$1
+    echo ""
+    log_ok "Phase $CURRENT_PHASE completed: $phase_name"
+    echo ""
+}
 
 # ===================== DOCKER PERMISSION HELPER =====================
 check_docker_permissions() {
@@ -142,7 +209,56 @@ cleanup_system() {
     log_ok "System cleanup completed!"
 }
 
-# ===================== ARRAY WARNINGS GLOBAL =====================
+# ===================== ERROR HANDLING & REPORTING =====================
+declare -a INSTALLATION_LOG=()
+LOG_FILE="/tmp/taxi-install-$(date +%Y%m%d_%H%M%S).log"
+
+log_to_file() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG_FILE"
+    INSTALLATION_LOG+=("$*")
+}
+
+trap_error() {
+    local line_number=$1
+    local error_code=$2
+    log_error "Installation failed at line $line_number with exit code $error_code"
+    log_to_file "ERROR at line $line_number: exit code $error_code"
+    
+    echo ""
+    echo -e "${RED}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${RED}Installation Summary:${NC}"
+    echo -e "${RED}════════════════════════════════════════════════════════════════${NC}"
+    echo "Phase: $CURRENT_PHASE/$TOTAL_PHASES"
+    echo "Error: Line $line_number (Exit code: $error_code)"
+    echo "Log file: $LOG_FILE"
+    echo ""
+    echo -e "${YELLOW}You can continue the installation by running the script again.${NC}"
+    echo -e "${YELLOW}Or run cleanup and start fresh:${NC}"
+    echo "  sudo bash $0 --cleanup"
+    echo ""
+}
+
+trap 'trap_error ${LINENO} $?' ERR
+
+show_summary() {
+    echo ""
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}✅ INSTALLATION COMPLETED SUCCESSFULLY!${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "Installation Log: $LOG_FILE"
+    echo "Taxi Home: /home/taxi"
+    echo "App Dir: /home/taxi/app"
+    echo ""
+    echo "Access Points:"
+    echo "  - Admin Panel: http://$(hostname -I | awk '{print $1}'):3001"
+    echo "  - Driver Portal: http://$(hostname -I | awk '{print $1}'):3002"
+    echo "  - Customer App: http://$(hostname -I | awk '{print $1}'):3003"
+    echo "  - API: http://$(hostname -I | awk '{print $1}'):3000"
+    echo ""
+    log_to_file "Installation completed successfully"
+}
+
 declare -ag WARNINGS=()
 
 # ===================== FUNCIONES AUXILIARES =====================
@@ -151,6 +267,75 @@ print_banner() {
     echo -e "${CYAN}   $1${NC}"
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
     echo -e "${YELLOW}${2:-}${NC}\n"
+}
+
+# ===================== VALIDATION FUNCTIONS =====================
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        log_error "This script must be run as root or with sudo"
+        exit 1
+    fi
+}
+
+check_ubuntu() {
+    if ! grep -qi "ubuntu\|debian" /etc/os-release; then
+        log_error "This script is designed for Ubuntu/Debian systems only"
+        exit 1
+    fi
+}
+
+check_internet() {
+    log_step "Checking internet connection..."
+    if ! ping -c 1 8.8.8.8 &> /dev/null; then
+        log_error "No internet connection detected"
+        exit 1
+    fi
+    log_ok "Internet connection verified"
+}
+
+check_ports() {
+    local ports=(80 443 3000 3001 3002 3003 5432 27017 6379 9000 19999)
+    local in_use=()
+    
+    log_step "Checking if required ports are available..."
+    for port in "${ports[@]}"; do
+        if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+            in_use+=($port)
+        fi
+    done
+    
+    if [ ${#in_use[@]} -gt 0 ]; then
+        log_warn "Ports in use: ${in_use[*]}"
+        echo "These ports may be used by existing services:"
+        for port in "${in_use[@]}"; do
+            lsof -i :$port 2>/dev/null || true
+        done
+        read -p "Continue anyway? (y/n): " port_choice
+        if [[ ! "$port_choice" =~ ^[Yy]$ ]]; then
+            log_error "Installation cancelled"
+            exit 1
+        fi
+    else
+        log_ok "All required ports are available"
+    fi
+}
+
+# ===================== INSTALLATION HELPERS =====================
+install_package() {
+    local package=$1
+    local display_name=${2:-$package}
+    
+    if command -v "$package" &> /dev/null; then
+        log_info "$display_name is already installed"
+        return 0
+    fi
+    
+    run_with_spinner "Installing $display_name" apt-get install -y "$package"
+}
+
+enable_service() {
+    local service=$1
+    run_with_spinner "Enabling $service" systemctl enable --now "$service"
 }
 
 # ===================== DOCKER-COMPOSE WRAPPER =====================
