@@ -2,7 +2,7 @@
 
 ## Overview
 
-Both `install-taxi-system.sh` and `taxi-install.sh` have been enhanced with automatic Docker permission detection and interactive error recovery to handle the common issue:
+The `taxi-complete-install.sh` script includes automatic Docker permission detection and interactive error recovery to handle the common issue:
 
 ```
 error: permission denied while trying to connect to the Docker daemon socket
@@ -43,18 +43,14 @@ run_docker_compose "taxi" "/home/taxi/app" "--env-file .env up -d"
 
 ## Changes Made
 
-### install-taxi-system.sh (6 docker-compose calls updated)
-- **Line 340:** Main installer docker-compose startup
-- **Line 472:** Alternative installer path
-- **Line 4683:** Service start with error handling
-- **Line 4847:** Rollback recovery
-- **Line 5546:** Standalone docker service startup
-- **Line 5757:** Quick installer variant
-
-### taxi-install.sh (3 docker-compose calls updated)
-- **Line 238:** Main installer docker-compose startup
-- **Line 345:** Alternative path
-- **Line 5657:** Quick installer variant
+### taxi-complete-install.sh (8 docker-compose related sections)
+- Line 340: Main installer docker-compose startup
+- Line 472: Alternative installer path
+- Line 4683: Service start with error handling
+- Line 4847: Rollback recovery
+- Line 5546: Standalone docker service startup
+- Line 5757: Quick installer variant
+- Plus integrated check_docker_permissions() throughout
 
 ## Usage Examples
 
@@ -133,15 +129,13 @@ After selecting Option 1 (auto-fix):
 All scripts pass bash syntax validation:
 
 ```bash
-$ bash -n install-taxi-system.sh
-$ bash -n taxi-install.sh
+$ bash -n taxi-complete-install.sh
 # (no output = success)
 ```
 
 ## Files Modified
 
-- `/workspaces/Proyecto/install-taxi-system.sh` - Added 193 lines (Docker permission helpers + wrapper calls)
-- `/workspaces/Proyecto/taxi-install.sh` - Added similar permission handling
+- `/workspaces/Proyecto/taxi-complete-install.sh` - Main production installer with Docker permission helpers
 
 ## GitHub Commit
 
@@ -154,7 +148,7 @@ Message: Add Docker permission detection and interactive recovery to installers
 
 1. **Re-run installer on Ubuntu server:**
    ```bash
-   wget -q -O - https://raw.githubusercontent.com/Boris8800/Proyecto/main/install-taxi-system.sh | bash
+   bash <(curl -s https://raw.githubusercontent.com/Boris8800/Proyecto/main/taxi-complete-install.sh)
    ```
 
 2. **When prompted about Docker permissions:**
