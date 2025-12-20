@@ -21,6 +21,97 @@ log_ok()      { echo -e "${GREEN}[OK]${NC} $1"; }
 log_error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 log_warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
 
+# ===================== DOCKER PERMISSION HELPER =====================
+check_docker_permissions() {
+    local docker_user="${1:-taxi}"
+    
+    # Test if the user can access docker daemon
+    if ! sudo -u "$docker_user" docker ps >/dev/null 2>&1; then
+        log_warn "Docker permission issue detected for user: $docker_user"
+        echo ""
+        echo "Options:"
+        echo "  1) Auto-fix: Add $docker_user to docker group (RECOMMENDED)"
+        echo "  2) Skip: Continue without fixing (may fail later)"
+        echo "  3) Exit: Stop installation"
+        echo ""
+        read -p "Choose option (1/2/3): " docker_option
+        
+        case "$docker_option" in
+            1)
+                log_step "Adding $docker_user to docker group..."
+                if ! getent group docker >/dev/null; then
+                    sudo groupadd docker
+                fi
+                sudo usermod -aG docker "$docker_user"
+                log_ok "User $docker_user added to docker group. Changes will take effect after logout/login."
+                log_step "Attempting to start Docker services..."
+                if sudo -u "$docker_user" docker ps >/dev/null 2>&1; then
+                    log_ok "Docker access verified."
+                    return 0
+                else
+                    log_warn "Docker still not accessible. You may need to log out and back in."
+                    read -p "Continue anyway? (y/n): " continue_opt
+                    if [[ "$continue_opt" =~ ^[Yy]$ ]]; then
+                        return 0
+                    else
+                        log_error "Aborting installation."
+                        exit 1
+                    fi
+                fi
+                ;;
+            2)
+                log_warn "Skipping Docker permission fix. Docker compose may fail."
+                return 0
+                ;;
+            3)
+                log_error "Installation cancelled."
+                exit 0
+                ;;
+            *)
+                log_error "Invalid option. Exiting."
+                exit 1
+                ;;
+        esac
+    else
+        log_ok "Docker permissions OK for user: $docker_user"
+        return 0
+    fi
+}
+
+# ===================== DOCKER-COMPOSE WRAPPER =====================
+run_docker_compose() {
+    local docker_user="${1:-taxi}"
+    local compose_dir="${2:-.}"
+    local compose_args="${@:3}"
+    
+    # Check permissions before running
+    check_docker_permissions "$docker_user"
+    
+    # Run docker-compose with error handling
+    log_step "Starting Docker services..."
+    if cd "$compose_dir" && sudo -u "$docker_user" docker-compose $compose_args; then
+        log_ok "Docker Compose executed successfully"
+        return 0
+    else
+        local exit_code=$?
+        log_error "Docker Compose failed with exit code: $exit_code"
+        
+        # Check if error is permission-related
+        if [[ "$exit_code" == 126 ]] || [[ "$exit_code" == 127 ]]; then
+            log_warn "Permission or command not found error detected"
+            check_docker_permissions "$docker_user"
+            log_step "Retrying Docker Compose..."
+            if cd "$compose_dir" && sudo -u "$docker_user" docker-compose $compose_args; then
+                log_ok "Docker Compose succeeded on retry"
+                return 0
+            fi
+        fi
+        
+        log_error "Docker Compose failed. Check logs at /var/log/install-taxi.log"
+        return 1
+    fi
+}
+
 # ===================== ARRAY WARNINGS GLOBAL =====================
 declare -ag WARNINGS=()
 
@@ -144,7 +235,7 @@ log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
     cd /home/taxi/app
-    sudo -u taxi docker-compose --env-file .env up -d
+    run_docker_compose "taxi" "/home/taxi/app" "--env-file .env up -d"
     log_ok "Servicios Docker en ejecución."
 
     echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
@@ -251,7 +342,7 @@ log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
     cd /home/taxi/app
-    sudo -u taxi docker-compose --env-file .env up -d
+    run_docker_compose "taxi" "/home/taxi/app" "--env-file .env up -d"
     log_ok "Servicios Docker en ejecución."
 
     IP=$(hostname -I | awk '{print $1}')
@@ -5563,7 +5654,7 @@ log_ok "Sistema configurado."
 
         log_step "Levantando servicios Docker..."
         cd /home/taxi/app
-        sudo -u taxi docker-compose --env-file .env up -d
+        run_docker_compose "taxi" "/home/taxi/app" "--env-file .env up -d"
         log_ok "Servicios Docker en ejecución."
 
         IP=$(hostname -I | awk '{print $1}')
