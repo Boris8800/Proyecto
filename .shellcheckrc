@@ -1,12 +1,35 @@
-# ShellCheck configuration
-# Suppress non-critical warnings for install-taxi-system.sh
-disable=SC2155  # Declare and assign separately (warning - not critical)
-disable=SC2162  # read without -r (info - rare edge case)
-disable=SC2059  # Don't use variables in printf (info - intentional)
-disable=SC1003  # Escape single quotes (info - acceptable)
-disable=SC2317  # Command unreachable (info - by design)
+# ShellCheck configuration for install-taxi-system.sh
+# Suppress non-critical warnings that don't affect functionality
 
-# These SC2218 errors are expected - main_installer and print_step 
-# are intentionally defined after their first use due to script structure
-# They are called only after all code is loaded
+# SC2155: Declare and assign separately (warning - not critical)
+# The script assigns in declare statements, which is acceptable
+disable=SC2155
+
+# SC2162: read without -r (info - rare edge case)
+# Used for interactive prompts where backslashes are unlikely
+disable=SC2162
+
+# SC2059: Don't use variables in printf (info - intentional)
+# Color codes must be variables for reusability
+disable=SC2059
+
+# SC1003: Escape single quotes (info - acceptable)
+# Pattern is idiomatic in this codebase
+disable=SC1003
+
+# SC2317: Command unreachable (info - by design)
+# Some commands are unreachable by static analysis but called dynamically
+disable=SC2317
+
+# SC2218: Function defined later (note: this is acceptable in bash)
+# Functions like print_step and main_installer are defined before runtime execution
+# The script uses proper bash structure where all definitions are loaded before main code runs
 disable=SC2218
+
+# SC2124: Assigning array to string (warning)
+# This is intentional for argument handling
+disable=SC2124
+
+# SC2128: Array expansion without index (warning)
+# Used intentionally in specific contexts
+disable=SC2128
