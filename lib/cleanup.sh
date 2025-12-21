@@ -6,6 +6,41 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ===================== CLEANUP AND MAINTENANCE FUNCTIONS =====================
+
+cleanup_temp_files() {
+    log_step "Performing complete system cleanup..."
+    
+    # Limpiar archivos temporales
+    log_info "Removing temporary files..."
+    rm -rf /tmp/taxi-* 2>/dev/null || true
+    rm -rf /tmp/*.tmp 2>/dev/null || true
+    rm -rf /var/tmp/* 2>/dev/null || true
+    
+    # Limpiar cache de paquetes
+    log_info "Clearing package manager cache..."
+    apt-get clean >/dev/null 2>&1 || true
+    apt-get autoclean >/dev/null 2>&1 || true
+    apt-get autoremove -y >/dev/null 2>&1 || true
+    
+    # Limpiar logs antiguos
+    log_info "Removing old log files..."
+    find /var/log -type f -name "*.log" -mtime +30 -delete 2>/dev/null || true
+    find /var/log -type f -name "*.gz" -mtime +30 -delete 2>/dev/null || true
+    
+    # Limpiar Docker
+    log_info "Cleaning up Docker resources..."
+    docker container prune -f >/dev/null 2>&1 || true
+    docker image prune -f >/dev/null 2>&1 || true
+    docker volume prune -f >/dev/null 2>&1 || true
+    
+    # Limpiar directorios de caché
+    log_info "Clearing application caches..."
+    rm -rf /root/.cache/* 2>/dev/null || true
+    rm -rf /home/taxi/.cache/* 2>/dev/null || true
+    
+    log_ok "System cleanup completed"
+}
+
 cleanup_system() {
     log_step "Cleaning up system..."
     

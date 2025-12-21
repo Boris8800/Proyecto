@@ -167,6 +167,10 @@ fresh_install() {
     health_check
     system_status
     
+    # Cleanup
+    log_step "Cleaning up temporary files..."
+    cleanup_temp_files
+    
     print_success_banner
     
     log_ok "Installation completed successfully!"
