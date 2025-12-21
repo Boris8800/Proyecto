@@ -15,18 +15,19 @@ show_main_menu() {
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "${BLUE}Main Menu:${NC}"
-    echo "  ${GREEN}1)${NC}  Fresh Installation"
-    echo "  ${GREEN}2)${NC}  Update Existing Installation"
-    echo "  ${GREEN}3)${NC}  Service Management"
-    echo "  ${GREEN}4)${NC}  System Diagnostics"
-    echo "  ${GREEN}5)${NC}  Database Management"
-    echo "  ${GREEN}6)${NC}  Security Audit"
-    echo "  ${GREEN}7)${NC}  Error Recovery"
-    echo "  ${GREEN}8)${NC}  Backup & Restore"
-    echo "  ${GREEN}9)${NC}  System Cleanup"
-    echo "  ${GREEN}0)${NC}  Exit"
     echo ""
-    read -r -p "Select an option (0-9): " main_choice
+    echo "  ${GREEN}[1]${NC}  Fresh Installation"
+    echo "  ${GREEN}[2]${NC}  Update Existing Installation"
+    echo "  ${GREEN}[3]${NC}  Service Management"
+    echo "  ${GREEN}[4]${NC}  System Diagnostics"
+    echo "  ${GREEN}[5]${NC}  Database Management"
+    echo "  ${GREEN}[6]${NC}  Security Audit"
+    echo "  ${GREEN}[7]${NC}  Error Recovery"
+    echo "  ${GREEN}[8]${NC}  Backup & Restore"
+    echo "  ${GREEN}[9]${NC}  System Cleanup"
+    echo "  ${GREEN}[0]${NC}  Exit"
+    echo ""
+    read -r -p "Select an option [0-9]: " main_choice
     
     case "$main_choice" in
         1) fresh_installation_menu ;;
@@ -321,13 +322,14 @@ cleanup_menu() {
     print_header "System Cleanup"
     echo ""
     echo -e "${BLUE}Cleanup Options:${NC}"
-    echo "  ${GREEN}1)${NC}  Clean temporary files"
-    echo "  ${GREEN}2)${NC}  Clean Docker images and containers"
-    echo "  ${GREEN}3)${NC}  Clean logs"
-    echo "  ${GREEN}4)${NC}  Full system cleanup"
-    echo "  ${GREEN}5)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-5): " clean_choice
+    echo "  ${GREEN}[1]${NC}  Clean temporary files"
+    echo "  ${GREEN}[2]${NC}  Clean Docker images and containers"
+    echo "  ${GREEN}[3]${NC}  Clean logs"
+    echo "  ${GREEN}[4]${NC}  Full system cleanup"
+    echo "  ${GREEN}[5]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-5]: " clean_choice
     
     case "$clean_choice" in
         1) log_info "Cleaning temporary files..."; sleep 2; cleanup_menu ;;
