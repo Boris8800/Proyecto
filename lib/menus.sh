@@ -114,11 +114,6 @@ interactive_menu() {
         fi
     done
 }
-        
-        # Clear the lines we just printed to redraw
-        # (Actually tput cuu already moved us up, so we just redraw over)
-    done
-}
 
 # Read user input with 10-second timeout
 # Usage: read_with_timeout variable_name "prompt" default_value
