@@ -1377,7 +1377,7 @@ enable_service() {
 run_docker_compose() {
     local docker_user="${1:-taxi}"
     local compose_dir="${2:-.}"
-    local compose_args="${@:3}"
+    local compose_args; compose_args="$*"
     
     # Check permissions before running
     check_docker_permissions "$docker_user"
@@ -7328,7 +7328,7 @@ if [[ "${1:-}" == "--quick" ]]; then
 fi
 
 # Ejecuta el flujo principal solo si el script es ejecutado directamente
-if [[ "$0" == "$BASH_SOURCE" ]]; then
+if [ "$0" = "${BASH_SOURCE[0]}" ]; then
     main_installer "$@"
 fi
 LOG_FILE="/var/log/taxi_installer.log"

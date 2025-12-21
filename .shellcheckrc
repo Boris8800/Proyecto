@@ -5,3 +5,8 @@ disable=SC2162  # read without -r (info - rare edge case)
 disable=SC2059  # Don't use variables in printf (info - intentional)
 disable=SC1003  # Escape single quotes (info - acceptable)
 disable=SC2317  # Command unreachable (info - by design)
+
+# These SC2218 errors are expected - main_installer and print_step 
+# are intentionally defined after their first use due to script structure
+# They are called only after all code is loaded
+disable=SC2218
