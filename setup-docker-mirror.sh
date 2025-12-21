@@ -20,14 +20,16 @@ sleep 3
 mkdir -p /etc/docker
 
 # 3. Configurar daemon.json con espejo
-echo "2️⃣  Configurando Docker con espejo de Aliyun..."
+echo "2️⃣  Configurando Docker con espejo..."
 cat > /etc/docker/daemon.json << 'EOF'
 {
   "registry-mirrors": [
-    "https://mirror.aliyun.com",
-    "https://2qikv7nl.mirror.aliyuncs.com"
+    "https://docker.io",
+    "https://registry-1.docker.io",
+    "https://mirror.baidubce.com",
+    "https://mirror.ccs.tencentyun.com"
   ],
-  "dns": ["8.8.8.8", "8.8.4.4", "114.114.114.114"],
+  "dns": ["8.8.8.8", "1.1.1.1", "114.114.114.114"],
   "log-driver": "json-file",
   "log-opts": {
     "max-size": "10m",

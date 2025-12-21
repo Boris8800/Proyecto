@@ -7,19 +7,21 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ===================== DOCKER MIRROR CONFIGURATION =====================
 configure_docker_mirror() {
-    log_info "Setting up Docker registry mirror (Aliyun)..."
+    log_info "Setting up Docker registry mirror..."
     
     # Create docker config directory
     mkdir -p /etc/docker
     
-    # Configure daemon.json with Aliyun mirror
+    # Configure daemon.json with multiple mirrors (try different ones)
     cat > /etc/docker/daemon.json << 'EOF'
 {
   "registry-mirrors": [
-    "https://mirror.aliyun.com",
-    "https://2qikv7nl.mirror.aliyuncs.com"
+    "https://docker.io",
+    "https://registry-1.docker.io",
+    "https://mirror.baidubce.com",
+    "https://mirror.ccs.tencentyun.com"
   ],
-  "dns": ["8.8.8.8", "8.8.4.4", "114.114.114.114"],
+  "dns": ["8.8.8.8", "1.1.1.1", "114.114.114.114"],
   "log-driver": "json-file",
   "log-opts": {
     "max-size": "10m",
