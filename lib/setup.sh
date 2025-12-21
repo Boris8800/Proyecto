@@ -210,7 +210,7 @@ services:
       retries: 5
 
   taxi-mongo:
-    image: mongo:6-alpine
+    image: mongo:6
     container_name: taxi-mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
