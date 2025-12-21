@@ -176,13 +176,23 @@ auto_fix_ports() {
     
     # IMMEDIATE PRE-CLEANUP: Kill everything that might block ports
     log_info "Pre-cleanup: Stopping potential port blockers..."
-    pkill -9 -f "nginx|apache2|apache|httpd" 2>/dev/null || true
+    pkill -9 -f "nginx|apache2|apache|httpd|haproxy" 2>/dev/null || true
     pkill -9 postgres 2>/dev/null || true
     pkill -9 mongod 2>/dev/null || true
     pkill -9 redis-server 2>/dev/null || true
     pkill -9 node 2>/dev/null || true
-    docker stop $(docker ps -aq) 2>/dev/null || true
-    systemctl stop docker 2>/dev/null || true
+    
+    # Safely stop Docker containers if Docker is running
+    if command -v docker &> /dev/null && docker ps &> /dev/null; then
+        local containers=$(docker ps -aq)
+        if [ -n "$containers" ]; then
+            docker stop $containers 2>/dev/null || true
+        fi
+    fi
+    
+    if command -v systemctl &> /dev/null; then
+        systemctl stop docker 2>/dev/null || true
+    fi
     sleep 2
     
     local conflicts=0
@@ -215,23 +225,29 @@ auto_fix_ports() {
         log_warn "Attempt $attempt/$max_attempts to resolve $conflicts port conflict(s)..."
         
         # Kill nginx and apache directly
-        log_info "Stopping web servers (nginx, apache)..."
-        sudo pkill -9 -f "nginx|apache|httpd|http-server" 2>/dev/null || true
-        sudo pkill -9 postgres mongod redis-server node 2>/dev/null || true
+        log_info "Stopping web servers (nginx, apache, haproxy)..."
+        if command -v systemctl &> /dev/null; then
+            systemctl stop nginx 2>/dev/null || true
+            systemctl stop apache2 2>/dev/null || true
+            systemctl stop httpd 2>/dev/null || true
+            systemctl stop haproxy 2>/dev/null || true
+        fi
+        pkill -9 -f "nginx|apache|httpd|http-server|haproxy" 2>/dev/null || true
+        pkill -9 postgres mongod redis-server node 2>/dev/null || true
         
-        # Stop all Docker containers
+        # Stop all Docker containers safely
         log_info "Stopping all Docker containers..."
-        sudo systemctl stop docker 2>/dev/null || true
-        sudo docker-compose down -v 2>/dev/null || true
-        sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
-        docker-compose down -v 2>/dev/null || true
-        docker stop $(docker ps -aq) 2>/dev/null || true
+        if command -v systemctl &> /dev/null; then
+            systemctl stop docker 2>/dev/null || true
+        fi
         
-        # Clean Docker system
-        log_info "Cleaning Docker system..."
-        sudo docker system prune -f --all --volumes 2>/dev/null || true
-        docker system prune -f --all --volumes 2>/dev/null || true
-        docker system prune -f --all --volumes 2>/dev/null || true
+        if command -v docker &> /dev/null && docker ps &> /dev/null; then
+            local containers=$(docker ps -aq)
+            if [ -n "$containers" ]; then
+                docker stop $containers 2>/dev/null || true
+            fi
+            docker system prune -f --all --volumes 2>/dev/null || true
+        fi
         
         # Kill any remaining processes using the specific ports
         for port in "${ports_in_use[@]}"; do
@@ -242,8 +258,8 @@ auto_fix_ports() {
         # Force release of ports using fuser if available
         if command -v fuser &> /dev/null; then
             for port in "${ports_in_use[@]}"; do
-                sudo fuser -k "$port/tcp" 2>/dev/null || true
-                sudo fuser -k "$port/udp" 2>/dev/null || true
+                fuser -k "$port/tcp" 2>/dev/null || true
+                fuser -k "$port/udp" 2>/dev/null || true
             done
         fi
         

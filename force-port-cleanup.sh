@@ -19,7 +19,8 @@ echo ""
 PORTS=(80 443 5432 27017 6379 3000 3001 3002 3003)
 
 echo -e "${YELLOW}Step 1: Killing all web servers...${NC}"
-sudo pkill -9 -f "nginx|apache2|apache|httpd" 2>/dev/null || true
+sudo systemctl stop haproxy 2>/dev/null || true
+sudo pkill -9 -f "nginx|apache2|apache|httpd|haproxy" 2>/dev/null || true
 echo -e "${GREEN}✓ Web servers killed${NC}"
 sleep 1
 

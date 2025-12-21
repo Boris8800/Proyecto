@@ -162,7 +162,8 @@ if [ "${auto_fix:-n}" = "y" ] || [ "${auto_fix:-n}" = "Y" ]; then
     
     # Kill web servers
     echo "  Killing web servers..."
-    sudo pkill -9 -f "nginx|apache|httpd" 2>/dev/null || true
+    sudo systemctl stop haproxy 2>/dev/null || true
+    sudo pkill -9 -f "nginx|apache|httpd|haproxy" 2>/dev/null || true
     
     # Stop docker
     echo "  Stopping Docker..."

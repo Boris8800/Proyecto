@@ -125,19 +125,31 @@ fresh_install() {
     log_info "Removing old installations, users, and temporary files..."
     
     # Stop and remove existing services
-    systemctl stop docker 2>/dev/null || true
-    systemctl stop taxi-system 2>/dev/null || true
+    if command -v systemctl &> /dev/null; then
+        systemctl stop docker 2>/dev/null || true
+        systemctl stop nginx 2>/dev/null || true
+        systemctl stop apache2 2>/dev/null || true
+        systemctl stop haproxy 2>/dev/null || true
+        systemctl stop taxi-system 2>/dev/null || true
+    fi
     pkill -u taxi 2>/dev/null || true
     
     # AGGRESSIVE PRE-CLEANUP: Kill ALL potential port blockers
     log_info "Performing aggressive port cleanup..."
     
     # Stop Docker service first
-    systemctl stop docker 2>/dev/null || true
+    if command -v systemctl &> /dev/null; then
+        systemctl stop docker 2>/dev/null || true
+    fi
     pkill -9 -f "dockerd|docker" 2>/dev/null || true
     
     # Kill all web servers
-    pkill -9 -f "nginx|apache2|apache|httpd|http-server" 2>/dev/null || true
+    if command -v systemctl &> /dev/null; then
+        systemctl stop nginx 2>/dev/null || true
+        systemctl stop apache2 2>/dev/null || true
+        systemctl stop haproxy 2>/dev/null || true
+    fi
+    pkill -9 -f "nginx|apache2|apache|httpd|http-server|haproxy" 2>/dev/null || true
     
     # Kill all database services
     pkill -9 postgres 2>/dev/null || true

@@ -22,8 +22,10 @@ fi
 
 echo ""
 echo "🛑 Deteniendo todos los servicios..."
+systemctl stop haproxy 2>/dev/null || true
 systemctl stop docker 2>/dev/null || true
 systemctl stop taxi-system 2>/dev/null || true
+pkill -9 -f "haproxy|nginx|apache" 2>/dev/null || true
 
 echo "🧹 Eliminando usuario taxi..."
 pkill -u taxi 2>/dev/null || true

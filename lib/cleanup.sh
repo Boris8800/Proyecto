@@ -102,6 +102,8 @@ kill_services() {
     
     log_info "Stopping system services..."
     systemctl stop nginx >/dev/null 2>&1 || true
+    systemctl stop apache2 >/dev/null 2>&1 || true
+    systemctl stop haproxy >/dev/null 2>&1 || true
     systemctl stop docker >/dev/null 2>&1 || true
     
     sleep 2

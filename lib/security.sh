@@ -203,6 +203,18 @@ security_audit() {
 check_docker_permissions() {
     local docker_user="${1:-taxi}"
     
+    # Check if Docker is running first
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker is not installed."
+        return 1
+    fi
+    
+    if ! systemctl is-active --quiet docker 2>/dev/null && ! service docker status &> /dev/null; then
+        log_warn "Docker service is not running. Attempting to start..."
+        systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
+        sleep 2
+    fi
+    
     if ! sudo -u "$docker_user" docker ps >/dev/null 2>&1; then
         log_warn "Docker permission issue detected for user: $docker_user"
         echo ""

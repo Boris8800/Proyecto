@@ -44,6 +44,7 @@ SOLUTION OPTIONS (Choose One):
    sudo pkill -9 nginx
    sudo pkill -9 apache2
    sudo pkill -9 httpd
+   sudo pkill -9 haproxy
 
    # 2. Stop Docker
    sudo systemctl stop docker 2>/dev/null || true
