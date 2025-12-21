@@ -1,0 +1,132 @@
+services:
+  taxi-postgres:
+    image: postgres:15-alpine
+    container_name: taxi-postgres
+    environment:
+      POSTGRES_USER: taxi_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taxi123}
+      POSTGRES_DB: taxi_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - taxi_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taxi_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  taxi-mongo:
+    image: mongo:6
+    container_name: taxi-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongo123}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - taxi_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  taxi-redis:
+    image: redis:7-alpine
+    container_name: taxi-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123}
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - taxi_network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD:-redis123} ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  taxi-api:
+    image: node:18-alpine
+    container_name: taxi-api
+    working_dir: /app
+    volumes:
+      - ./web/api:/app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+    command: node magic-links-server.js
+    networks:
+      - taxi_network
+    depends_on:
+      - taxi-postgres
+      - taxi-mongo
+      - taxi-redis
+
+  taxi-admin:
+    image: node:18-alpine
+    container_name: taxi-admin
+    working_dir: /app
+    volumes:
+      - ./web/admin:/app
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    command: npx http-server -p 3001 -g
+    networks:
+      - taxi_network
+    depends_on:
+      - taxi-api
+
+  taxi-driver:
+    image: node:18-alpine
+    container_name: taxi-driver
+    working_dir: /app
+    volumes:
+      - ./web/driver:/app
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+    command: npx http-server -p 3002 -g
+    networks:
+      - taxi_network
+    depends_on:
+      - taxi-api
+
+  taxi-customer:
+    image: node:18-alpine
+    container_name: taxi-customer
+    working_dir: /app
+    volumes:
+      - ./web/customer:/app
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+    command: npx http-server -p 3003 -g
+    networks:
+      - taxi_network
+    depends_on:
+      - taxi-api
+
+networks:
+  taxi_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:
