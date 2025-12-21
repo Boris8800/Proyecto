@@ -21,7 +21,7 @@ initialize_postgresql() {
             log_ok "PostgreSQL is ready"
             break
         fi
-        ((attempts++))
+        attempts=$((attempts + 1))
         sleep 2
     done
     
@@ -61,7 +61,7 @@ initialize_mongodb() {
             log_ok "MongoDB is ready"
             break
         fi
-        ((attempts++))
+        attempts=$((attempts + 1))
         sleep 2
     done
     
@@ -110,7 +110,7 @@ setup_redis() {
             log_ok "Redis is ready"
             break
         fi
-        ((attempts++))
+        attempts=$((attempts + 1))
         sleep 2
     done
     

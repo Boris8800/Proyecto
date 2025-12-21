@@ -154,7 +154,7 @@ manage_ports() {
         if check_port "$port"; then
             log_warn "Port $port ($service) is already in use"
             ports_in_use+=("$port")
-            ((conflicts++))
+            conflicts=$((conflicts + 1))
         else
             log_ok "Port $port ($service) is available"
         fi
@@ -212,7 +212,7 @@ auto_fix_ports() {
             if check_port "$port"; then
                 log_warn "Port $port ($service) is already in use"
                 ports_in_use+=("$port")
-                ((conflicts++))
+                conflicts=$((conflicts + 1))
             fi
         done
         
@@ -266,7 +266,7 @@ auto_fix_ports() {
         # LONGER WAIT for system to truly release ports
         log_info "Waiting for system to release ports... (8 seconds)"
         sleep 8
-        ((attempt++))
+        attempt=$((attempt + 1))
         
         if [ $attempt -le $max_attempts ]; then
             log_info "Retrying port check (attempt $attempt/$max_attempts)..."
