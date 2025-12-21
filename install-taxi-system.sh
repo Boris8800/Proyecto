@@ -1827,7 +1827,9 @@ server {
 NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
-    nginx -t && systemctl reload nginx
+    nginx -t
+    systemctl start nginx || true
+    systemctl reload nginx || true
     log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
@@ -1986,7 +1988,9 @@ server {
 NGINX
     ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
     rm -f /etc/nginx/sites-enabled/default
-    nginx -t && systemctl reload nginx
+    nginx -t
+    systemctl start nginx || true
+    systemctl reload nginx || true
     log_ok "Sistema configurado."
 
     log_step "Levantando servicios Docker..."
@@ -7288,7 +7292,9 @@ server {
 NGINX
         ln -sf /etc/nginx/sites-available/taxi /etc/nginx/sites-enabled/taxi
         rm -f /etc/nginx/sites-enabled/default
-        nginx -t && systemctl reload nginx
+        nginx -t
+        systemctl start nginx || true
+        systemctl reload nginx || true
         log_ok "Sistema configurado."
 
         log_step "Levantando servicios Docker..."
