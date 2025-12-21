@@ -23,8 +23,8 @@ create_taxi_user() {
     useradd -m -s /bin/bash -G docker,sudo "$username" >/dev/null 2>&1
     
     # Set password (if provided)
-    if [ -n "$2" ]; then
-        echo "$username:$2" | chpasswd
+    if [ -n "${2:-}" ]; then
+        echo "$username:${2:-}" | chpasswd
         log_ok "User created with password"
     else
         log_ok "User created (password required on first login)"
