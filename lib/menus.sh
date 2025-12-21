@@ -33,7 +33,7 @@ interactive_menu() {
         local remaining=$((timeout - elapsed))
         
         if [ $remaining -le 0 ]; then
-            [ $has_tput -eq 1 ] && tput cnorm
+            [ $has_tput -eq 1 ] && tput cnorm 2>/dev/null || true
             echo ""
             log_info "Timeout reached. Selecting recommended option: ${options[$default_idx]}"
             return $((default_idx + 1))
@@ -64,15 +64,21 @@ interactive_menu() {
         
         # Move cursor back up to start of menu
         if [ $has_tput -eq 1 ]; then
-            tput cuu $((num_options + 4))
+            tput cuu $((num_options + 4)) 2>/dev/null || true
         fi
         
         # Read input with 1s timeout
-        read -s -n 1 -t 1 key || true
+        # We don't use || true here because we need to capture the exit code
+        set +e
+        read -s -n 1 -t 1 key
+        read_status=$?
+        set -e
         
         case "$key" in
             $'\x1b') # Escape sequence
-                read -s -n 2 -t 0.1 next_key || true
+                set +e
+                read -s -n 2 -t 0.1 next_key
+                set -e
                 case "$next_key" in
                     "[A"|"OA") # Up arrow (Standard / PuTTY)
                         current=$(( (current - 1 + num_options) % num_options ))
@@ -91,16 +97,15 @@ interactive_menu() {
             [1-9]) # Direct number selection
                 if [ "$key" -le "$num_options" ]; then
                     current=$((key - 1))
-                    [ $has_tput -eq 1 ] && tput cnorm
+                    [ $has_tput -eq 1 ] && tput cnorm 2>/dev/null || true
                     for ((i=0; i<num_options+4; i++)); do echo ""; done
                     return $key
                 fi
                 ;;
             "") # Enter key
-                # Check if it was actually Enter (exit code 0) or timeout (exit code > 128)
-                # In some shells, read timeout returns > 128
-                if [ $? -eq 0 ]; then
-                    [ $has_tput -eq 1 ] && tput cnorm
+                # Check if it was actually Enter (exit code 0)
+                if [ $read_status -eq 0 ]; then
+                    [ $has_tput -eq 1 ] && tput cnorm 2>/dev/null || true
                     # Move cursor down to clear the menu area
                     for ((i=0; i<num_options+4; i++)); do echo ""; done
                     return $((current + 1))
