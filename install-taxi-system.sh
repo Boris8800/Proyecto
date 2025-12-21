@@ -415,7 +415,7 @@ cleanup_system() {
                 for pid in $pids; do
                     local process_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
                     log_info "Killing process $process_name (PID: $pid) on port $port"
-                    kill -9 $pid 2>/dev/null || true
+                    kill -9 "$pid" 2>/dev/null || true
                     killed_count=$((killed_count + 1))
                 done
             fi
@@ -1141,9 +1141,9 @@ kill_port() {
         # Kill the processes
         for pid in $pids; do
             if [[ "$force" == "true" ]]; then
-                kill -9 $pid 2>/dev/null && log_ok "Killed process $pid on port $port" || log_warn "Failed to kill $pid"
+                kill -9 "$pid" 2>/dev/null && log_ok "Killed process $pid on port $port" || log_warn "Failed to kill $pid"
             else
-                kill $pid 2>/dev/null && log_ok "Killed process $pid on port $port" || log_warn "Failed to kill $pid"
+                kill "$pid" 2>/dev/null && log_ok "Killed process $pid on port $port" || log_warn "Failed to kill $pid"
             fi
         done
         
@@ -1155,7 +1155,7 @@ kill_port() {
         else
             log_warn "Port $port still in use, trying force kill..."
             for pid in $pids; do
-                kill -9 $pid 2>/dev/null || true
+                kill -9 "$pid" 2>/dev/null || true
             done
             sleep 1
             return 0
@@ -2184,7 +2184,7 @@ kill_ports() {
         local pids
         pids=$(lsof -t -i :"$port" 2>/dev/null)
         if [ -n "$pids" ]; then
-            for pid in ${pids[@]}; do
+            for pid in "${pids[@]}"; do
                 echo -e "${CYAN}Matando proceso $pid en puerto $port...${NC}"
                 kill -9 "$pid" && echo -e "${GREEN}✓ Proceso $pid matado.${NC}" || echo -e "${RED}✗ No se pudo matar $pid.${NC}"
             done
@@ -7454,7 +7454,7 @@ kill_ports() {
         local pids
         pids=$(lsof -t -i :"$port" 2>/dev/null)
         if [ -n "$pids" ]; then
-            for pid in ${pids[@]}; do
+            for pid in "${pids[@]}"; do
                 echo -e "${CYAN}Matando proceso $pid en puerto $port...${NC}"
                 kill -9 "$pid" && echo -e "${GREEN}✓ Proceso $pid matado.${NC}" || echo -e "${RED}✗ No se pudo matar $pid.${NC}"
             done
