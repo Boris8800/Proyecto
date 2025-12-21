@@ -1,5 +1,14 @@
-# ShellCheck configuration for install-taxi-system.sh
+# ShellCheck configuration for Taxi System Installation Scripts
 # Suppress non-critical warnings that don't affect functionality
+# The installation scripts have been modularized for better maintainability
+
+# SC1091: Cannot follow non-constant source (info - dynamic sourcing)
+# Modules are sourced dynamically at runtime - ShellCheck cannot statically analyze
+disable=SC1091
+
+# SC2119/SC2120: Use function with arguments (info - intentional parameter passing)
+# Some functions intentionally take optional parameters or default values
+disable=SC2119,SC2120
 
 # SC2155: Declare and assign separately (warning - not critical)
 # The script assigns in declare statements, which is acceptable
