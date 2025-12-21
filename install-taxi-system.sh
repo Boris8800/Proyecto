@@ -1116,8 +1116,8 @@ check_ubuntu() {
 check_internet() {
     log_step "Checking internet connection..."
     if ! ping -c 1 8.8.8.8 &> /dev/null; then
-        log_error "No internet connection detected"
-        exit 1
+        log_warn "No internet connection detected - offline mode"
+        return 0
     fi
     log_ok "Internet connection verified"
 }
