@@ -164,6 +164,13 @@ fresh_install() {
     check_system_requirements
     check_docker_permissions taxi
     
+    # Check and manage ports
+    log_step "Checking for port conflicts..."
+    bash "${SCRIPT_DIR}/manage-ports.sh" --fix || {
+        log_error "Port conflicts could not be resolved"
+        return 1
+    }
+    
     # Install Docker
     log_step "Installing Docker..."
     install_docker

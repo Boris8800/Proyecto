@@ -194,7 +194,13 @@ diagnostics_menu() {
     case "$diag_choice" in
         1) echo "Running full system check..."; sleep 2; diagnostics_menu ;;
         2) echo "Running Docker diagnostics..."; sleep 2; diagnostics_menu ;;
-        3) echo "Checking port availability..."; check_ports; read -r -p "Press Enter..."; diagnostics_menu ;;
+        3) 
+            echo ""
+            bash "${SCRIPT_DIR}/manage-ports.sh" --check
+            echo ""
+            read -r -p "Press Enter to continue..."
+            diagnostics_menu
+            ;;
         4) echo "Testing network connectivity..."; sleep 2; diagnostics_menu ;;
         5) echo "Testing database connectivity..."; sleep 2; diagnostics_menu ;;
         6) echo "Running health check..."; sleep 2; diagnostics_menu ;;
