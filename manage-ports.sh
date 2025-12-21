@@ -36,14 +36,37 @@ REQUIRED_PORTS=(
 # Function to check if port is in use
 check_port() {
     local port=$1
-    if command -v nc &> /dev/null; then
-        nc -z 127.0.0.1 "$port" 2>/dev/null && return 0 || return 1
-    elif command -v curl &> /dev/null; then
-        curl -s http://127.0.0.1:"$port" >/dev/null 2>&1 && return 0 || return 1
-    else
-        # Fallback: use /dev/tcp
-        bash -c "</dev/tcp/127.0.0.1/$port" 2>/dev/null && return 0 || return 1
+    local timeout=1
+    
+    # Try multiple methods to check if port is in use
+    # Method 1: Using /dev/tcp (most reliable in bash)
+    if bash -c "</dev/tcp/127.0.0.1/$port" 2>/dev/null; then
+        return 0
     fi
+    
+    # Method 2: Using nc if available
+    if command -v nc &> /dev/null; then
+        if nc -z -w $timeout 127.0.0.1 "$port" 2>/dev/null; then
+            return 0
+        fi
+    fi
+    
+    # Method 3: Using curl if available
+    if command -v curl &> /dev/null; then
+        if curl -s --max-time $timeout http://127.0.0.1:"$port" >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    
+    # Method 4: Using netstat if available (most direct)
+    if command -v netstat &> /dev/null; then
+        if netstat -tln 2>/dev/null | grep -q "127.0.0.1:$port"; then
+            return 0
+        fi
+    fi
+    
+    # Port is not in use
+    return 1
 }
 
 # Function to find process using port
@@ -150,24 +173,32 @@ auto_fix_ports() {
         # Attempt to resolve conflicts
         log_warn "Attempt $attempt/$max_attempts to resolve $conflicts port conflict(s)..."
         
-        # Stop Docker containers
-        log_step "Stopping Docker containers..."
-        docker-compose down -v 2>/dev/null || true
-        docker stop $(docker ps -q) 2>/dev/null || true
-        docker system prune -f 2>/dev/null || true
+        # Kill any nginx processes (common port 80 user)
+        log_info "Stopping Nginx (if running)..."
+        sudo pkill -9 nginx 2>/dev/null || true
         
-        # Kill processes using conflicting ports
+        # Stop Docker completely
+        log_info "Stopping all Docker containers..."
+        sudo docker stop $(sudo docker ps -q) 2>/dev/null || true
+        sudo docker-compose down -v 2>/dev/null || true
+        docker-compose down -v 2>/dev/null || true
+        
+        # Clean Docker
+        log_info "Cleaning Docker resources..."
+        sudo docker system prune -f -a 2>/dev/null || true
+        docker system prune -f -a 2>/dev/null || true
+        
+        # Kill any remaining processes using the ports
         for port in "${ports_in_use[@]}"; do
-            if kill_port_process "$port"; then
-                log_ok "Freed port $port"
-            fi
+            kill_port_process "$port"
         done
         
-        sleep 2
+        # Wait and retry with fresh port check
+        sleep 3
         ((attempt++))
         
         if [ $attempt -le $max_attempts ]; then
-            log_info "Retrying port check..."
+            log_info "Retrying port check (attempt $attempt)..."
             echo ""
         fi
     done
@@ -175,13 +206,18 @@ auto_fix_ports() {
     # All attempts exhausted
     log_error "Could not resolve port conflicts after $max_attempts attempts"
     echo ""
-    echo "Conflicting ports:"
+    echo "Remaining conflicting ports:"
     for port_info in "${REQUIRED_PORTS[@]}"; do
         IFS=':' read -r port service <<< "$port_info"
         if check_port "$port"; then
             echo "  - Port $port ($service)"
         fi
     done
+    echo ""
+    echo "Manual resolution:"
+    echo "  sudo pkill -9 nginx          # Kill Nginx"
+    echo "  sudo docker system prune -a  # Clean Docker"
+    echo "  sudo netstat -tulpn | grep -E ':(80|443|3000|3001|3002|3003|5432|27017|6379)' # Check ports"
     return 1
 }
 
