@@ -46,19 +46,20 @@ interactive_menu() {
         # Print Title
         echo -e "${BLUE}$title:${NC}"
         
-        # Print Options
+        # Print Options with indices
         for i in "${!options[@]}"; do
+            local display_idx=$((i + 1))
             if [ $i -eq $current ]; then
                 if [ $i -eq $default_idx ]; then
-                    echo -e "  ${CYAN}➜ ${options[$i]} ${YELLOW}(Recommended)${NC}"
+                    echo -e "  ${CYAN}${display_idx}) ${options[$i]} ${YELLOW}(Recommended)${NC}"
                 else
-                    echo -e "  ${CYAN}➜ ${options[$i]}${NC}"
+                    echo -e "  ${CYAN}${display_idx}) ${options[$i]}${NC}"
                 fi
             else
                 if [ $i -eq $default_idx ]; then
-                    echo -e "    ${options[$i]} ${YELLOW}(Recommended)${NC}"
+                    echo -e "    ${display_idx}) ${options[$i]} ${YELLOW}(Recommended)${NC}"
                 else
-                    echo -e "    ${options[$i]}"
+                    echo -e "    ${display_idx}) ${options[$i]}"
                 fi
             fi
         done
