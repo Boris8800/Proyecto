@@ -241,6 +241,51 @@ The installer will:
 
 ---
 
+## 🔧 Port Management & Troubleshooting
+
+### Automatic Port Conflict Resolution
+
+**NEW in v2.0**: The installer now automatically detects and resolves port conflicts!
+
+If any of these ports are already in use:
+- **80** (HTTP) - Nginx
+- **443** (HTTPS) - Nginx  
+- **5432** (PostgreSQL)
+- **27017** (MongoDB)
+- **6379** (Redis)
+- **3000-3003** (Dashboards & API)
+
+The installer will **automatically**:
+1. Pre-kill blocking processes
+2. Stop Docker containers
+3. Clean Docker system
+4. Retry up to 3 times
+5. Provide manual commands if needed
+
+### If Port Conflicts Persist
+
+**Quick Diagnostic:**
+```bash
+sudo bash debug-ports.sh
+```
+
+**Manual Resolution:**
+```bash
+# Kill web servers
+sudo pkill -9 nginx apache2 httpd
+
+# Stop Docker
+sudo docker stop $(sudo docker ps -aq)
+sudo docker system prune -af
+
+# Try installation again
+sudo bash install-taxi-system.sh
+```
+
+**For Detailed Solutions:** See [PORT_TROUBLESHOOTING.md](PORT_TROUBLESHOOTING.md)
+
+---
+
 ## 🎯 Usage
 
 ### Interactive Menu
