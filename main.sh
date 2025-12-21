@@ -149,6 +149,10 @@ fresh_install() {
     
     log_ok "Server cleaned"
     
+    # System initialization (create user FIRST before any permission checks)
+    log_step "Initializing system..."
+    initialize_system
+    
     # Configure Docker mirror first to avoid image pull issues
     log_step "Configuring Docker registry mirror..."
     configure_docker_mirror
@@ -159,10 +163,6 @@ fresh_install() {
     check_space
     check_system_requirements
     check_docker_permissions taxi
-    
-    # System initialization
-    log_step "Initializing system..."
-    initialize_system
     
     # Install Docker
     log_step "Installing Docker..."
