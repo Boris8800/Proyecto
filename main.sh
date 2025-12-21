@@ -119,6 +119,10 @@ fresh_install() {
     
     log_step "Starting Taxi System Fresh Installation..."
     
+    # Configure Docker mirror first to avoid image pull issues
+    log_step "Configuring Docker registry mirror..."
+    configure_docker_mirror
+    
     # Pre-installation checks
     log_step "Running pre-installation checks..."
     check_internet

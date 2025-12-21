@@ -5,6 +5,41 @@
 # Source dependencies
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
+# ===================== DOCKER MIRROR CONFIGURATION =====================
+configure_docker_mirror() {
+    log_info "Setting up Docker registry mirror (Aliyun)..."
+    
+    # Create docker config directory
+    mkdir -p /etc/docker
+    
+    # Configure daemon.json with Aliyun mirror
+    cat > /etc/docker/daemon.json << 'EOF'
+{
+  "registry-mirrors": [
+    "https://mirror.aliyun.com",
+    "https://2qikv7nl.mirror.aliyuncs.com"
+  ],
+  "dns": ["8.8.8.8", "8.8.4.4", "114.114.114.114"],
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+EOF
+    
+    # Reload daemon
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    
+    # Restart Docker if running
+    if systemctl is-active --quiet docker; then
+        systemctl restart docker >/dev/null 2>&1 || true
+        sleep 3
+    fi
+    
+    log_ok "Docker mirror configured"
+}
+
 # ===================== DOCKER INSTALLATION FUNCTIONS =====================
 install_docker() {
     log_step "Installing Docker and Docker Compose..."
