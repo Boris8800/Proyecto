@@ -30,19 +30,15 @@ initialize_postgresql() {
         return 1
     fi
     
-    # Create database and user (use postgres superuser for initial setup)
-    log_info "Creating database and user..."
+    # Create database and user (if they don't already exist)
+    log_info "Ensuring database and user are configured..."
     
-    # First create the user with the superuser account
+    # Try with taxi_admin first (since it's the superuser defined in docker-compose)
     docker exec -e PGPASSWORD="$postgres_password" "$db_container" \
-        psql -U postgres -c "CREATE USER taxi_admin WITH PASSWORD '$postgres_password';" 2>/dev/null || true
+        psql -U taxi_admin -d postgres -c "CREATE DATABASE taxi_db;" 2>/dev/null || true
     
     docker exec -e PGPASSWORD="$postgres_password" "$db_container" \
-        psql -U postgres -c "ALTER ROLE taxi_admin WITH SUPERUSER;" 2>/dev/null || true
-    
-    # Then create the database
-    docker exec -e PGPASSWORD="$postgres_password" "$db_container" \
-        psql -U postgres -c "CREATE DATABASE taxi_db OWNER taxi_admin;" 2>/dev/null || true
+        psql -U taxi_admin -d postgres -c "ALTER USER taxi_admin WITH PASSWORD '$postgres_password';" 2>/dev/null || true
     
     log_ok "PostgreSQL database initialized"
 }
@@ -72,20 +68,32 @@ initialize_mongodb() {
     
     # Initialize admin user and database
     log_info "Creating MongoDB admin user and databases..."
-    docker exec "$db_container" mongosh << MONGO_SCRIPT 2>/dev/null
+    
+    # Try to connect with password first, then without
+    local mongo_auth=""
+    if ! docker exec "$db_container" mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+        mongo_auth="-u admin -p $mongo_password --authenticationDatabase admin"
+    fi
+
+    docker exec "$db_container" mongosh $mongo_auth << MONGO_SCRIPT 2>/dev/null
         use admin
-        db.createUser({
-            user: 'admin',
-            pwd: '$mongo_password',
-            roles: [{ role: 'root', db: 'admin' }]
-        })
+        // Only create admin if it doesn't exist (though INITDB usually handles this)
+        if (!db.getUser('admin')) {
+            db.createUser({
+                user: 'admin',
+                pwd: '$mongo_password',
+                roles: [{ role: 'root', db: 'admin' }]
+            })
+        }
         
         use taxi_locations
-        db.createUser({
-            user: 'taxi_user',
-            pwd: '$mongo_password',
-            roles: [{ role: 'readWrite', db: 'taxi_locations' }]
-        })
+        if (!db.getUser('taxi_user')) {
+            db.createUser({
+                user: 'taxi_user',
+                pwd: '$mongo_password',
+                roles: [{ role: 'readWrite', db: 'taxi_locations' }]
+            })
+        }
         
         // Create initial collections
         db.drivers.createIndex({ location: "2dsphere" })
@@ -106,6 +114,14 @@ setup_redis() {
     log_info "Waiting for Redis to be ready..."
     local attempts=0
     while [ $attempts -lt 30 ]; do
+        # Try pinging with password if provided, otherwise without
+        if [ -n "$redis_password" ]; then
+            if docker exec "$redis_container" redis-cli -a "$redis_password" ping 2>/dev/null | grep -q "PONG"; then
+                log_ok "Redis is ready (authenticated)"
+                break
+            fi
+        fi
+        
         if docker exec "$redis_container" redis-cli ping 2>/dev/null | grep -q "PONG"; then
             log_ok "Redis is ready"
             break
@@ -119,9 +135,20 @@ setup_redis() {
         return 1
     fi
     
-    # Configure Redis password (if using redis.conf)
-    log_info "Configuring Redis authentication..."
-    docker exec "$redis_container" redis-cli CONFIG SET requirepass "$redis_password" >/dev/null 2>&1
+    # Configure Redis password (only if not already set via command line)
+    log_info "Ensuring Redis authentication is configured..."
+    if ! docker exec "$redis_container" redis-cli ping 2>/dev/null | grep -q "PONG"; then
+        # If ping fails without password, it's likely already protected
+        if docker exec "$redis_container" redis-cli -a "$redis_password" ping 2>/dev/null | grep -q "PONG"; then
+            log_ok "Redis authentication already active"
+        else
+            # Try to set it if it's not set and we can't ping
+            docker exec "$redis_container" redis-cli CONFIG SET requirepass "$redis_password" >/dev/null 2>&1 || true
+        fi
+    else
+        # If ping succeeds without password, set the password now
+        docker exec "$redis_container" redis-cli CONFIG SET requirepass "$redis_password" >/dev/null 2>&1
+    fi
     
     log_ok "Redis configured"
 }
@@ -327,7 +354,11 @@ database_status() {
     if docker ps --filter name=taxi-mongo --filter status=running | grep -q taxi-mongo; then
         echo -e "  ${GREEN}✅ Running${NC}"
         
-        if docker exec taxi-mongo mongosh --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+        local mongo_pass="${MONGO_PASSWORD:-}"
+        local mongo_auth=""
+        [ -n "$mongo_pass" ] && mongo_auth="-u admin -p $mongo_pass --authenticationDatabase admin"
+        
+        if docker exec taxi-mongo mongosh $mongo_auth --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
             echo -e "  ${GREEN}✅ Accessible${NC}"
         else
             echo -e "  ${RED}❌ Not accessible${NC}"
@@ -342,11 +373,15 @@ database_status() {
     if docker ps --filter name=taxi-redis --filter status=running | grep -q taxi-redis; then
         echo -e "  ${GREEN}✅ Running${NC}"
         
-        if docker exec taxi-redis redis-cli ping 2>/dev/null | grep -q "PONG"; then
+        local redis_pass="${REDIS_PASSWORD:-}"
+        local redis_auth=""
+        [ -n "$redis_pass" ] && redis_auth="-a $redis_pass"
+        
+        if docker exec taxi-redis redis-cli $redis_auth ping 2>/dev/null | grep -q "PONG"; then
             echo -e "  ${GREEN}✅ Accessible${NC}"
             
             local redis_mem
-            redis_mem=$(docker exec taxi-redis redis-cli INFO memory 2>/dev/null | grep used_memory_human | cut -d: -f2 | tr -d '\r')
+            redis_mem=$(docker exec taxi-redis redis-cli $redis_auth INFO memory 2>/dev/null | grep used_memory_human | cut -d: -f2 | tr -d '\r')
             echo "  💾 Memory: $redis_mem"
         else
             echo -e "  ${RED}❌ Not accessible${NC}"

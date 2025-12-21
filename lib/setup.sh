@@ -122,9 +122,9 @@ POSTGRES_PASSWORD=$postgres_pass
 # MongoDB
 MONGO_HOST=taxi-mongo
 MONGO_PORT=27017
-MONGO_INITDB_ROOT_USERNAME=admin
-MONGO_INITDB_ROOT_PASSWORD=$mongo_pass
 MONGO_DB=taxi_locations
+MONGO_USER=admin
+MONGO_PASSWORD=$mongo_pass
 
 # Redis Cache
 REDIS_HOST=taxi-redis
@@ -220,7 +220,7 @@ services:
     networks:
       - taxi_network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok'
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -236,7 +236,7 @@ services:
     networks:
       - taxi_network
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
