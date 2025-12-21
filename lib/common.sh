@@ -61,24 +61,24 @@ log_to_file() {
 # ===================== BANNER & MESSAGES =====================
 print_banner() {
     echo -e "${PURPLE}\n════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${CYAN}   $1${NC}"
+    echo -e "${CYAN}   ${1:-}${NC}"
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
     echo -e "${YELLOW}${2:-}${NC}\n"
 }
 
 print_header() {
     echo -e "\n${BLUE}════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${BLUE}                    $1                    ${NC}"
+    echo -e "${BLUE}                    ${1:-}                    ${NC}"
     echo -e "${BLUE}════════════════════════════════════════════════════════════════${NC}"
 }
 
 print_substep() {
-    echo -e "${BLUE}  →${NC} $1"
+    echo -e "${BLUE}  →${NC} ${1:-}"
 }
 
 print_step() {
-    local phase_num=$1
-    local phase_name=$2
+    local phase_num=${1:-}
+    local phase_name=${2:-}
     CURRENT_PHASE=$phase_num
     echo ""
     echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
