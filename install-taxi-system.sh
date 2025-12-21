@@ -52,13 +52,13 @@ spinner() {
     local spinstr='|/-\'
     
     echo -ne "${BLUE}${message}${NC} "
-    while kill -0 $pid 2>/dev/null; do
+    while kill -0 "$pid" 2>/dev/null; do
         for i in $(seq 0 3); do
             echo -ne "\b${spinstr:$i:1}"
             sleep $delay
         done
     done
-    wait $pid
+    wait "$pid"
     local status=$?
     if [ $status -eq 0 ]; then
         echo -ne "\b${GREEN}✓${NC}\n"
@@ -410,10 +410,10 @@ cleanup_system() {
     for port in "${ports[@]}"; do
         if netstat -tuln 2>/dev/null | grep -q ":$port " || ss -tuln 2>/dev/null | grep -q ":$port "; then
             log_info "Port $port is in use, attempting to free it..."
-            local pids=$(lsof -t -i :$port 2>/dev/null || fuser $port/tcp 2>/dev/null || echo "")
+            local pids=$(lsof -t -i :"$port" 2>/dev/null || fuser "$port"/tcp 2>/dev/null || echo "")
             if [ -n "$pids" ]; then
                 for pid in $pids; do
-                    local process_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
+                    local process_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
                     log_info "Killing process $process_name (PID: $pid) on port $port"
                     kill -9 "$pid" 2>/dev/null || true
                     killed_count=$((killed_count + 1))
@@ -509,7 +509,7 @@ cleanup_system() {
     )
     
     for config in "${configs_to_remove[@]}"; do
-        rm -f $config 2>/dev/null || true
+        rm -f "$config" 2>/dev/null || true
     done
     log_ok "Configuration files removed"
     
@@ -1131,7 +1131,7 @@ kill_port() {
         log_step "Killing process on port $port..."
         
         # Get PIDs using the port
-        local pids=$(lsof -t -i :$port 2>/dev/null)
+        local pids=$(lsof -t -i :"$port" 2>/dev/null)
         
         if [ -z "$pids" ]; then
             log_warn "No process found on port $port, but port appears in use"
@@ -1199,7 +1199,7 @@ check_ports() {
         
         for port in "${in_use[@]}"; do
             echo -e "${YELLOW}📍 Port $port:${NC}"
-            local port_info=$(lsof -i :$port 2>/dev/null | awk 'NR>1 {print "   PID: " $2 ", Process: " $1 ", User: " $3}')
+            local port_info=$(lsof -i :"$port" 2>/dev/null | awk 'NR>1 {print "   PID: " $2 ", Process: " $1 ", User: " $3}')
             if [ -n "$port_info" ]; then
                 echo "$port_info"
             else
@@ -1378,7 +1378,7 @@ run_docker_compose() {
     
     # Run docker-compose with error handling
     log_step "Starting Docker services..."
-    if cd "$compose_dir" && sudo -u "$docker_user" docker-compose $compose_args; then
+    if cd "$compose_dir" && sudo -u "$docker_user" docker-compose "$compose_args"; then
         log_ok "Docker Compose executed successfully"
         return 0
     else
@@ -1390,7 +1390,7 @@ run_docker_compose() {
             log_warn "Permission or command not found error detected"
             check_docker_permissions "$docker_user"
             log_step "Retrying Docker Compose..."
-            if cd "$compose_dir" && sudo -u "$docker_user" docker-compose $compose_args; then
+            if cd "$compose_dir" && sudo -u "$docker_user" docker-compose "$compose_args"; then
                 log_ok "Docker Compose succeeded on retry"
                 return 0
             fi
@@ -2068,7 +2068,7 @@ retry_with_backoff() {
     local max_attempts=${2:-5}
     local delay=2
     local attempt=1
-    while [ $attempt -le $max_attempts ]; do
+    while [ "$attempt" -le "$max_attempts" ]; do
         log_step "Attempt $attempt: $1"
         eval "$1" && return 0
         log_step "Failed attempt $attempt for: $1"
@@ -2122,7 +2122,7 @@ unit_test_taxi_installer() {
     local ports=(80 443 3000 5432 6379 27017 9000 19999)
     local port_free=true
     for port in "${ports[@]}"; do
-        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+        if lsof -i :"$port" 2>/dev/null | grep -q LISTEN; then
             echo -e "${RED}✗ Port $port is still in use.${NC}"
             port_free=false
             failed=1
@@ -2168,7 +2168,7 @@ show_open_ports_menu() {
     echo -e "${CYAN}Target ports (22/SSH excluded):${NC} ${ports[*]}"
     echo -e "${BLUE}Port status:${NC}"
     for port in "${ports[@]}"; do
-        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+        if lsof -i :"$port" 2>/dev/null | grep -q LISTEN; then
             local pids
             pids=$(lsof -t -i :"$port" 2>/dev/null | sort -u)
             echo -e "${YELLOW}Port $port OPEN by PID(s): $pids${NC}"
@@ -7338,7 +7338,7 @@ retry_with_backoff() {
     local max_attempts=${2:-5}
     local delay=2
     local attempt=1
-    while [ $attempt -le $max_attempts ]; do
+    while [ "$attempt" -le "$max_attempts" ]; do
         log_step "Attempt $attempt: $1"
         eval "$1" && return 0
         log_step "Failed attempt $attempt for: $1"
@@ -7392,7 +7392,7 @@ unit_test_taxi_installer() {
     local ports=(80 443 3000 5432 6379 27017 9000 19999)
     local port_free=true
     for port in "${ports[@]}"; do
-        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+        if lsof -i :"$port" 2>/dev/null | grep -q LISTEN; then
             echo -e "${RED}✗ Port $port is still in use.${NC}"
             port_free=false
             failed=1
@@ -7438,7 +7438,7 @@ show_open_ports_menu() {
     echo -e "${CYAN}Target ports (22/SSH excluded):${NC} ${ports[*]}"
     echo -e "${BLUE}Port status:${NC}"
     for port in "${ports[@]}"; do
-        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+        if lsof -i :"$port" 2>/dev/null | grep -q LISTEN; then
             local pids
             pids=$(lsof -t -i :"$port" 2>/dev/null | sort -u)
             echo -e "${YELLOW}Port $port OPEN by PID(s): $pids${NC}"
@@ -7550,7 +7550,7 @@ main_installer() {
     # Comprobación de conflictos de puertos
     local ports=(80 443 3000 5432 6379 27017 9000 19999)
     for port in "${ports[@]}"; do
-        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+        if lsof -i :"$port" 2>/dev/null | grep -q LISTEN; then
             echo -e "${RED}El puerto $port ya está en uso. Libera el puerto y vuelve a intentarlo.${NC}"
             exit 1
         fi
@@ -7668,7 +7668,7 @@ main_installer() {
     # Comprobación de conflictos de puertos
     local ports=(80 443 3000 5432 6379 27017 9000 19999)
     for port in "${ports[@]}"; do
-        if lsof -i :$port 2>/dev/null | grep -q LISTEN; then
+        if lsof -i :"$port" 2>/dev/null | grep -q LISTEN; then
             echo -e "${RED}El puerto $port ya está en uso. Libera el puerto y vuelve a intentarlo.${NC}"
             exit 1
         fi
