@@ -27,7 +27,7 @@ show_main_menu() {
     echo "  ${GREEN}[9]${NC}  System Cleanup"
     echo "  ${GREEN}[0]${NC}  Exit"
     echo ""
-    read -r -p "Select an option [0-9]: " main_choice
+    read -r -p "Select an option [1/2/3/4/5/6/7/8/9/0]: " main_choice
     
     case "$main_choice" in
         1) fresh_installation_menu ;;
@@ -84,7 +84,7 @@ update_menu() {
     echo "  ${GREEN}[1]${NC}  Update all services"
     echo "  ${GREEN}[2]${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1-2]: " update_choice
+    read -r -p "Select an option [1/2]: " update_choice
     
     case "$update_choice" in
         1) 
@@ -112,7 +112,7 @@ service_management_menu() {
     echo "  ${GREEN}[5]${NC}  View service logs"
     echo "  ${GREEN}[6]${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1-6]: " service_choice
+    read -r -p "Select an option [1/2/3/4/5/6]: " service_choice
     
     case "$service_choice" in
         1)
@@ -163,7 +163,7 @@ service_logs_menu() {
     echo "  5) Admin Dashboard"
     echo "  6) Back"
     echo ""
-    read -r -p "Select (1-6): " log_choice
+    read -r -p "Select (1/2/3/4/5/6): " log_choice
     
     case "$log_choice" in
         1) docker logs taxi-api -f ;;
@@ -189,7 +189,7 @@ diagnostics_menu() {
     echo "  ${GREEN}6)${NC}  Health check"
     echo "  ${GREEN}7)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-7): " diag_choice
+    read -r -p "Select an option (1/2/3/4/5/6/7): " diag_choice
     
     case "$diag_choice" in
         1) echo "Running full system check..."; sleep 2; diagnostics_menu ;;
@@ -215,7 +215,7 @@ database_menu() {
     echo "  ${GREEN}5)${NC}  Reset databases (DESTRUCTIVE)"
     echo "  ${GREEN}6)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-6): " db_choice
+    read -r -p "Select an option (1/2/3/4/5/6): " db_choice
     
     case "$db_choice" in
         1) log_info "Initializing databases..."; sleep 2; database_menu ;;
@@ -248,7 +248,7 @@ security_menu() {
     echo "  ${GREEN}4)${NC}  View security report"
     echo "  ${GREEN}5)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-5): " sec_choice
+    read -r -p "Select an option (1/2/3/4/5): " sec_choice
     
     case "$sec_choice" in
         1) log_info "Running security audit..."; sleep 2; security_menu ;;
@@ -272,7 +272,7 @@ error_recovery_menu() {
     echo "  ${GREEN}5)${NC}  System reset"
     echo "  ${GREEN}6)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-6): " err_choice
+    read -r -p "Select an option (1/2/3/4/5/6): " err_choice
     
     case "$err_choice" in
         1) log_info "Recent errors..."; sleep 2; error_recovery_menu ;;
@@ -306,7 +306,7 @@ backup_menu() {
     echo "  ${GREEN}5)${NC}  Restore from backup"
     echo "  ${GREEN}6)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-6): " backup_choice
+    read -r -p "Select an option [1/2/3/4/5/6]: " backup_choice
     
     case "$backup_choice" in
         1) log_info "Creating full backup..."; sleep 2; backup_menu ;;
@@ -331,7 +331,7 @@ cleanup_menu() {
     echo "  ${GREEN}[4]${NC}  Full system cleanup"
     echo "  ${GREEN}[5]${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1-5]: " clean_choice
+    read -r -p "Select an option [1/2/3/4/5]: " clean_choice
     
     case "$clean_choice" in
         1) log_info "Cleaning temporary files..."; sleep 2; cleanup_menu ;;
