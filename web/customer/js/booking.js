@@ -70,10 +70,7 @@ class SwiftCabBookingSystem {
 
         // Modals
         this.successModal = document.getElementById('successModal');
-        this.profileModal = document.getElementById('profileModal');
         this.modalOverlay = document.getElementById('modalOverlay');
-        this.profileBtn = document.getElementById('profileBtn');
-        this.closeProfileBtn = document.getElementById('closeProfileBtn');
         this.closeSuccessBtn = document.getElementById('closeSuccessBtn');
         this.bookingRefElement = document.getElementById('bookingRef');
 
@@ -114,8 +111,6 @@ class SwiftCabBookingSystem {
         if (this.confirmBtn) this.confirmBtn.addEventListener('click', () => this.confirmBooking());
 
         // Modal Events
-        if (this.profileBtn) this.profileBtn.addEventListener('click', () => this.openProfileModal());
-        if (this.closeProfileBtn) this.closeProfileBtn.addEventListener('click', () => this.closeProfileModal());
         if (this.closeSuccessBtn) this.closeSuccessBtn.addEventListener('click', () => this.closeSuccessModal());
         if (this.modalOverlay) this.modalOverlay.addEventListener('click', () => this.closeAllModals());
 
@@ -264,16 +259,7 @@ class SwiftCabBookingSystem {
         this.resetForm();
     }
 
-    openProfileModal() {
-        this.profileModal.classList.add('active');
-    }
-
-    closeProfileModal() {
-        this.profileModal.classList.remove('active');
-    }
-
     closeAllModals() {
-        this.closeProfileModal();
         this.closeSuccessModal();
     }
 
