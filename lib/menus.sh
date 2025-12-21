@@ -99,6 +99,8 @@ interactive_menu() {
 }
 
 # Read user input with 10-second timeout
+# Usage: read_with_timeout variable_name "prompt" default_value
+read_with_timeout() {
     local var_name=$1
     local prompt=$2
     local default=$3
