@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Dashboard - Taxi System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Magic Link Login Screen -->
+    <div class="magic-link-container" id="loginScreen">
+        <div class="magic-link-card">
+            <div class="magic-link-header">
+                <i class="fas fa-taxi"></i>
+                <h1>QuickRide</h1>
+                <p>Sign in with magic link</p>
+            </div>
+            
+            <form id="magicLinkForm" class="magic-form">
+                <div class="form-group">
+                    <label for="customerEmail">
+                        <i class="fas fa-envelope"></i> Email Address
+                    </label>
+                    <input 
+                        type="email" 
+                        id="customerEmail" 
+                        placeholder="your.email@example.com"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+                
+                <button type="submit" class="btn-magic-link">
+                    <i class="fas fa-paper-plane"></i>
+                    Send Magic Link
+                </button>
+                
+                <div class="magic-link-benefits">
+                    <p><i class="fas fa-lock"></i> No password required</p>
+                    <p><i class="fas fa-bolt"></i> Instant access</p>
+                    <p><i class="fas fa-shield-alt"></i> More secure</p>
+                </div>
+            </form>
+            
+            <div id="emailSent" class="email-sent-message" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <h3>Check your email!</h3>
+                <p>We've sent a magic link to <strong id="sentEmailAddress"></strong></p>
+                <p class="email-hint">Click the link in the email to sign in instantly. No password needed!</p>
+                <button class="btn-resend" id="resendLink">
+                    <i class="fas fa-redo"></i> Resend Link
+                </button>
+            </div>
+            
+            <div class="magic-link-footer">
+                <p><i class="fas fa-info-circle"></i> New here? Magic links work for signup too!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard" id="mainDashboard" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-taxi"></i>
+                <h2>QuickRide</h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Book a Ride</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-route"></i>
+                    <span>Active Ride</span>
+                    <span class="badge online">Live</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-history"></i>
+                    <span>Ride History</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Payment Methods</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-tags"></i>
+                    <span>Promotions</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item">
+                    <i class="fas fa-headset"></i>
+                    <span>Support</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <h1>Hello, Maria! 👋</h1>
+                    <p class="subtitle">Where would you like to go today?</p>
+                </div>
+                <div class="header-right">
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">2</span>
+                    </button>
+                    
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Maria+Santos&background=4facfe&color=fff" alt="Customer">
+                        <span>Maria S.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Section -->
+            <div class="booking-section">
+                <div class="booking-card">
+                    <h2><i class="fas fa-map-marker-alt"></i> Book Your Ride</h2>
+                    
+                    <form class="booking-form">
+                        <div class="location-inputs">
+                            <div class="input-group">
+                                <div class="input-icon pickup">
+                                    <i class="fas fa-circle"></i>
+                                </div>
+                                <input type="text" placeholder="Pickup location" value="Current Location" class="form-input">
+                                <button type="button" class="location-btn">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="location-divider"></div>
+                            
+                            <div class="input-group">
+                                <div class="input-icon destination">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <input type="text" placeholder="Where to?" class="form-input">
+                            </div>
+                        </div>
+
+                        <div class="ride-options">
+                            <h3>Choose Ride Type</h3>
+                            <div class="ride-types">
+                                <div class="ride-type active" data-type="standard">
+                                    <i class="fas fa-car"></i>
+                                    <div class="ride-type-info">
+                                        <div class="ride-type-name">Standard</div>
+                                        <div class="ride-type-time">3 min away</div>
+                                    </div>
+                                    <div class="ride-type-price">$12.50</div>
+                                </div>
+                                
+                                <div class="ride-type" data-type="premium">
+                                    <i class="fas fa-car-side"></i>
+                                    <div class="ride-type-info">
+                                        <div class="ride-type-name">Premium</div>
+                                        <div class="ride-type-time">5 min away</div>
+                                    </div>
+                                    <div class="ride-type-price">$18.00</div>
+                                </div>
+                                
+                                <div class="ride-type" data-type="xl">
+                                    <i class="fas fa-shuttle-van"></i>
+                                    <div class="ride-type-info">
+                                        <div class="ride-type-name">XL (6 seats)</div>
+                                        <div class="ride-type-time">8 min away</div>
+                                    </div>
+                                    <div class="ride-type-price">$22.00</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="trip-details">
+                            <div class="detail-row">
+                                <span><i class="fas fa-route"></i> Distance</span>
+                                <span>8.5 km</span>
+                            </div>
+                            <div class="detail-row">
+                                <span><i class="fas fa-clock"></i> Est. Time</span>
+                                <span>15 min</span>
+                            </div>
+                            <div class="detail-row">
+                                <span><i class="fas fa-credit-card"></i> Payment</span>
+                                <span>Visa •••• 4242</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-book-ride">
+                            <i class="fas fa-check-circle"></i> Book Ride - $12.50
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Promo Code -->
+                <div class="promo-card">
+                    <div class="promo-icon">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                    <div class="promo-info">
+                        <h4>Have a promo code?</h4>
+                        <p>Get discounts on your ride</p>
+                    </div>
+                    <button class="btn-promo">Apply</button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="activity-section">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Rides</h3>
+                        <button class="btn-small">View All</button>
+                    </div>
+                    <div class="rides-list">
+                        <div class="ride-item">
+                            <div class="ride-icon">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="ride-details">
+                                <div class="ride-route">
+                                    <strong>Home → Office</strong>
+                                </div>
+                                <div class="ride-meta">
+                                    <span class="ride-date">Dec 15, 2023 • 8:30 AM</span>
+                                    <span class="ride-driver">Driver: Carlos R.</span>
+                                </div>
+                            </div>
+                            <div class="ride-right">
+                                <div class="ride-price">$15.50</div>
+                                <div class="ride-rating">
+                                    <i class="fas fa-star"></i> 5.0
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ride-item">
+                            <div class="ride-icon">
+                                <i class="fas fa-car-side"></i>
+                            </div>
+                            <div class="ride-details">
+                                <div class="ride-route">
+                                    <strong>Airport → Home</strong>
+                                </div>
+                                <div class="ride-meta">
+                                    <span class="ride-date">Dec 14, 2023 • 6:15 PM</span>
+                                    <span class="ride-driver">Driver: Ana L.</span>
+                                </div>
+                            </div>
+                            <div class="ride-right">
+                                <div class="ride-price">$28.00</div>
+                                <div class="ride-rating">
+                                    <i class="fas fa-star"></i> 4.8
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ride-item">
+                            <div class="ride-icon">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="ride-details">
+                                <div class="ride-route">
+                                    <strong>Downtown → Shopping Mall</strong>
+                                </div>
+                                <div class="ride-meta">
+                                    <span class="ride-date">Dec 13, 2023 • 2:45 PM</span>
+                                    <span class="ride-driver">Driver: Pedro G.</span>
+                                </div>
+                            </div>
+                            <div class="ride-right">
+                                <div class="ride-price">$12.50</div>
+                                <div class="ride-rating">
+                                    <i class="fas fa-star"></i> 5.0
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats & Favorites -->
+                <div class="sidebar-cards">
+                    <!-- Travel Stats -->
+                    <div class="card stats-card">
+                        <h3><i class="fas fa-chart-line"></i> Your Stats</h3>
+                        <div class="stats-list">
+                            <div class="stat-item">
+                                <span class="stat-label">Total Rides</span>
+                                <span class="stat-value">47</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Distance</span>
+                                <span class="stat-value">342 km</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Spent</span>
+                                <span class="stat-value">$684</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Saved</span>
+                                <span class="stat-value">$48</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Favorite Locations -->
+                    <div class="card favorites-card">
+                        <h3><i class="fas fa-star"></i> Favorites</h3>
+                        <div class="favorites-list">
+                            <div class="favorite-item">
+                                <div class="fav-icon home">
+                                    <i class="fas fa-home"></i>
+                                </div>
+                                <div class="fav-details">
+                                    <div class="fav-name">Home</div>
+                                    <div class="fav-address">123 Main St, Apt 4B</div>
+                                </div>
+                            </div>
+                            
+                            <div class="favorite-item">
+                                <div class="fav-icon work">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                                <div class="fav-details">
+                                    <div class="fav-name">Work</div>
+                                    <div class="fav-address">456 Business Blvd</div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn-add-favorite">
+                                <i class="fas fa-plus"></i> Add Favorite
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -110,6 +110,218 @@ end_phase() {
     echo ""
 }
 
+# ===================== SECURITY FUNCTIONS =====================
+generate_secure_password() {
+    # Generate a 32-character secure password
+    openssl rand -base64 32 | tr -d "=+/" | cut -c1-32
+}
+
+save_credentials() {
+    local credentials_file="/root/.taxi-credentials-$(date +%s).txt"
+    
+    cat > "$credentials_file" << EOF
+════════════════════════════════════════════════════════════════
+                    TAXI SYSTEM CREDENTIALS
+                    Generated: $(date)
+════════════════════════════════════════════════════════════════
+
+PostgreSQL Database:
+  Host:     localhost:5432
+  User:     taxi_admin
+  Password: ${POSTGRES_PASSWORD}
+  Database: taxi_db
+
+MongoDB:
+  Host:     localhost:27017
+  User:     admin
+  Password: ${MONGO_PASSWORD}
+  Database: taxi_locations
+
+Redis:
+  Host:     localhost:6379
+  Password: ${REDIS_PASSWORD}
+
+JWT Secret:
+  ${JWT_SECRET}
+
+API Gateway:
+  URL: http://localhost:3000
+
+Dashboards:
+  Admin:    http://${SERVER_IP:-localhost}:3001
+  Driver:   http://${SERVER_IP:-localhost}:3002
+  Customer: http://${SERVER_IP:-localhost}:3003
+
+════════════════════════════════════════════════════════════════
+⚠️  IMPORTANT SECURITY NOTICE:
+════════════════════════════════════════════════════════════════
+• SAVE THIS FILE IN A SECURE LOCATION IMMEDIATELY!
+• Do NOT share these credentials over insecure channels
+• Change default passwords in production
+• This file will be automatically deleted in 24 hours
+
+File location: ${credentials_file}
+════════════════════════════════════════════════════════════════
+EOF
+
+    chmod 600 "$credentials_file"
+    echo "$credentials_file"
+}
+
+configure_firewall() {
+    log_step "Configuring firewall (UFW)..."
+    
+    # Install UFW if not present
+    if ! command -v ufw &> /dev/null; then
+        apt-get install -y ufw >/dev/null 2>&1
+    fi
+    
+    # Reset to defaults
+    echo "y" | ufw --force reset >/dev/null 2>&1
+    
+    # Default policies
+    ufw default deny incoming >/dev/null 2>&1
+    ufw default allow outgoing >/dev/null 2>&1
+    
+    # Allow SSH (CRITICAL - don't lock yourself out!)
+    ufw allow 22/tcp comment 'SSH' >/dev/null 2>&1
+    
+    # Allow HTTP/HTTPS
+    ufw allow 80/tcp comment 'HTTP' >/dev/null 2>&1
+    ufw allow 443/tcp comment 'HTTPS' >/dev/null 2>&1
+    
+    # Allow application dashboards
+    ufw allow 3000:3003/tcp comment 'Taxi Dashboards' >/dev/null 2>&1
+    
+    # Block database ports from external access (security best practice)
+    # They will still be accessible from localhost and Docker network
+    
+    # Enable firewall
+    echo "y" | ufw --force enable >/dev/null 2>&1
+    
+    log_ok "Firewall configured and enabled"
+    log_info "Allowed ports: 22 (SSH), 80 (HTTP), 443 (HTTPS), 3000-3003 (Dashboards)"
+    log_info "Database ports (5432, 27017, 6379) are protected - only accessible locally"
+}
+
+security_audit() {
+    echo ""
+    echo -e "${CYAN}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}              🔍 SECURITY AUDIT REPORT${NC}"
+    echo -e "${CYAN}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    local issues=0
+    local warnings=0
+    local passed=0
+    
+    # Check 1: Strong passwords
+    if [ -f "/home/taxi/app/.env" ]; then
+        if grep -q "password123\|admin123\|taxipass" /home/taxi/app/.env 2>/dev/null; then
+            echo -e "${RED}❌ CRITICAL: Default/weak passwords detected${NC}"
+            ((issues++))
+        else
+            echo -e "${GREEN}✅ Strong passwords configured${NC}"
+            ((passed++))
+        fi
+    fi
+    
+    # Check 2: Database ports exposure
+    local exposed_ports=$(netstat -tuln 2>/dev/null | grep -E ":(5432|27017|6379).*0.0.0.0" | wc -l)
+    if [ "$exposed_ports" -gt 0 ]; then
+        echo -e "${YELLOW}⚠️  WARNING: Database ports exposed to internet${NC}"
+        echo -e "${YELLOW}   Consider using firewall to restrict access${NC}"
+        ((warnings++))
+    else
+        echo -e "${GREEN}✅ Database ports not exposed externally${NC}"
+        ((passed++))
+    fi
+    
+    # Check 3: Docker socket permissions
+    if [ -e "/var/run/docker.sock" ]; then
+        local socket_perms=$(stat -c %a /var/run/docker.sock 2>/dev/null)
+        if [ "$socket_perms" = "666" ]; then
+            echo -e "${YELLOW}⚠️  WARNING: Docker socket is world-writable${NC}"
+            echo -e "${YELLOW}   This is set for compatibility but reduces security${NC}"
+            ((warnings++))
+        else
+            echo -e "${GREEN}✅ Docker socket permissions are restrictive${NC}"
+            ((passed++))
+        fi
+    fi
+    
+    # Check 4: Firewall status
+    if command -v ufw &> /dev/null; then
+        if ufw status | grep -q "Status: active"; then
+            echo -e "${GREEN}✅ Firewall (UFW) is active${NC}"
+            ((passed++))
+        else
+            echo -e "${RED}❌ CRITICAL: Firewall is not active${NC}"
+            ((issues++))
+        fi
+    else
+        echo -e "${YELLOW}⚠️  WARNING: UFW firewall not installed${NC}"
+        ((warnings++))
+    fi
+    
+    # Check 5: SSL/TLS
+    if [ -d "/etc/nginx" ]; then
+        if grep -r "ssl_certificate" /etc/nginx/sites-enabled/ 2>/dev/null | grep -v "#" >/dev/null; then
+            echo -e "${GREEN}✅ SSL/TLS certificate configured${NC}"
+            ((passed++))
+        else
+            echo -e "${YELLOW}⚠️  WARNING: No SSL certificate configured (HTTP only)${NC}"
+            echo -e "${YELLOW}   Consider setting up Let's Encrypt for HTTPS${NC}"
+            ((warnings++))
+        fi
+    fi
+    
+    # Check 6: Root login
+    if [ -f "/etc/ssh/sshd_config" ]; then
+        if grep -q "^PermitRootLogin yes" /etc/ssh/sshd_config 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  WARNING: Root SSH login is enabled${NC}"
+            ((warnings++))
+        else
+            echo -e "${GREEN}✅ Root SSH login is disabled/restricted${NC}"
+            ((passed++))
+        fi
+    fi
+    
+    # Calculate security score
+    local total_checks=$((passed + warnings + issues))
+    local score=100
+    
+    if [ $total_checks -gt 0 ]; then
+        score=$((100 - (warnings * 10) - (issues * 25)))
+        if [ $score -lt 0 ]; then
+            score=0
+        fi
+    fi
+    
+    echo ""
+    echo -e "${CYAN}────────────────────────────────────────────────────────────────${NC}"
+    
+    if [ $score -ge 80 ]; then
+        echo -e "${GREEN}Security Score: ${score}/100 - GOOD${NC}"
+    elif [ $score -ge 60 ]; then
+        echo -e "${YELLOW}Security Score: ${score}/100 - FAIR${NC}"
+    else
+        echo -e "${RED}Security Score: ${score}/100 - NEEDS IMPROVEMENT${NC}"
+    fi
+    
+    echo -e "${CYAN}Summary: ${GREEN}${passed} passed${NC}, ${YELLOW}${warnings} warnings${NC}, ${RED}${issues} critical${NC}"
+    echo -e "${CYAN}════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    
+    if [ $issues -gt 0 ] || [ $warnings -gt 0 ]; then
+        echo -e "${YELLOW}Recommendations:${NC}"
+        [ $issues -gt 0 ] && echo "  • Fix critical security issues immediately"
+        [ $warnings -gt 0 ] && echo "  • Review and address warnings when possible"
+        echo "  • Run 'sudo bash $0 --security-audit' to check again"
+        echo ""
+    fi
+}
+
 # ===================== DOCKER PERMISSION HELPER =====================
 check_docker_permissions() {
     local docker_user="${1:-taxi}"
@@ -133,6 +345,11 @@ check_docker_permissions() {
                 fi
                 sudo usermod -aG docker "$docker_user"
                 log_ok "User $docker_user added to docker group. Changes will take effect after logout/login."
+                
+                # Apply changes immediately
+                log_step "Applying group changes..."
+                sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
+                
                 log_step "Attempting to start Docker services..."
                 if sudo -u "$docker_user" docker ps >/dev/null 2>&1; then
                     log_ok "Docker access verified."
@@ -170,44 +387,215 @@ check_docker_permissions() {
 # ===================== SYSTEM CLEANUP FUNCTION =====================
 cleanup_system() {
     echo ""
-    log_step "Starting system cleanup and preparation..."
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}        STARTING COMPLETE SYSTEM CLEANUP${NC}"
+    echo -e "${PURPLE}════════════════════════════════════════════════════════════════${NC}"
     echo ""
     
-    # Stop all running containers
-    log_step "Stopping Docker containers..."
-    if command -v docker &> /dev/null; then
-        docker-compose -f /home/taxi/docker-compose.yml down 2>/dev/null || true
-        docker stop $(docker ps -q) 2>/dev/null || true
-        docker rm $(docker ps -a -q) 2>/dev/null || true
-        docker rmi $(docker images -q) 2>/dev/null || true
-        docker system prune -a -f 2>/dev/null || true
-        log_ok "Docker cleaned"
+    log_warn "This will remove ALL previous Taxi System installations"
+    log_warn "and free up all required ports for a clean installation"
+    echo ""
+    read -p "Continue with cleanup? (yes/no): " cleanup_confirm
+    
+    if [[ ! "$cleanup_confirm" =~ ^[Yy][Ee][Ss]$ ]]; then
+        log_info "Cleanup cancelled"
+        return 0
     fi
     
-    # Stop services
-    log_step "Stopping system services..."
-    systemctl stop nginx 2>/dev/null || true
-    systemctl stop docker 2>/dev/null || true
-    systemctl stop postgresql 2>/dev/null || true
-    systemctl stop redis-server 2>/dev/null || true
-    log_ok "Services stopped"
+    # ========== STEP 1: Kill processes on required ports ==========
+    log_step "Step 1/8: Freeing up required ports..."
+    local ports=(80 443 3000 3001 3002 3003 5432 27017 6379 9000 19999)
+    local killed_count=0
     
-    # Remove old installation
-    log_step "Removing old installation files..."
-    rm -rf /home/taxi 2>/dev/null || true
-    rm -rf /var/lib/docker 2>/dev/null || true
-    rm -rf /etc/docker 2>/dev/null || true
-    rm -rf /etc/nginx/sites-available/taxi 2>/dev/null || true
-    rm -rf /etc/nginx/sites-enabled/taxi 2>/dev/null || true
-    log_ok "Old files removed"
+    for port in "${ports[@]}"; do
+        if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+            log_info "Port $port is in use, attempting to free it..."
+            local pids=$(lsof -t -i :$port 2>/dev/null)
+            if [ -n "$pids" ]; then
+                for pid in $pids; do
+                    local process_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
+                    log_info "Killing process $process_name (PID: $pid) on port $port"
+                    kill -9 $pid 2>/dev/null || true
+                    ((killed_count++))
+                done
+            fi
+        fi
+    done
     
-    # Remove taxi user
-    log_step "Removing taxi user..."
-    userdel -r taxi 2>/dev/null || true
-    log_ok "Taxi user removed"
+    if [ $killed_count -gt 0 ]; then
+        log_ok "Killed $killed_count process(es) and freed ports"
+        sleep 2
+    else
+        log_ok "All required ports are already free"
+    fi
+    
+    # ========== STEP 2: Stop all Docker containers ==========
+    log_step "Step 2/8: Stopping and removing Docker containers..."
+    if command -v docker &> /dev/null; then
+        # Stop all taxi-related docker-compose stacks
+        for compose_file in /home/taxi/docker-compose.yml /home/taxi/app/docker-compose.yml /home/taxi/docker/compose/docker-compose.yml; do
+            if [ -f "$compose_file" ]; then
+                log_info "Stopping compose stack: $compose_file"
+                docker-compose -f "$compose_file" down 2>/dev/null || true
+            fi
+        done
+        
+        # Stop all running containers safely
+        if [ -n "$(docker ps -q)" ]; then
+            log_info "Stopping $(docker ps -q | wc -l) running container(s)..."
+            docker stop $(docker ps -q) 2>/dev/null || true
+        fi
+        
+        # Remove all containers safely
+        if [ -n "$(docker ps -a -q)" ]; then
+            log_info "Removing $(docker ps -a -q | wc -l) container(s)..."
+            docker rm -f $(docker ps -a -q) 2>/dev/null || true
+        fi
+        
+        # Remove all taxi-related images
+        local taxi_images=$(docker images | grep -i "taxi\|app-\|driver\|admin\|customer" | awk '{print $3}' | sort -u)
+        if [ -n "$taxi_images" ]; then
+            log_info "Removing taxi-related Docker images..."
+            echo "$taxi_images" | xargs docker rmi -f 2>/dev/null || true
+        fi
+        
+        # Prune system
+        log_info "Cleaning up Docker system..."
+        docker system prune -a -f --volumes 2>/dev/null || true
+        
+        log_ok "Docker containers and images cleaned"
+    else
+        log_info "Docker not installed, skipping Docker cleanup"
+    fi
+    
+    # ========== STEP 3: Stop system services ==========
+    log_step "Step 3/8: Stopping system services..."
+    local services_to_stop=("nginx" "docker" "postgresql" "postgresql@*" "redis-server" "mongod" "mongodb")
+    
+    for service in "${services_to_stop[@]}"; do
+        if systemctl list-units --full -all | grep -q "$service"; then
+            log_info "Stopping service: $service"
+            systemctl stop "$service" 2>/dev/null || true
+            systemctl disable "$service" 2>/dev/null || true
+        fi
+    done
+    log_ok "System services stopped"
+    
+    # ========== STEP 4: Remove old installation files ==========
+    log_step "Step 4/8: Removing old Taxi System installation files..."
+    local dirs_to_remove=(
+        "/home/taxi"
+        "/opt/taxi-system"
+        "/var/lib/taxi"
+        "/etc/taxi"
+        "/usr/local/taxi"
+    )
+    
+    for dir in "${dirs_to_remove[@]}"; do
+        if [ -d "$dir" ]; then
+            log_info "Removing directory: $dir"
+            rm -rf "$dir" 2>/dev/null || true
+        fi
+    done
+    log_ok "Installation directories removed"
+    
+    # ========== STEP 5: Remove configuration files ==========
+    log_step "Step 5/8: Removing configuration files..."
+    local configs_to_remove=(
+        "/etc/nginx/sites-available/taxi*"
+        "/etc/nginx/sites-enabled/taxi*"
+        "/etc/systemd/system/taxi*"
+        "/etc/supervisor/conf.d/taxi*"
+    )
+    
+    for config in "${configs_to_remove[@]}"; do
+        rm -f $config 2>/dev/null || true
+    done
+    log_ok "Configuration files removed"
+    
+    # ========== STEP 6: Remove taxi user and group ==========
+    log_step "Step 6/8: Removing taxi user and group..."
+    if id "taxi" &>/dev/null; then
+        log_info "Removing taxi user..."
+        # Stop any processes owned by taxi user
+        pkill -u taxi 2>/dev/null || true
+        sleep 1
+        pkill -9 -u taxi 2>/dev/null || true
+        # Remove user
+        userdel -r taxi 2>/dev/null || true
+        log_ok "Taxi user removed"
+    else
+        log_info "Taxi user does not exist"
+    fi
+    
+    if getent group taxi &>/dev/null; then
+        log_info "Removing taxi group..."
+        groupdel taxi 2>/dev/null || true
+    fi
+    
+    # ========== STEP 7: Clean up old packages (optional) ==========
+    log_step "Step 7/8: Cleaning up package cache..."
+    apt-get clean 2>/dev/null || true
+    apt-get autoclean 2>/dev/null || true
+    apt-get autoremove -y 2>/dev/null || true
+    log_ok "Package cache cleaned"
+    
+    # ========== STEP 8: Remove logs and temporary files ==========
+    log_step "Step 8/8: Removing logs and temporary files..."
+    local logs_to_remove=(
+        "/var/log/taxi*"
+        "/tmp/taxi*"
+        "/var/tmp/taxi*"
+    )
+    
+    for log_pattern in "${logs_to_remove[@]}"; do
+        rm -rf $log_pattern 2>/dev/null || true
+    done
+    log_ok "Logs and temporary files removed"
+    
+    # ========== Final verification ==========
+    echo ""
+    log_step "Verifying cleanup completion..."
+    local cleanup_issues=0
+    
+    # Check if ports are free
+    for port in "${ports[@]}"; do
+        if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+            log_warn "Port $port is still in use"
+            ((cleanup_issues++))
+        fi
+    done
+    
+    # Check if taxi user exists
+    if id "taxi" &>/dev/null; then
+        log_warn "Taxi user still exists"
+        ((cleanup_issues++))
+    fi
+    
+    # Check if installation directories exist
+    if [ -d "/home/taxi" ]; then
+        log_warn "/home/taxi directory still exists"
+        ((cleanup_issues++))
+    fi
     
     echo ""
-    log_ok "System cleanup completed!"
+    if [ $cleanup_issues -eq 0 ]; then
+        echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${GREEN}     ✅ SYSTEM CLEANUP COMPLETED SUCCESSFULLY!${NC}"
+        echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
+        echo ""
+        log_ok "System is ready for fresh installation"
+    else
+        echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${YELLOW}     ⚠️  CLEANUP COMPLETED WITH $cleanup_issues WARNING(S)${NC}"
+        echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
+        echo ""
+        log_warn "Some cleanup issues detected, but you can proceed"
+        log_info "The installation script will handle remaining issues"
+    fi
+    
+    echo ""
+    sleep 2
 }
 
 # ===================== TROUBLESHOOTING FUNCTIONS =====================
@@ -408,24 +796,155 @@ log_to_file() {
     INSTALLATION_LOG+=("$*")
 }
 
+# ===================== ERROR RECOVERY MENU =====================
+show_error_recovery_menu() {
+    local line_number=$1
+    local error_code=$2
+    local error_context=$3
+    
+    while true; do
+        echo ""
+        echo -e "${RED}════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${RED}           ⚠️  INSTALLATION ERROR DETECTED${NC}"
+        echo -e "${RED}════════════════════════════════════════════════════════════════${NC}"
+        echo ""
+        echo -e "${YELLOW}Error Details:${NC}"
+        echo "  Line Number:    $line_number"
+        echo "  Exit Code:      $error_code"
+        echo "  Phase:          $CURRENT_PHASE/$TOTAL_PHASES"
+        echo "  Context:        $error_context"
+        echo "  Log File:       $LOG_FILE"
+        echo ""
+        
+        echo -e "${CYAN}What would you like to do?${NC}"
+        echo ""
+        echo "  ${GREEN}1)${NC} View Error Log (last 30 lines)"
+        echo "  ${GREEN}2)${NC} View Full Log"
+        echo "  ${GREEN}3)${NC} View Log by Phase"
+        echo "  ${GREEN}4)${NC} Retry Installation (continue from menu)"
+        echo "  ${GREEN}5)${NC} Clean & Restart (remove everything and start fresh)"
+        echo "  ${GREEN}6)${NC} System Status Check"
+        echo "  ${GREEN}7)${NC} Exit and Fix Manually"
+        echo ""
+        
+        read -p "Choose an option (1-7): " recovery_choice
+        recovery_choice=$(echo "$recovery_choice" | xargs)
+        
+        case "$recovery_choice" in
+            "1"|"1)")
+                echo ""
+                echo -e "${CYAN}═══ Last 30 Lines of Log ═══${NC}"
+                tail -n 30 "$LOG_FILE" | while IFS= read -r line; do
+                    if [[ "$line" =~ ERROR ]]; then
+                        echo -e "${RED}$line${NC}"
+                    elif [[ "$line" =~ WARN ]]; then
+                        echo -e "${YELLOW}$line${NC}"
+                    elif [[ "$line" =~ OK ]]; then
+                        echo -e "${GREEN}$line${NC}"
+                    else
+                        echo "$line"
+                    fi
+                done
+                echo ""
+                read -p "Press Enter to continue..."
+                ;;
+            "2"|"2)")
+                echo ""
+                echo -e "${CYAN}Opening full log in less viewer...${NC}"
+                echo -e "${YELLOW}(Use arrows to scroll, 'q' to quit)${NC}"
+                sleep 2
+                less "$LOG_FILE"
+                ;;
+            "3"|"3)")
+                echo ""
+                echo -e "${CYAN}Select Phase to View:${NC}"
+                echo "  1) Preflight Checks"
+                echo "  2) System Updates"
+                echo "  3) Docker Installation"
+                echo "  4) Database Setup"
+                echo "  5) Application Setup"
+                echo "  6) Configuration"
+                echo "  7) Services Start"
+                echo ""
+                read -p "Choose phase (1-7): " phase_choice
+                echo ""
+                case "$phase_choice" in
+                    1) grep "PHASE 1" -A 50 "$LOG_FILE" | less ;;
+                    2) grep "PHASE 2" -A 50 "$LOG_FILE" | less ;;
+                    3) grep "PHASE 3" -A 50 "$LOG_FILE" | less ;;
+                    4) grep "PHASE 4" -A 50 "$LOG_FILE" | less ;;
+                    5) grep "PHASE 5" -A 50 "$LOG_FILE" | less ;;
+                    6) grep "PHASE 6" -A 50 "$LOG_FILE" | less ;;
+                    7) grep "PHASE 7" -A 50 "$LOG_FILE" | less ;;
+                    *) log_error "Invalid phase"; sleep 1 ;;
+                esac
+                ;;
+            "4"|"4)")
+                log_info "Returning to main menu..."
+                echo ""
+                show_main_menu
+                return 0
+                ;;
+            "5"|"5)")
+                log_warn "This will remove all installations and start fresh!"
+                read -p "Are you sure? Type 'yes' to confirm: " confirm
+                if [ "$confirm" = "yes" ]; then
+                    cleanup_system
+                    log_info "Returning to main menu..."
+                    show_main_menu
+                    return 0
+                else
+                    log_info "Cleanup cancelled"
+                    sleep 1
+                fi
+                ;;
+            "6"|"6)")
+                system_status
+                echo ""
+                read -p "Press Enter to continue..."
+                ;;
+            "7"|"7)")
+                log_info "Exiting. You can check the log at: $LOG_FILE"
+                echo ""
+                echo -e "${YELLOW}To retry later, run:${NC}"
+                echo "  sudo bash $0"
+                echo ""
+                echo -e "${YELLOW}To start fresh:${NC}"
+                echo "  sudo bash $0 --cleanup"
+                echo ""
+                exit 1
+                ;;
+            *)
+                log_error "Invalid option. Please choose 1-7"
+                sleep 1
+                ;;
+        esac
+    done
+}
+
 trap_error() {
     local line_number=$1
     local error_code=$2
-    log_error "Installation failed at line $line_number with exit code $error_code"
-    log_to_file "ERROR at line $line_number: exit code $error_code"
+    local error_context="Unknown error"
     
-    echo ""
-    echo -e "${RED}════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${RED}Installation Summary:${NC}"
-    echo -e "${RED}════════════════════════════════════════════════════════════════${NC}"
-    echo "Phase: $CURRENT_PHASE/$TOTAL_PHASES"
-    echo "Error: Line $line_number (Exit code: $error_code)"
-    echo "Log file: $LOG_FILE"
-    echo ""
-    echo -e "${YELLOW}You can continue the installation by running the script again.${NC}"
-    echo -e "${YELLOW}Or run cleanup and start fresh:${NC}"
-    echo "  sudo bash $0 --cleanup"
-    echo ""
+    # Determine error context based on current phase
+    case $CURRENT_PHASE in
+        0) error_context="Initial setup" ;;
+        1) error_context="Preflight checks" ;;
+        2) error_context="System updates" ;;
+        3) error_context="Docker installation" ;;
+        4) error_context="Database setup" ;;
+        5) error_context="Application setup" ;;
+        6) error_context="Configuration" ;;
+        7) error_context="Services startup" ;;
+        *) error_context="Phase $CURRENT_PHASE" ;;
+    esac
+    
+    log_error "Installation failed at line $line_number with exit code $error_code"
+    log_to_file "ERROR at line $line_number: exit code $error_code (Phase: $CURRENT_PHASE - $error_context)"
+    
+    # Show interactive recovery menu
+    show_error_recovery_menu "$line_number" "$error_code" "$error_context"
 }
 
 trap 'trap_error ${LINENO} $?' ERR
@@ -670,309 +1189,165 @@ check_ports() {
     done
     
     if [ ${#in_use[@]} -gt 0 ]; then
-        log_warn "Ports in use: ${in_use[*]}"
         echo ""
-        echo -e "${YELLOW}These ports are currently in use:${NC}"
+        echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
+        echo -e "${YELLOW}         ⚠️  PORTS IN USE DETECTED${NC}"
+        echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
+        echo ""
+        echo -e "${YELLOW}The following ports are currently in use:${NC}"
+        echo ""
+        
         for port in "${in_use[@]}"; do
-            echo -e "${YELLOW}Port $port:${NC}"
-            lsof -i :$port 2>/dev/null | awk 'NR>1 {print "  - PID: " $2 ", Process: " $1}' || true
+            echo -e "${YELLOW}📍 Port $port:${NC}"
+            local port_info=$(lsof -i :$port 2>/dev/null | awk 'NR>1 {print "   PID: " $2 ", Process: " $1 ", User: " $3}')
+            if [ -n "$port_info" ]; then
+                echo "$port_info"
+            else
+                echo "   (Process information unavailable)"
+            fi
+            echo ""
         done
+        
+        echo -e "${CYAN}These ports are required for Taxi System:${NC}"
+        echo "  • 80, 443    - Nginx web server"
+        echo "  • 3000       - API server"
+        echo "  • 3001       - Admin dashboard"
+        echo "  • 3002       - Driver portal"
+        echo "  • 3003       - Customer app"
+        echo "  • 5432       - PostgreSQL database"
+        echo "  • 27017      - MongoDB database"
+        echo "  • 6379       - Redis cache"
+        echo "  • 9000       - Portainer"
+        echo "  • 19999      - Netdata monitoring"
         echo ""
-        echo "Options:"
-        echo "  1) Kill processes and free ports (RECOMMENDED)"
-        echo "  2) Continue anyway (may cause conflicts)"
-        echo "  3) Exit installation"
+        echo -e "${CYAN}Options:${NC}"
+        echo "  ${GREEN}1)${NC} Automatically kill processes and free ports (RECOMMENDED)"
+        echo "  ${YELLOW}2)${NC} Continue anyway (may cause conflicts - NOT RECOMMENDED)"
+        echo "  ${RED}3)${NC} Exit installation"
         echo ""
-        read -p "Choose option (1/2/3): " port_choice
+        
+        # Read with timeout and default to option 1
+        local port_choice
+        read -t 30 -p "Choose option (1/2/3) [default=1 in 30s]: " port_choice || port_choice="1"
         
         # Trim whitespace
         port_choice=$(echo "$port_choice" | xargs)
         
+        # Default to 1 if empty
+        [ -z "$port_choice" ] && port_choice="1"
+        
         case "$port_choice" in
             "1"|"1)")
-                log_step "Freeing up ports..."
+                echo ""
+                log_step "Automatically freeing up ports..."
                 kill_all_ports
-                log_ok "Ports have been freed"
+                
+                # Verify ports are free
+                sleep 2
+                local still_in_use=0
+                for port in "${in_use[@]}"; do
+                    if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+                        log_warn "Port $port is still in use after kill attempt"
+                        ((still_in_use++))
+                    fi
+                done
+                
+                if [ $still_in_use -eq 0 ]; then
+                    log_ok "All ports have been freed successfully"
+                else
+                    log_warn "$still_in_use port(s) could not be freed"
+                    echo ""
+                    read -p "Continue anyway? (y/n): " continue_anyway
+                    if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
+                        log_error "Installation cancelled"
+                        exit 1
+                    fi
+                fi
                 ;;
             "2"|"2)")
                 log_warn "Continuing with ports in use. Installation may fail."
+                echo ""
+                log_warn "If services fail to start, run cleanup and try again:"
+                log_info "  sudo bash $0 --cleanup"
+                echo ""
+                sleep 3
                 ;;
             "3"|"3)")
-                log_error "Installation cancelled"
-                exit 1
+                log_error "Installation cancelled by user"
+                echo ""
+                log_info "To free ports and try again, run:"
+                log_info "  sudo bash $0 --cleanup"
+                echo ""
+                exit 0
                 ;;
             *)
-                log_error "Invalid option: '$port_choice'. Please choose 1, 2, or 3. Exiting."
-                exit 1
+                log_error "Invalid option: '$port_choice'. Please choose 1, 2, or 3."
+                log_info "Defaulting to option 1 (free ports automatically)..."
+                sleep 2
+                kill_all_ports
                 ;;
         esac
     else
-        log_ok "All required ports are available"
+        log_ok "All required ports are available ✓"
     fi
 }
 
 # ===================== DASHBOARD CREATION FUNCTIONS =====================
-create_admin_dashboard() {
-    local dashboard_dir="${1:-/home/taxi/app/admin}"
-    local port="${2:-3001}"
-    
-    log_step "Creating Admin Dashboard..."
-    mkdir -p "$dashboard_dir"
-    
-    cat > "$dashboard_dir/index.html" << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taxi System - Admin Dashboard</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { color: white; margin-bottom: 30px; }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card h2 { color: #667eea; margin-bottom: 10px; }
-        .card .value { font-size: 2em; font-weight: bold; color: #333; }
-        .card .label { color: #666; font-size: 0.9em; margin-top: 5px; }
-        .status-online { color: #10b981; }
-        .status-offline { color: #ef4444; }
-        .btn { display: inline-block; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
-        .btn:hover { background: #764ba2; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚕 Taxi System Admin Dashboard</h1>
-            <p>Welcome to the Taxi Management System</p>
-        </div>
-        
-        <div class="grid">
-            <div class="card">
-                <h2>👥 Total Drivers</h2>
-                <div class="value">0</div>
-                <div class="label">Active Drivers</div>
-                <a href="/api/drivers" class="btn">View Drivers</a>
-            </div>
-            
-            <div class="card">
-                <h2>👤 Total Users</h2>
-                <div class="value">0</div>
-                <div class="label">Registered Users</div>
-                <a href="/api/users" class="btn">View Users</a>
-            </div>
-            
-            <div class="card">
-                <h2>🚗 Total Rides</h2>
-                <div class="value">0</div>
-                <div class="label">Completed Rides</div>
-                <a href="/api/rides" class="btn">View Rides</a>
-            </div>
-            
-            <div class="card">
-                <h2>💰 Revenue</h2>
-                <div class="value">$0</div>
-                <div class="label">Total Revenue</div>
-                <a href="/api/revenue" class="btn">View Reports</a>
-            </div>
-            
-            <div class="card">
-                <h2>🐳 Docker Status</h2>
-                <div class="value status-online">● Running</div>
-                <div class="label">All Services Online</div>
-            </div>
-            
-            <div class="card">
-                <h2>🔧 System Settings</h2>
-                <div class="label">Configure your Taxi System</div>
-                <a href="/settings" class="btn">Go to Settings</a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-EOF
-    
-    chown -R taxi:taxi "$dashboard_dir"
-    log_ok "Admin Dashboard created at $dashboard_dir"
-}
-
-create_driver_dashboard() {
-    local dashboard_dir="${1:-/home/taxi/app/driver}"
-    local port="${2:-3002}"
-    
-    log_step "Creating Driver Portal..."
-    mkdir -p "$dashboard_dir"
-    
-    cat > "$dashboard_dir/index.html" << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driver Portal - Taxi System</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { color: white; margin-bottom: 30px; }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card h2 { color: #f5576c; margin-bottom: 10px; }
-        .card .value { font-size: 2em; font-weight: bold; color: #333; }
-        .card .label { color: #666; font-size: 0.9em; margin-top: 5px; }
-        .btn { display: inline-block; padding: 10px 20px; background: #f5576c; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
-        .btn:hover { background: #f093fb; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚗 Driver Portal</h1>
-            <p>Manage Your Rides & Earnings</p>
-        </div>
-        
-        <div class="grid">
-            <div class="card">
-                <h2>📊 Today's Earnings</h2>
-                <div class="value">$0</div>
-                <div class="label">Total Earnings</div>
-            </div>
-            
-            <div class="card">
-                <h2>🚖 Active Rides</h2>
-                <div class="value">0</div>
-                <div class="label">Current Trips</div>
-            </div>
-            
-            <div class="card">
-                <h2>⭐ Rating</h2>
-                <div class="value">5.0</div>
-                <div class="label">Driver Rating</div>
-            </div>
-            
-            <div class="card">
-                <h2>📍 Status</h2>
-                <div class="value">Online</div>
-                <div class="label">Toggle Availability</div>
-                <button class="btn">Toggle Status</button>
-            </div>
-            
-            <div class="card">
-                <h2>💳 Payment Method</h2>
-                <div class="label">Manage Payment Info</div>
-                <a href="/payment" class="btn">Update Payment</a>
-            </div>
-            
-            <div class="card">
-                <h2>📱 Documents</h2>
-                <div class="label">Upload Required Documents</div>
-                <a href="/documents" class="btn">View Documents</a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-EOF
-    
-    chown -R taxi:taxi "$dashboard_dir"
-    log_ok "Driver Portal created at $dashboard_dir"
-}
-
-create_customer_dashboard() {
-    local dashboard_dir="${1:-/home/taxi/app/customer}"
-    local port="${2:-3003}"
-    
-    log_step "Creating Customer App..."
-    mkdir -p "$dashboard_dir"
-    
-    cat > "$dashboard_dir/index.html" << 'EOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taxi App - Book Your Ride</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        .header { color: white; margin-bottom: 30px; }
-        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card h2 { color: #00f2fe; margin-bottom: 10px; }
-        .card .value { font-size: 2em; font-weight: bold; color: #333; }
-        .card .label { color: #666; font-size: 0.9em; margin-top: 5px; }
-        .btn { display: inline-block; padding: 10px 20px; background: #4facfe; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px; }
-        .btn:hover { background: #00f2fe; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🚕 Book Your Ride</h1>
-            <p>Quick, Safe, and Reliable Transportation</p>
-        </div>
-        
-        <div class="grid">
-            <div class="card">
-                <h2>🎯 Book a Ride</h2>
-                <div class="label">Get a ride in minutes</div>
-                <a href="/book" class="btn">Book Now</a>
-            </div>
-            
-            <div class="card">
-                <h2>🛣️ My Rides</h2>
-                <div class="value">0</div>
-                <div class="label">Total Trips</div>
-                <a href="/rides" class="btn">View History</a>
-            </div>
-            
-            <div class="card">
-                <h2>💰 Payment</h2>
-                <div class="label">Manage Payment Methods</div>
-                <a href="/payment" class="btn">Update Payment</a>
-            </div>
-            
-            <div class="card">
-                <h2>⭐ Reviews</h2>
-                <div class="value">0</div>
-                <div class="label">Your Reviews</div>
-                <a href="/reviews" class="btn">View Reviews</a>
-            </div>
-            
-            <div class="card">
-                <h2>👤 Profile</h2>
-                <div class="label">Update Your Profile</div>
-                <a href="/profile" class="btn">Edit Profile</a>
-            </div>
-            
-            <div class="card">
-                <h2>📞 Support</h2>
-                <div class="label">Need Help?</div>
-                <a href="/support" class="btn">Contact Support</a>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-EOF
-    
-    chown -R taxi:taxi "$dashboard_dir"
-    log_ok "Customer App created at $dashboard_dir"
-}
-
 create_all_dashboards() {
-    log_step "Creating all web dashboards..."
-    create_admin_dashboard /home/taxi/app/admin 3001
-    create_driver_dashboard /home/taxi/app/driver 3002
-    create_customer_dashboard /home/taxi/app/customer 3003
-    log_ok "All dashboards created successfully"
+    log_step "Deploying professional web dashboards..."
+    
+    # Get the directory where the script is located
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local web_source="$script_dir/web"
+    
+    # Check if web directory exists
+    if [ ! -d "$web_source" ]; then
+        log_error "Web directory not found at $web_source"
+        log_error "Please ensure the 'web' folder is in the same directory as this script"
+        return 1
+    fi
+    
+    # Create app directory structure
+    mkdir -p /home/taxi/app/{admin,driver,customer}
+    
+    # Copy admin dashboard
+    if [ -d "$web_source/admin" ]; then
+        log_step "Deploying Admin Dashboard..."
+        cp -r "$web_source/admin"/* /home/taxi/app/admin/
+        log_ok "Admin Dashboard deployed"
+    else
+        log_error "Admin dashboard not found in web/admin"
+    fi
+    
+    # Copy driver dashboard
+    if [ -d "$web_source/driver" ]; then
+        log_step "Deploying Driver Portal..."
+        cp -r "$web_source/driver"/* /home/taxi/app/driver/
+        log_ok "Driver Portal deployed"
+    else
+        log_error "Driver dashboard not found in web/driver"
+    fi
+    
+    # Copy customer dashboard
+    if [ -d "$web_source/customer" ]; then
+        log_step "Deploying Customer App..."
+        cp -r "$web_source/customer"/* /home/taxi/app/customer/
+        log_ok "Customer App deployed"
+    else
+        log_error "Customer dashboard not found in web/customer"
+    fi
+    
+    # Set proper ownership
+    chown -R taxi:taxi /home/taxi/app
+    
+    # Set proper permissions
+    find /home/taxi/app -type d -exec chmod 755 {} \;
+    find /home/taxi/app -type f -exec chmod 644 {} \;
+    
+    log_ok "All professional dashboards deployed successfully"
+    log_info "  Admin:    http://YOUR_SERVER_IP:3001"
+    log_info "  Driver:   http://YOUR_SERVER_IP:3002"
+    log_info "  Customer: http://YOUR_SERVER_IP:3003"
 }
 
 install_package() {
@@ -1069,11 +1444,12 @@ show_main_menu() {
     echo "  ${GREEN}3)${NC} Start Docker Services (if already installed)"
     echo "  ${GREEN}4)${NC} Stop Docker Services"
     echo "  ${GREEN}5)${NC} Clean & Remove Installation"
-    echo "  ${GREEN}6)${NC} View Installation Help"
-    echo "  ${GREEN}7)${NC} Exit"
+    echo "  ${GREEN}6)${NC} Security Audit (check system security)"
+    echo "  ${GREEN}7)${NC} View Installation Help"
+    echo "  ${GREEN}8)${NC} Exit"
     echo ""
     
-    read -p "Choose an option (1-7): " menu_choice
+    read -p "Choose an option (1-8): " menu_choice
     
     # Trim whitespace
     menu_choice=$(echo "$menu_choice" | xargs)
@@ -1126,15 +1502,21 @@ show_main_menu() {
             fi
             ;;
         "6"|"6)")
-            show_help_menu
+            security_audit
+            echo ""
+            read -p "Press Enter to return to menu..."
             show_main_menu
             ;;
         "7"|"7)")
+            show_help_menu
+            show_main_menu
+            ;;
+        "8"|"8)")
             log_info "Exiting..."
             exit 0
             ;;
         *)
-            log_error "Invalid option. Please choose 1-7"
+            log_error "Invalid option. Please choose 1-8"
             sleep 1
             show_main_menu
             ;;
@@ -1453,7 +1835,7 @@ NGINX
     id taxi &>/dev/null || useradd -m -s /bin/bash taxi
     mkdir -p /home/taxi/app
     chown -R taxi:taxi /home/taxi
-    cd /home/taxi/app
+    cd /home/taxi/app || { log_error "Failed to change to /home/taxi/app"; exit 1; }
     run_docker_compose "taxi" "/home/taxi/app" "--env-file .env up -d"
     log_ok "Servicios Docker en ejecución."
 
@@ -1502,22 +1884,49 @@ taxi_quick_installer() {
     mkdir -p /home/taxi/app
     chown -R taxi:taxi /home/taxi
 
-    log_step "Generando archivo .env..."
+    # Generate secure passwords
+    log_step "Generando contraseñas seguras..."
+    export POSTGRES_PASSWORD=$(generate_secure_password)
+    export MONGO_PASSWORD=$(generate_secure_password)
+    export REDIS_PASSWORD=$(generate_secure_password)
+    export JWT_SECRET=$(generate_secure_password)
+    export SERVER_IP=$IP
+    
+    log_step "Generando archivo .env con credenciales seguras..."
     cat > /home/taxi/app/.env <<EOF
-POSTGRES_PASSWORD=taxipass
-REDIS_PASSWORD=redispass
+# Database Credentials (Auto-generated secure passwords)
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+MONGO_PASSWORD=${MONGO_PASSWORD}
+REDIS_PASSWORD=${REDIS_PASSWORD}
+
+# API Configuration
 API_PORT=3000
+JWT_SECRET=${JWT_SECRET}
+
+# Server
+SERVER_IP=${IP}
+
+# Dashboard Ports
+ADMIN_PORT=3001
+DRIVER_PORT=3002
+CUSTOMER_PORT=3003
 EOF
     sudo chown taxi:taxi /home/taxi/app/.env
+    chmod 600 /home/taxi/app/.env
+    
+    # Save credentials to secure file
+    log_step "Guardando credenciales en archivo seguro..."
+    CREDENTIALS_FILE=$(save_credentials)
+    log_ok "Credenciales guardadas en: $CREDENTIALS_FILE"
+    log_warn "¡IMPORTANTE! Guarde este archivo en un lugar seguro antes de que se elimine automáticamente"
 
     log_step "Generando docker-compose.yml..."
     cat > /home/taxi/app/docker-compose.yml <<EOF
-version: '3.8'
 services:
     postgres:
         image: postgres:15
         environment:
-            POSTGRES_PASSWORD: taxipass
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
         ports:
             - "5432:5432"
         volumes:
@@ -1526,7 +1935,7 @@ services:
 
     redis:
         image: redis:7
-        command: ["redis-server", "--requirepass", "redispass"]
+        command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
         ports:
             - "6379:6379"
         restart: always
@@ -1585,7 +1994,7 @@ NGINX
     id taxi &>/dev/null || useradd -m -s /bin/bash taxi
     mkdir -p /home/taxi/app
     chown -R taxi:taxi /home/taxi
-    cd /home/taxi/app
+    cd /home/taxi/app || { log_error "Failed to change to /home/taxi/app"; exit 1; }
     run_docker_compose "taxi" "/home/taxi/app" "--env-file .env up -d"
     log_ok "Servicios Docker en ejecución."
 
@@ -1593,11 +2002,27 @@ NGINX
     if [ -z "$IP" ]; then
         IP=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}' | grep -v '127.0.0.1' | head -n1)
     fi
+    
+    # Configure firewall for security
+    echo ""
+    log_step "Configurando firewall para protección del sistema..."
+    configure_firewall
+    
+    # Run security audit
+    echo ""
+    security_audit
+    
     echo -e "\n\033[1;32m✅ INSTALACIÓN COMPLETA\033[0m"
     echo "🌐 API:         http://$IP:3000"
     echo "📊 Admin Panel: http://$IP:8080"
     echo "🐘 PostgreSQL:  $IP:5432"
     echo "🔴 Redis:       $IP:6379"
+    echo ""
+    echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${YELLOW}⚠️  IMPORTANT: Secure credentials file created${NC}"
+    echo -e "${YELLOW}Location: ${CREDENTIALS_FILE}${NC}"
+    echo -e "${YELLOW}Please save this file immediately!${NC}"
+    echo -e "${YELLOW}════════════════════════════════════════════════════════════════${NC}"
 }
 
 # ===================== STATUS JSON GENERATOR =====================
@@ -3078,8 +3503,6 @@ print_substep "Creating docker-compose.yml with 20+ services..."
 
 # Main docker-compose.yml
 cat << 'EOF' | run_as_taxi "tee $TAXI_HOME/docker/compose/docker-compose.yml"
-version: '3.8'
-
 x-logging: &default-logging
   driver: "json-file"
   options:
@@ -3232,7 +3655,7 @@ services:
     restart: unless-stopped
     command: ["--bind_ip_all", "--auth"]
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/taxi_analytics --quiet
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -6656,7 +7079,11 @@ for i in {1..30}; do
 done
 
 # Navigate to docker compose directory
-cd /home/taxi/docker/compose
+if [ ! -d "/home/taxi/docker/compose" ]; then
+    log_error "Docker compose directory not found"
+    exit 1
+fi
+cd /home/taxi/docker/compose || { log_error "Failed to change to /home/taxi/docker/compose"; exit 1; }
 
 # Start all services
 echo "Starting Docker services..."
@@ -6797,7 +7224,6 @@ EOF
 
         log_step "Generando docker-compose.yml..."
         cat > /home/taxi/app/docker-compose.yml <<EOF
-version: '3.8'
 services:
     postgres:
         image: postgres:15
@@ -7265,6 +7691,10 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
             cleanup_system
             exit 0
             ;;
+        --security-audit)
+            security_audit
+            exit 0
+            ;;
         --menu)
             show_main_menu
             exit 0
@@ -7275,17 +7705,19 @@ if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
             echo "Usage: sudo bash $0 [OPTIONS]"
             echo ""
             echo "Options:"
-            echo "  (no args)           Show interactive menu"
-            echo "  --menu              Show interactive menu"
-            echo "  --status|--check    Show system status and troubleshooting tips"
-            echo "  --cleanup           Clean previous installation"
-            echo "  --help              Show this help message"
+            echo "  (no args)              Show interactive menu"
+            echo "  --menu                 Show interactive menu"
+            echo "  --status|--check       Show system status and troubleshooting tips"
+            echo "  --cleanup              Clean previous installation"
+            echo "  --security-audit       Run security audit on installed system"
+            echo "  --help                 Show this help message"
             echo ""
             echo "Examples:"
             echo "  sudo bash $0                    # Show menu"
             echo "  sudo bash $0 --menu             # Show menu"
             echo "  sudo bash $0 --status          # Check what's installed"
             echo "  sudo bash $0 --cleanup         # Remove old installation"
+            echo "  sudo bash $0 --security-audit  # Run security audit"
             echo ""
             exit 0
             ;;

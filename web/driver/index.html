@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Dashboard - Taxi System</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Magic Link Login Screen -->
+    <div class="magic-link-container" id="loginScreen">
+        <div class="magic-link-card">
+            <div class="magic-link-header">
+                <i class="fas fa-taxi"></i>
+                <h1>Driver Portal</h1>
+                <p>Sign in with magic link</p>
+            </div>
+            
+            <form id="magicLinkForm" class="magic-form">
+                <div class="form-group">
+                    <label for="driverEmail">
+                        <i class="fas fa-envelope"></i> Email Address
+                    </label>
+                    <input 
+                        type="email" 
+                        id="driverEmail" 
+                        placeholder="your.email@example.com"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+                
+                <button type="submit" class="btn-magic-link">
+                    <i class="fas fa-paper-plane"></i>
+                    Send Magic Link
+                </button>
+            </form>
+            
+            <div id="emailSent" class="email-sent-message" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <h3>Check your email!</h3>
+                <p>We've sent a magic link to <strong id="sentEmailAddress"></strong></p>
+                <p class="email-hint">Click the link in the email to sign in instantly. No password needed!</p>
+                <button class="btn-resend" id="resendLink">
+                    <i class="fas fa-redo"></i> Resend Link
+                </button>
+            </div>
+            
+            <div class="magic-link-footer">
+                <p><i class="fas fa-shield-alt"></i> Secure passwordless authentication</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard" id="mainDashboard" style="display: none;">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-taxi"></i>
+                <h2>TaxiDriver</h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-route"></i>
+                    <span>Active Rides</span>
+                    <span class="badge">2</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-history"></i>
+                    <span>Ride History</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-dollar-sign"></i>
+                    <span>Earnings</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-star"></i>
+                    <span>Ratings</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-left">
+                    <h1>Welcome, Carlos</h1>
+                    <p class="subtitle">Track your rides and earnings</p>
+                </div>
+                <div class="header-right">
+                    <!-- Online Status Toggle -->
+                    <div class="status-toggle">
+                        <label class="switch">
+                            <input type="checkbox" id="onlineStatus" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span class="status-text">Online</span>
+                    </div>
+                    
+                    <button class="notification-btn">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">5</span>
+                    </button>
+                    
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Carlos+Rodriguez&background=4facfe&color=fff" alt="Driver">
+                        <span>Carlos R.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Today's Rides</h3>
+                        <div class="stat-number">8</div>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> 25% from yesterday
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Today's Earnings</h3>
+                        <div class="stat-number">$184.50</div>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> $45 from yesterday
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card orange">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Rating</h3>
+                        <div class="stat-number">4.8</div>
+                        <span class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> 0.2 this week
+                        </span>
+                    </div>
+                </div>
+
+                <div class="stat-card purple">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-details">
+                        <h3>Online Time</h3>
+                        <div class="stat-number">5.5h</div>
+                        <span class="stat-change">Today</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Ride Requests -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>New Ride Requests</h3>
+                        <button class="btn-small">View All</button>
+                    </div>
+                    <div class="ride-requests">
+                        <div class="ride-request-item">
+                            <div class="request-header">
+                                <div class="customer-info">
+                                    <img src="https://ui-avatars.com/api/?name=Maria+Santos&background=random" alt="Customer">
+                                    <div>
+                                        <h4>Maria Santos</h4>
+                                        <p class="customer-rating">
+                                            <i class="fas fa-star"></i> 4.9
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="request-price">$15.50</div>
+                            </div>
+                            <div class="request-route">
+                                <div class="route-point">
+                                    <i class="fas fa-circle pickup"></i>
+                                    <span>123 Main St, Downtown</span>
+                                </div>
+                                <div class="route-line"></div>
+                                <div class="route-point">
+                                    <i class="fas fa-map-marker-alt destination"></i>
+                                    <span>456 Oak Ave, Uptown</span>
+                                </div>
+                            </div>
+                            <div class="request-details">
+                                <span><i class="fas fa-car"></i> 3.2 km away</span>
+                                <span><i class="fas fa-clock"></i> 5 min pickup</span>
+                            </div>
+                            <div class="request-actions">
+                                <button class="btn-accept">Accept</button>
+                                <button class="btn-decline">Decline</button>
+                            </div>
+                        </div>
+
+                        <div class="ride-request-item">
+                            <div class="request-header">
+                                <div class="customer-info">
+                                    <img src="https://ui-avatars.com/api/?name=John+Smith&background=random" alt="Customer">
+                                    <div>
+                                        <h4>John Smith</h4>
+                                        <p class="customer-rating">
+                                            <i class="fas fa-star"></i> 5.0
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="request-price">$22.00</div>
+                            </div>
+                            <div class="request-route">
+                                <div class="route-point">
+                                    <i class="fas fa-circle pickup"></i>
+                                    <span>789 Elm St, Central</span>
+                                </div>
+                                <div class="route-line"></div>
+                                <div class="route-point">
+                                    <i class="fas fa-map-marker-alt destination"></i>
+                                    <span>Airport Terminal 1</span>
+                                </div>
+                            </div>
+                            <div class="request-details">
+                                <span><i class="fas fa-car"></i> 1.8 km away</span>
+                                <span><i class="fas fa-clock"></i> 3 min pickup</span>
+                            </div>
+                            <div class="request-actions">
+                                <button class="btn-accept">Accept</button>
+                                <button class="btn-decline">Decline</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Earnings Summary -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Earnings Summary</h3>
+                        <select class="filter-select">
+                            <option>Today</option>
+                            <option>This Week</option>
+                            <option>This Month</option>
+                        </select>
+                    </div>
+                    <div class="earnings-chart">
+                        <div class="earning-item">
+                            <div class="earning-label">Base Fare</div>
+                            <div class="earning-value">$156.00</div>
+                            <div class="earning-bar" style="width: 85%"></div>
+                        </div>
+                        <div class="earning-item">
+                            <div class="earning-label">Tips</div>
+                            <div class="earning-value">$28.50</div>
+                            <div class="earning-bar tips" style="width: 15%"></div>
+                        </div>
+                        <div class="earning-item">
+                            <div class="earning-label">Bonuses</div>
+                            <div class="earning-value">$0.00</div>
+                            <div class="earning-bar bonus" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="earnings-total">
+                        <span>Total Earnings</span>
+                        <span class="total-amount">$184.50</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Rides -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Recent Rides</h3>
+                    <button class="btn-small">View All</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Customer</th>
+                                <th>Route</th>
+                                <th>Distance</th>
+                                <th>Earnings</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2:45 PM</td>
+                                <td>
+                                    <div class="customer-cell">
+                                        <img src="https://ui-avatars.com/api/?name=Ana+Lopez&background=random" alt="">
+                                        Ana Lopez
+                                    </div>
+                                </td>
+                                <td>Downtown → Airport</td>
+                                <td>15.2 km</td>
+                                <td class="earning-cell">$28.50</td>
+                                <td>
+                                    <span class="rating-badge">
+                                        <i class="fas fa-star"></i> 5.0
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>1:30 PM</td>
+                                <td>
+                                    <div class="customer-cell">
+                                        <img src="https://ui-avatars.com/api/?name=Pedro+Garcia&background=random" alt="">
+                                        Pedro Garcia
+                                    </div>
+                                </td>
+                                <td>Central → Mall</td>
+                                <td>8.5 km</td>
+                                <td class="earning-cell">$18.00</td>
+                                <td>
+                                    <span class="rating-badge">
+                                        <i class="fas fa-star"></i> 4.5
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>12:15 PM</td>
+                                <td>
+                                    <div class="customer-cell">
+                                        <img src="https://ui-avatars.com/api/?name=Sofia+Martinez&background=random" alt="">
+                                        Sofia Martinez
+                                    </div>
+                                </td>
+                                <td>Station → Office Park</td>
+                                <td>6.8 km</td>
+                                <td class="earning-cell">$15.50</td>
+                                <td>
+                                    <span class="rating-badge">
+                                        <i class="fas fa-star"></i> 5.0
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
