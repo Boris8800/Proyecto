@@ -18,25 +18,22 @@ interactive_menu() {
     local timeout=10
     local start_time=$(date +%s)
     
-    # Hide cursor
-    tput civis
+    # Check if tput is available and working
+    local has_tput=0
+    if command -v tput >/dev/null 2>&1 && tput colors >/dev/null 2>&1; then
+        has_tput=1
+    fi
     
-    # Clear menu area function
-    clear_menu() {
-        for ((i=0; i<num_options+2; i++)); do
-            tput el
-            tput cuu1
-        done
-        tput el
-    }
-
+    # Hide cursor if possible
+    [ $has_tput -eq 1 ] && tput civis
+    
     while true; do
         local now=$(date +%s)
         local elapsed=$((now - start_time))
         local remaining=$((timeout - elapsed))
         
         if [ $remaining -le 0 ]; then
-            tput cnorm
+            [ $has_tput -eq 1 ] && tput cnorm
             echo ""
             log_info "Timeout reached. Selecting recommended option: ${options[$default_idx]}"
             return $((default_idx + 1))
@@ -62,36 +59,61 @@ interactive_menu() {
             fi
         done
         
-        echo -e "\n${YELLOW}Auto-selecting in ${remaining}s... (Use arrows to navigate, Enter to select)${NC}"
+        echo -e "\n${YELLOW}Auto-selecting in ${remaining}s... (Use arrows/numbers to navigate, Enter to select)${NC}"
+        echo -e "${CYAN}Tip: If arrows don't work, use numbers 1-9 or 'w'/'s' keys.${NC}"
         
         # Move cursor back up to start of menu
-        tput cuu $((num_options + 3))
+        if [ $has_tput -eq 1 ]; then
+            tput cuu $((num_options + 4))
+        fi
         
         # Read input with 1s timeout
-        read -s -n 1 -t 1 key
+        read -s -n 1 -t 1 key || true
         
         case "$key" in
             $'\x1b') # Escape sequence
-                read -s -n 2 -t 0.1 next_key
+                read -s -n 2 -t 0.1 next_key || true
                 case "$next_key" in
-                    "[A") # Up arrow
+                    "[A"|"OA") # Up arrow (Standard / PuTTY)
                         current=$(( (current - 1 + num_options) % num_options ))
                         ;;
-                    "[B") # Down arrow
+                    "[B"|"OB") # Down arrow (Standard / PuTTY)
                         current=$(( (current + 1) % num_options ))
                         ;;
                 esac
                 ;;
+            [wWkK]) # Up (w/W or k/K)
+                current=$(( (current - 1 + num_options) % num_options ))
+                ;;
+            [sSjJ]) # Down (s/S or j/J)
+                current=$(( (current + 1) % num_options ))
+                ;;
+            [1-9]) # Direct number selection
+                if [ "$key" -le "$num_options" ]; then
+                    current=$((key - 1))
+                    [ $has_tput -eq 1 ] && tput cnorm
+                    for ((i=0; i<num_options+4; i++)); do echo ""; done
+                    return $key
+                fi
+                ;;
             "") # Enter key
                 # Check if it was actually Enter (exit code 0) or timeout (exit code > 128)
+                # In some shells, read timeout returns > 128
                 if [ $? -eq 0 ]; then
-                    tput cnorm
+                    [ $has_tput -eq 1 ] && tput cnorm
                     # Move cursor down to clear the menu area
-                    for ((i=0; i<num_options+3; i++)); do echo ""; done
+                    for ((i=0; i<num_options+4; i++)); do echo ""; done
                     return $((current + 1))
                 fi
                 ;;
         esac
+        
+        # If no tput, we can't redraw in place easily, so we just clear and reprint
+        if [ $has_tput -eq 0 ]; then
+            clear
+        fi
+    done
+}
         
         # Clear the lines we just printed to redraw
         # (Actually tput cuu already moved us up, so we just redraw over)
