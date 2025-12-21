@@ -99,14 +99,9 @@ interactive_menu() {
             [sSjJ]) # Down (s/S or j/J)
                 current=$(( (current + 1) % num_options ))
                 ;;
-            [1-9]) # Direct number selection
+            [1-9]) # Jump to numbered option without selecting
                 if [ "$key" -le "$num_options" ]; then
                     current=$((key - 1))
-                    if [ $has_tput -eq 1 ]; then
-                        tput cnorm 2>/dev/null || true
-                    fi
-                    for ((i=0; i<num_options+4; i++)); do echo ""; done
-                    return $key
                 fi
                 ;;
             "") # Enter key
