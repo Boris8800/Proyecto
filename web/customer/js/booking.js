@@ -39,6 +39,11 @@ class SwiftCabBookingSystem {
         this.estimateBox = document.getElementById('estimateBox');
         this.nextBtn1 = document.getElementById('nextBtn1');
 
+        if (!this.nextBtn1) {
+            console.error('nextBtn1 element not found!');
+            return;
+        }
+
         // Step 2
         this.rideOptions = document.querySelectorAll('.ride-option');
         this.wheelchairCheckbox = document.getElementById('wheelchairNeeded');
@@ -82,41 +87,43 @@ class SwiftCabBookingSystem {
 
     attachEventListeners() {
         // Step 1 Events
-        this.scheduleRideCheckbox.addEventListener('change', () => this.toggleScheduleInputs());
-        this.currentLocationBtn.addEventListener('click', () => this.useCurrentLocation());
-        this.nextBtn1.addEventListener('click', () => this.goToStep(2));
+        if (this.scheduleRideCheckbox) this.scheduleRideCheckbox.addEventListener('change', () => this.toggleScheduleInputs());
+        if (this.currentLocationBtn) this.currentLocationBtn.addEventListener('click', () => this.useCurrentLocation());
+        if (this.nextBtn1) this.nextBtn1.addEventListener('click', () => this.goToStep(2));
 
         // Step 2 Events
         this.rideOptions.forEach(option => {
             option.addEventListener('click', () => this.selectRideType(option));
         });
-        this.backBtn2.addEventListener('click', () => this.goToStep(1));
-        this.nextBtn2.addEventListener('click', () => this.goToStep(3));
+        if (this.backBtn2) this.backBtn2.addEventListener('click', () => this.goToStep(1));
+        if (this.nextBtn2) this.nextBtn2.addEventListener('click', () => this.goToStep(3));
 
         // Step 3 Events
-        this.applyPromoBtn.addEventListener('click', () => this.applyPromoCode());
-        this.promoCodeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.applyPromoCode();
-        });
+        if (this.applyPromoBtn) this.applyPromoBtn.addEventListener('click', () => this.applyPromoCode());
+        if (this.promoCodeInput) {
+            this.promoCodeInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') this.applyPromoCode();
+            });
+        }
         this.paymentRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 this.bookingData.paymentMethod = e.target.value;
             });
         });
-        this.backBtn3.addEventListener('click', () => this.goToStep(2));
-        this.confirmBtn.addEventListener('click', () => this.confirmBooking());
+        if (this.backBtn3) this.backBtn3.addEventListener('click', () => this.goToStep(2));
+        if (this.confirmBtn) this.confirmBtn.addEventListener('click', () => this.confirmBooking());
 
         // Modal Events
-        this.profileBtn.addEventListener('click', () => this.openProfileModal());
-        this.closeProfileBtn.addEventListener('click', () => this.closeProfileModal());
-        this.closeSuccessBtn.addEventListener('click', () => this.closeSuccessModal());
-        this.modalOverlay.addEventListener('click', () => this.closeAllModals());
+        if (this.profileBtn) this.profileBtn.addEventListener('click', () => this.openProfileModal());
+        if (this.closeProfileBtn) this.closeProfileBtn.addEventListener('click', () => this.closeProfileModal());
+        if (this.closeSuccessBtn) this.closeSuccessBtn.addEventListener('click', () => this.closeSuccessModal());
+        if (this.modalOverlay) this.modalOverlay.addEventListener('click', () => this.closeAllModals());
 
         // Quick locations
         this.quickLocationBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const location = btn.textContent.trim();
-                this.dropoffInput.value = location;
+                if (this.dropoffInput) this.dropoffInput.value = location;
                 this.updateEstimate();
             });
         });
@@ -288,5 +295,11 @@ class SwiftCabBookingSystem {
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-    new SwiftCabBookingSystem();
+    try {
+        console.log('Initializing SwiftCab Booking System...');
+        new SwiftCabBookingSystem();
+        console.log('SwiftCab Booking System initialized successfully');
+    } catch (error) {
+        console.error('Error initializing booking system:', error);
+    }
 });
