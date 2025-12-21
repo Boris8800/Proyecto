@@ -1645,8 +1645,8 @@ while true; do
     echo "2. Ver configuraciones nginx"
     echo "3. Cambiar puerto 80 → 8080"
     echo "4. Deshabilitar nginx temporalmente"
-    echo "5. Forzar liberar puerto 80"
-    echo "6. Continuar instalación taxi."
+    echo "5. Forzar liberar puerto 80 ⭐ (RECOMENDADO primero)"
+    echo "6. Continuar instalación taxi. ⭐ (DESPUÉS de opción 5)"
     echo "7. Salir"
     echo ""
     read -p "Opción [1-7]: " opc
