@@ -12,21 +12,17 @@ configure_docker_mirror() {
     # Create docker config directory
     mkdir -p /etc/docker
     
-    # Configure daemon.json with multiple mirrors (try different ones)
+    # Configure daemon.json with proper settings
+    # Note: We use the default Docker Hub without mirrors to avoid misconfigurations
     cat > /etc/docker/daemon.json << 'EOF'
 {
-  "registry-mirrors": [
-    "https://docker.io",
-    "https://registry-1.docker.io",
-    "https://mirror.baidubce.com",
-    "https://mirror.ccs.tencentyun.com"
-  ],
   "dns": ["8.8.8.8", "1.1.1.1", "114.114.114.114"],
   "log-driver": "json-file",
   "log-opts": {
     "max-size": "10m",
     "max-file": "3"
-  }
+  },
+  "storage-driver": "overlay2"
 }
 EOF
     
@@ -39,7 +35,7 @@ EOF
         sleep 3
     fi
     
-    log_ok "Docker mirror configured"
+    log_ok "Docker configured"
 }
 
 # ===================== DOCKER INSTALLATION FUNCTIONS =====================
