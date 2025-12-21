@@ -64,11 +64,14 @@ fresh_installation_menu() {
         # Run installation
         log_info "Starting fresh installation..."
         # Installation logic would go here
-        sleep 2
+        echo ""
+        echo -e "${GREEN}✅ Fresh installation completed!${NC}"
+        echo ""
+        read -r -p "Press Enter to return to main menu..."
         show_main_menu
     else
         log_info "Installation cancelled"
-        sleep 2
+        sleep 1
         show_main_menu
     fi
 }
