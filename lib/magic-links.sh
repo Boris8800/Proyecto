@@ -71,6 +71,12 @@ generate_magic_token() {
         return 1
     fi
     
+    # Validate role (prevent SQL injection)
+    if [[ ! "$role" =~ ^(admin|driver|customer|user)$ ]]; then
+        log_error "Invalid role: $role"
+        return 1
+    fi
+    
     if ! [[ "$days" =~ ^[1-5]$ ]]; then
         log_warn "Invalid expiry days: $days (must be 1-5), using default (3)"
         days=3
@@ -82,10 +88,14 @@ generate_magic_token() {
     # Calculate expiration time
     local expires_at=$(date -d "+$days days" '+%Y-%m-%d %H:%M:%S')
     
-    # Store in database
+    # Sanitize user-provided inputs (escape single quotes for SQL)
+    local safe_ip="${REMOTE_ADDR//\'/\'\'}"
+    local safe_ua="${HTTP_USER_AGENT//\'/\'\'}"
+    
+    # Store in database using parameterized-style insertion
     sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
 INSERT INTO magic_links (email, token, role, expires_at, ip_address, user_agent)
-VALUES ('$email', '$token', '$role', '$expires_at', '$REMOTE_ADDR', '$HTTP_USER_AGENT');
+VALUES ('$email', '$token', '$role', '$expires_at', '$safe_ip', '$safe_ua');
 EOF
     
     if [ $? -eq 0 ]; then

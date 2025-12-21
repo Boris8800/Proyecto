@@ -17,7 +17,7 @@ initialize_postgresql() {
     log_info "Waiting for PostgreSQL to be ready..."
     local attempts=0
     while [ $attempts -lt 30 ]; do
-        if docker exec "$db_container" pg_isready -U postgres >/dev/null 2>&1; then
+        if docker exec "$db_container" pg_isready -U taxi_admin >/dev/null 2>&1; then
             log_ok "PostgreSQL is ready"
             break
         fi
@@ -30,16 +30,19 @@ initialize_postgresql() {
         return 1
     fi
     
-    # Create database and user
+    # Create database and user (use postgres superuser for initial setup)
     log_info "Creating database and user..."
-    docker exec -e PGPASSWORD="$postgres_password" "$db_container" \
-        psql -U postgres -c "CREATE DATABASE taxi_db;" 2>/dev/null || true
     
+    # First create the user with the superuser account
     docker exec -e PGPASSWORD="$postgres_password" "$db_container" \
         psql -U postgres -c "CREATE USER taxi_admin WITH PASSWORD '$postgres_password';" 2>/dev/null || true
     
     docker exec -e PGPASSWORD="$postgres_password" "$db_container" \
         psql -U postgres -c "ALTER ROLE taxi_admin WITH SUPERUSER;" 2>/dev/null || true
+    
+    # Then create the database
+    docker exec -e PGPASSWORD="$postgres_password" "$db_container" \
+        psql -U postgres -c "CREATE DATABASE taxi_db OWNER taxi_admin;" 2>/dev/null || true
     
     log_ok "PostgreSQL database initialized"
 }

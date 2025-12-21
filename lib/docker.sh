@@ -118,9 +118,12 @@ setup_docker_permissions() {
         log_ok "User $taxi_user added to docker group"
     fi
     
-    # Set Docker socket permissions for broader access (needed for compose)
-    chmod 666 /var/run/docker.sock >/dev/null 2>&1
-    log_ok "Docker socket permissions configured"
+    # Set Docker socket permissions using group-based access (more secure than 666)
+    # Only allow docker group members to access the socket
+    chgrp docker /var/run/docker.sock >/dev/null 2>&1
+    chmod 660 /var/run/docker.sock >/dev/null 2>&1
+    log_ok "Docker socket permissions configured (group-based access)"
+    log_info "Note: Users must be in 'docker' group to access Docker"
 }
 
 verify_docker_installation() {
@@ -157,8 +160,8 @@ verify_docker_installation() {
     fi
 }
 
-setup_docker_compose() {
-    log_step "Configuring Docker Compose..."
+validate_docker_compose() {
+    log_step "Validating Docker Compose configuration..."
     
     local project_dir="${1:-.}"
     local compose_file="${project_dir}/docker-compose.yml"

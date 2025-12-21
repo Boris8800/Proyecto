@@ -67,6 +67,9 @@ show_main_menu() {
             echo -e "${CYAN}Goodbye!${NC}"
             exit 0
             ;;
+        \*)
+            cleanup_menu
+            ;;
         *)
             log_error "Invalid option"
             sleep 2

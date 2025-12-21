@@ -76,32 +76,56 @@ function verifyMagicLink(token) {
     console.log('Verifying magic link token:', token);
     
     // Show loading state
-    document.getElementById('loginScreen').innerHTML = `
+    const loginScreen = document.getElementById('loginScreen');
+    if (!loginScreen) {
+        console.error('Login screen element not found');
+        return;
+    }
+    
+    loginScreen.innerHTML = `
         <div class="magic-link-card" style="text-align: center;">
             <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--primary);"></i>
             <h3 style="margin-top: 1rem; color: var(--dark);">Verifying your magic link...</h3>
         </div>
     `;
     
-    // Simulate API verification
-    setTimeout(() => {
-        // In production:
-        // fetch('/api/auth/verify-magic-link', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ token })
-        // })
-        
+    // API verification with proper error handling
+    fetch('/api/auth/verify-magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Invalid or expired magic link');
+        }
+        return response.json();
+    })
+    .then(data => {
         // Success - show dashboard
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('mainDashboard').style.display = 'flex';
+        loginScreen.style.display = 'none';
+        const mainDashboard = document.getElementById('mainDashboard');
+        if (mainDashboard) {
+            mainDashboard.style.display = 'flex';
+        }
         
         // Store auth token
-        localStorage.setItem('driverAuthToken', token);
-        localStorage.setItem('driverEmail', 'demo@driver.com');
+        localStorage.setItem('driverAuthToken', data.token || token);
+        localStorage.setItem('driverEmail', data.email || '');
         
         console.log('Magic link verified - access granted');
-    }, 1500);
+    })
+    .catch(error => {
+        console.error('Magic link verification failed:', error.message);
+        loginScreen.innerHTML = `
+            <div class="magic-link-card" style="text-align: center;">
+                <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #ff5252;"></i>
+                <h3 style="margin-top: 1rem; color: var(--dark);">Verification Failed</h3>
+                <p style="color: #666;">${error.message}</p>
+                <a href="/driver/" class="btn-magic-link" style="margin-top: 1rem;">Try Again</a>
+            </div>
+        `;
+    });
 }
 
 function initDashboard() {

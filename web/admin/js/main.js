@@ -44,14 +44,35 @@ function setupSearch() {
 function updateSystemStatus() {
     // This would normally fetch from your API
     fetch('/api/status')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             console.log('System status updated:', data);
+            updateStatusUI(data);
         })
         .catch(error => {
-            console.log('Using demo mode - API not available');
+            console.warn('API not available, using demo mode:', error.message);
             // Demo mode - show default status
+            updateStatusUI(null);
         });
+}
+
+function updateStatusUI(data) {
+    // Update UI elements with status data or defaults
+    const statusElements = document.querySelectorAll('[data-status]');
+    statusElements.forEach(el => {
+        if (data && data[el.dataset.status]) {
+            el.textContent = data[el.dataset.status];
+            el.classList.remove('status-offline');
+            el.classList.add('status-online');
+        } else {
+            el.classList.add('status-demo');
+        }
+    });
 }
 
 // Utility function to format currency

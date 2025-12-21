@@ -6,7 +6,7 @@ set -euo pipefail
 
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROJECT_ROOT="$SCRIPT_DIR"  # main.sh is in the project root
 
 # Find the web directory (could be in multiple locations)
 if [ -d "$PROJECT_ROOT/web" ]; then
@@ -53,6 +53,12 @@ main() {
 }
 
 parse_arguments() {
+    # If no arguments provided, show interactive menu
+    if [[ $# -eq 0 ]]; then
+        show_main_menu
+        return 0
+    fi
+    
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --fresh)
@@ -107,11 +113,6 @@ parse_arguments() {
         esac
         shift
     done
-    
-    # No arguments - show interactive menu
-    if [ $# -eq 0 ]; then
-        show_main_menu
-    fi
 }
 
 fresh_install() {
