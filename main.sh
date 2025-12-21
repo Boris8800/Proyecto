@@ -128,9 +128,26 @@ fresh_install() {
     systemctl stop taxi-system 2>/dev/null || true
     pkill -u taxi 2>/dev/null || true
     
-    # Pre-emptively kill any processes that might block our ports
-    log_info "Clearing potentially blocking processes..."
-    pkill -9 -f "nginx|apache|httpd|http-server" 2>/dev/null || true
+    # AGGRESSIVE PRE-CLEANUP: Kill ALL potential port blockers
+    log_info "Performing aggressive port cleanup..."
+    
+    # Stop Docker service first
+    systemctl stop docker 2>/dev/null || true
+    pkill -9 -f "dockerd|docker" 2>/dev/null || true
+    
+    # Kill all web servers
+    pkill -9 -f "nginx|apache2|apache|httpd|http-server" 2>/dev/null || true
+    
+    # Kill all database services
+    pkill -9 postgres 2>/dev/null || true
+    pkill -9 mongod 2>/dev/null || true
+    pkill -9 redis-server 2>/dev/null || true
+    pkill -9 node 2>/dev/null || true
+    
+    # Force release all critical ports
+    for port in 80 443 5432 27017 6379 3000 3001 3002 3003; do
+        fuser -k "$port/tcp" 2>/dev/null || true
+    done
     
     # Remove taxi user and data
     userdel -f taxi 2>/dev/null || true
@@ -144,9 +161,9 @@ fresh_install() {
     docker volume prune -f 2>/dev/null || true
     docker system prune -f --all --volumes 2>/dev/null || true
     
-    # Give system time to release ports
-    log_info "Allowing system to release ports..."
-    sleep 2
+    # LONGER WAIT for system to fully release ports
+    log_info "Waiting for system to fully release ports... (5 seconds)"
+    sleep 5
     
     # Clean temporary files
     rm -rf /tmp/taxi* 2>/dev/null || true

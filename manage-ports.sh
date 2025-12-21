@@ -174,6 +174,17 @@ manage_ports() {
 auto_fix_ports() {
     log_step "Checking for port conflicts..."
     
+    # IMMEDIATE PRE-CLEANUP: Kill everything that might block ports
+    log_info "Pre-cleanup: Stopping potential port blockers..."
+    pkill -9 -f "nginx|apache2|apache|httpd" 2>/dev/null || true
+    pkill -9 postgres 2>/dev/null || true
+    pkill -9 mongod 2>/dev/null || true
+    pkill -9 redis-server 2>/dev/null || true
+    pkill -9 node 2>/dev/null || true
+    docker stop $(docker ps -aq) 2>/dev/null || true
+    systemctl stop docker 2>/dev/null || true
+    sleep 2
+    
     local conflicts=0
     local ports_in_use=()
     local max_attempts=3
@@ -205,10 +216,12 @@ auto_fix_ports() {
         
         # Kill nginx and apache directly
         log_info "Stopping web servers (nginx, apache)..."
-        sudo pkill -9 -f "nginx|apache|httpd" 2>/dev/null || true
+        sudo pkill -9 -f "nginx|apache|httpd|http-server" 2>/dev/null || true
+        sudo pkill -9 postgres mongod redis-server node 2>/dev/null || true
         
         # Stop all Docker containers
         log_info "Stopping all Docker containers..."
+        sudo systemctl stop docker 2>/dev/null || true
         sudo docker-compose down -v 2>/dev/null || true
         sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
         docker-compose down -v 2>/dev/null || true
@@ -217,6 +230,7 @@ auto_fix_ports() {
         # Clean Docker system
         log_info "Cleaning Docker system..."
         sudo docker system prune -f --all --volumes 2>/dev/null || true
+        docker system prune -f --all --volumes 2>/dev/null || true
         docker system prune -f --all --volumes 2>/dev/null || true
         
         # Kill any remaining processes using the specific ports
@@ -233,12 +247,13 @@ auto_fix_ports() {
             done
         fi
         
-        # Wait and retry with fresh port check
-        sleep 4
+        # LONGER WAIT for system to truly release ports
+        log_info "Waiting for system to release ports... (8 seconds)"
+        sleep 8
         ((attempt++))
         
         if [ $attempt -le $max_attempts ]; then
-            log_info "Retrying port check (attempt $attempt)..."
+            log_info "Retrying port check (attempt $attempt/$max_attempts)..."
             echo ""
         fi
     done
