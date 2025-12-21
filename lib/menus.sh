@@ -6,9 +6,99 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ===================== HELPER FUNCTIONS =====================
+# Interactive menu with arrow keys and timeout
+# Usage: interactive_menu "Title" "Default Option Index" "Option 1" "Option 2" ...
+interactive_menu() {
+    local title="$1"
+    local default_idx="$2"
+    shift 2
+    local options=("$@")
+    local num_options=${#options[@]}
+    local current=$default_idx
+    local timeout=10
+    local start_time=$(date +%s)
+    
+    # Hide cursor
+    tput civis
+    
+    # Clear menu area function
+    clear_menu() {
+        for ((i=0; i<num_options+2; i++)); do
+            tput el
+            tput cuu1
+        done
+        tput el
+    }
+
+    while true; do
+        local now=$(date +%s)
+        local elapsed=$((now - start_time))
+        local remaining=$((timeout - elapsed))
+        
+        if [ $remaining -le 0 ]; then
+            tput cnorm
+            echo ""
+            log_info "Timeout reached. Selecting recommended option: ${options[$default_idx]}"
+            return $((default_idx + 1))
+        fi
+
+        # Print Title
+        echo -e "${BLUE}$title:${NC}"
+        
+        # Print Options
+        for i in "${!options[@]}"; do
+            if [ $i -eq $current ]; then
+                if [ $i -eq $default_idx ]; then
+                    echo -e "  ${CYAN}➜ ${options[$i]} ${YELLOW}(Recommended)${NC}"
+                else
+                    echo -e "  ${CYAN}➜ ${options[$i]}${NC}"
+                fi
+            else
+                if [ $i -eq $default_idx ]; then
+                    echo -e "    ${options[$i]} ${YELLOW}(Recommended)${NC}"
+                else
+                    echo -e "    ${options[$i]}"
+                fi
+            fi
+        done
+        
+        echo -e "\n${YELLOW}Auto-selecting in ${remaining}s... (Use arrows to navigate, Enter to select)${NC}"
+        
+        # Move cursor back up to start of menu
+        tput cuu $((num_options + 3))
+        
+        # Read input with 1s timeout
+        read -s -n 1 -t 1 key
+        
+        case "$key" in
+            $'\x1b') # Escape sequence
+                read -s -n 2 -t 0.1 next_key
+                case "$next_key" in
+                    "[A") # Up arrow
+                        current=$(( (current - 1 + num_options) % num_options ))
+                        ;;
+                    "[B") # Down arrow
+                        current=$(( (current + 1) % num_options ))
+                        ;;
+                esac
+                ;;
+            "") # Enter key
+                # Check if it was actually Enter (exit code 0) or timeout (exit code > 128)
+                if [ $? -eq 0 ]; then
+                    tput cnorm
+                    # Move cursor down to clear the menu area
+                    for ((i=0; i<num_options+3; i++)); do echo ""; done
+                    return $((current + 1))
+                fi
+                ;;
+        esac
+        
+        # Clear the lines we just printed to redraw
+        # (Actually tput cuu already moved us up, so we just redraw over)
+    done
+}
+
 # Read user input with 10-second timeout
-# Usage: read_with_timeout variable_name "prompt" default_value
-read_with_timeout() {
     local var_name=$1
     local prompt=$2
     local default=$3
@@ -36,21 +126,21 @@ show_main_menu() {
     echo -e "${CYAN}║           🚕 TAXI SYSTEM INSTALLATION & MANAGEMENT 🚕          ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "${BLUE}Main Menu:${NC}"
-    echo ""
-    echo -e "  ${GREEN}1${NC}  Fresh Installation"
-    echo -e "  ${GREEN}2${NC}  Update Existing Installation"
-    echo -e "  ${GREEN}3${NC}  Service Management"
-    echo -e "  ${GREEN}4${NC}  System Diagnostics"
-    echo -e "  ${GREEN}5${NC}  Database Management"
-    echo -e "  ${GREEN}6${NC}  Security Audit"
-    echo -e "  ${GREEN}7${NC}  User Management"
-    echo -e "  ${GREEN}8${NC}  Error Recovery"
-    echo -e "  ${GREEN}9${NC}  Backup & Restore"
-    echo -e "  ${GREEN}*${NC}  System Cleanup"
-    echo -e "  ${GREEN}0${NC}  Exit"
-    echo ""
-    read_with_timeout main_choice "Select an option [0-9,*]" "1"
+    
+    interactive_menu "Main Menu" 0 \
+        "Fresh Installation" \
+        "Update Existing Installation" \
+        "Service Management" \
+        "System Diagnostics" \
+        "Database Management" \
+        "Security Audit" \
+        "User Management" \
+        "Error Recovery" \
+        "Backup & Restore" \
+        "System Cleanup" \
+        "Exit"
+    
+    main_choice=$?
     
     case "$main_choice" in
         1) fresh_installation_menu ;;
@@ -62,17 +152,13 @@ show_main_menu() {
         7) user_management_menu ;;
         8) error_recovery_menu ;;
         9) backup_menu ;;
-        0) 
+        10) cleanup_menu ;;
+        11) 
             echo ""
             echo -e "${CYAN}Goodbye!${NC}"
             exit 0
             ;;
-        \*)
-            cleanup_menu
-            ;;
         *)
-            log_error "Invalid option"
-            sleep 2
             show_main_menu
             ;;
     esac
@@ -86,9 +172,14 @@ fresh_installation_menu() {
     echo -e "${YELLOW}⚠️  WARNING: This may overwrite existing installations!${NC}"
     echo -e "${YELLOW}It is recommended to backup your data before proceeding.${NC}"
     echo ""
-    read_with_timeout confirm "Continue with fresh installation? (y/n)" "y"
     
-    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    interactive_menu "Continue with fresh installation?" 0 \
+        "Yes, proceed with installation" \
+        "No, cancel and go back"
+    
+    confirm=$?
+    
+    if [ $confirm -eq 1 ]; then
         # Call the actual fresh install function
         fresh_install
         echo ""
@@ -105,12 +196,12 @@ update_menu() {
     clear
     print_header "Update Installation"
     echo ""
-    echo -e "${BLUE}Update Options:${NC}"
-    echo ""
-    echo -e "  ${GREEN}1${NC}  Update all services"
-    echo -e "  ${GREEN}2${NC}  Back to main menu"
-    echo ""
-    read_with_timeout update_choice "Select an option [1-2]" "1"
+    
+    interactive_menu "Update Options" 0 \
+        "Update all services" \
+        "Back to main menu"
+    
+    update_choice=$?
     
     case "$update_choice" in
         1) 
@@ -121,7 +212,7 @@ update_menu() {
             show_main_menu 
             ;;
         2) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; update_menu ;;
+        *) show_main_menu ;;
     esac
 }
 
@@ -129,16 +220,16 @@ service_management_menu() {
     clear
     print_header "Service Management"
     echo ""
-    echo -e "${BLUE}Service Management Options:${NC}"
-    echo ""
-    echo -e "  ${GREEN}1${NC}  Start all services"
-    echo -e "  ${GREEN}2${NC}  Stop all services"
-    echo -e "  ${GREEN}3${NC}  Restart all services"
-    echo -e "  ${GREEN}4${NC}  View service status"
-    echo -e "  ${GREEN}5${NC}  View service logs"
-    echo -e "  ${GREEN}6${NC}  Back to main menu"
-    echo ""
-    read_with_timeout service_choice "Select an option [1-6]" "1"
+    
+    interactive_menu "Service Management Options" 0 \
+        "Start all services" \
+        "Stop all services" \
+        "Restart all services" \
+        "View service status" \
+        "View service logs" \
+        "Back to main menu"
+    
+    service_choice=$?
     
     case "$service_choice" in
         1)
@@ -172,8 +263,6 @@ service_management_menu() {
             show_main_menu
             ;;
         *)
-            log_error "Invalid option"
-            sleep 1
             service_management_menu
             ;;
     esac
@@ -181,15 +270,15 @@ service_management_menu() {
 
 service_logs_menu() {
     echo ""
-    echo -e "${BLUE}Select service for logs:${NC}"
-    echo -e "  ${GREEN}1${NC}  API Gateway"
-    echo -e "  ${GREEN}2${NC}  PostgreSQL"
-    echo -e "  ${GREEN}3${NC}  MongoDB"
-    echo -e "  ${GREEN}4${NC}  Redis"
-    echo -e "  ${GREEN}5${NC}  Admin Dashboard"
-    echo -e "  ${GREEN}6${NC}  Back"
-    echo ""
-    read_with_timeout log_choice "Select (1-6)" "6"
+    interactive_menu "Select service for logs" 5 \
+        "API Gateway" \
+        "PostgreSQL" \
+        "MongoDB" \
+        "Redis" \
+        "Admin Dashboard" \
+        "Back"
+    
+    log_choice=$?
     
     case "$log_choice" in
         1) docker logs taxi-api -f ;;
@@ -198,7 +287,7 @@ service_logs_menu() {
         4) docker logs taxi-redis -f ;;
         5) docker logs taxi-admin -f ;;
         6) service_management_menu ;;
-        *) log_error "Invalid option"; sleep 1; service_logs_menu ;;
+        *) service_management_menu ;;
     esac
 }
 
@@ -206,16 +295,17 @@ diagnostics_menu() {
     clear
     print_header "System Diagnostics"
     echo ""
-    echo -e "${BLUE}Diagnostics Options:${NC}"
-    echo -e "  ${GREEN}1${NC}  Full system check"
-    echo -e "  ${GREEN}2${NC}  Docker diagnostics"
-    echo -e "  ${GREEN}3${NC}  Port availability check"
-    echo -e "  ${GREEN}4${NC}  Network connectivity test"
-    echo -e "  ${GREEN}5${NC}  Database connectivity test"
-    echo -e "  ${GREEN}6${NC}  Health check"
-    echo -e "  ${GREEN}7${NC}  Back to main menu"
-    echo ""
-    read_with_timeout diag_choice "Select an option (1-7)" "1"
+    
+    interactive_menu "Diagnostics Options" 0 \
+        "Full system check" \
+        "Docker diagnostics" \
+        "Port availability check" \
+        "Network connectivity test" \
+        "Database connectivity test" \
+        "Health check" \
+        "Back to main menu"
+    
+    diag_choice=$?
     
     case "$diag_choice" in
         1) echo "Running full system check..."; sleep 2; diagnostics_menu ;;
@@ -231,7 +321,7 @@ diagnostics_menu() {
         5) echo "Testing database connectivity..."; sleep 2; diagnostics_menu ;;
         6) echo "Running health check..."; sleep 2; diagnostics_menu ;;
         7) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; diagnostics_menu ;;
+        *) diagnostics_menu ;;
     esac
 }
 
@@ -239,15 +329,16 @@ database_menu() {
     clear
     print_header "Database Management"
     echo ""
-    echo -e "${BLUE}Database Options:${NC}"
-    echo -e "  ${GREEN}1${NC}  Initialize databases"
-    echo -e "  ${GREEN}2${NC}  Create database backup"
-    echo -e "  ${GREEN}3${NC}  Restore from backup"
-    echo -e "  ${GREEN}4${NC}  View database status"
-    echo -e "  ${GREEN}5${NC}  Reset databases (DESTRUCTIVE)"
-    echo -e "  ${GREEN}6${NC}  Back to main menu"
-    echo ""
-    read_with_timeout db_choice "Select an option (1-6)" "1"
+    
+    interactive_menu "Database Options" 0 \
+        "Initialize databases" \
+        "Create database backup" \
+        "Restore from backup" \
+        "View database status" \
+        "Reset databases (DESTRUCTIVE)" \
+        "Back to main menu"
+    
+    db_choice=$?
     
     case "$db_choice" in
         1) log_info "Initializing databases..."; sleep 2; database_menu ;;
@@ -265,7 +356,7 @@ database_menu() {
             database_menu
             ;;
         6) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; database_menu ;;
+        *) database_menu ;;
     esac
 }
 
@@ -273,14 +364,15 @@ security_menu() {
     clear
     print_header "Security Audit"
     echo ""
-    echo -e "${BLUE}Security Options:${NC}"
-    echo -e "  ${GREEN}1${NC}  Run security audit"
-    echo -e "  ${GREEN}2${NC}  Configure firewall"
-    echo -e "  ${GREEN}3${NC}  Update security credentials"
-    echo -e "  ${GREEN}4${NC}  View security report"
-    echo -e "  ${GREEN}5${NC}  Back to main menu"
-    echo ""
-    read_with_timeout sec_choice "Select an option (1-5)" "1"
+    
+    interactive_menu "Security Options" 0 \
+        "Run security audit" \
+        "Configure firewall" \
+        "Update security credentials" \
+        "View security report" \
+        "Back to main menu"
+    
+    sec_choice=$?
     
     case "$sec_choice" in
         1) log_info "Running security audit..."; sleep 2; security_menu ;;
@@ -288,7 +380,7 @@ security_menu() {
         3) log_info "Updating credentials..."; sleep 2; security_menu ;;
         4) log_info "Security report..."; sleep 2; security_menu ;;
         5) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; security_menu ;;
+        *) security_menu ;;
     esac
 }
 
@@ -296,15 +388,16 @@ error_recovery_menu() {
     clear
     print_header "Error Recovery"
     echo ""
-    echo -e "${BLUE}Error Recovery Options:${NC}"
-    echo -e "  ${GREEN}1${NC}  View recent errors"
-    echo -e "  ${GREEN}2${NC}  Automatic error recovery"
-    echo -e "  ${GREEN}3${NC}  Manual troubleshooting guide"
-    echo -e "  ${GREEN}4${NC}  Restart failed services"
-    echo -e "  ${GREEN}5${NC}  System reset"
-    echo -e "  ${GREEN}6${NC}  Back to main menu"
-    echo ""
-    read_with_timeout err_choice "Select an option (1-6)" "1"
+    
+    interactive_menu "Error Recovery Options" 0 \
+        "View recent errors" \
+        "Automatic error recovery" \
+        "Manual troubleshooting guide" \
+        "Restart failed services" \
+        "System reset" \
+        "Back to main menu"
+    
+    err_choice=$?
     
     case "$err_choice" in
         1) log_info "Recent errors..."; sleep 2; error_recovery_menu ;;
@@ -322,7 +415,7 @@ error_recovery_menu() {
             error_recovery_menu
             ;;
         6) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; error_recovery_menu ;;
+        *) error_recovery_menu ;;
     esac
 }
 
@@ -330,15 +423,16 @@ backup_menu() {
     clear
     print_header "Backup & Restore"
     echo ""
-    echo -e "${BLUE}Backup Options:${NC}"
-    echo -e "  ${GREEN}1${NC}  Create full backup"
-    echo -e "  ${GREEN}2${NC}  Create database backup only"
-    echo -e "  ${GREEN}3${NC}  Create configuration backup"
-    echo -e "  ${GREEN}4${NC}  List backups"
-    echo -e "  ${GREEN}5${NC}  Restore from backup"
-    echo -e "  ${GREEN}6${NC}  Back to main menu"
-    echo ""
-    read_with_timeout backup_choice "Select an option (1-6)" "1"
+    
+    interactive_menu "Backup Options" 0 \
+        "Create full backup" \
+        "Create database backup only" \
+        "Create configuration backup" \
+        "List backups" \
+        "Restore from backup" \
+        "Back to main menu"
+    
+    backup_choice=$?
     
     case "$backup_choice" in
         1) log_info "Creating full backup..."; sleep 2; backup_menu ;;
@@ -347,7 +441,7 @@ backup_menu() {
         4) log_info "Listing backups..."; sleep 2; backup_menu ;;
         5) log_info "Restore from backup..."; sleep 2; backup_menu ;;
         6) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; backup_menu ;;
+        *) backup_menu ;;
     esac
 }
 
@@ -355,15 +449,16 @@ user_management_menu() {
     clear
     print_header "User Management"
     echo ""
-    echo -e "${BLUE}User Management Options:${NC}"
-    echo -e "  ${GREEN}1${NC}  List all system users"
-    echo -e "  ${GREEN}2${NC}  List taxi users"
-    echo -e "  ${GREEN}3${NC}  Create new user"
-    echo -e "  ${GREEN}4${NC}  Delete user"
-    echo -e "  ${GREEN}5${NC}  Change user permissions"
-    echo -e "  ${GREEN}6${NC}  Back to main menu"
-    echo ""
-    read_with_timeout user_choice "Select an option (1-6)" "1"
+    
+    interactive_menu "User Management Options" 0 \
+        "List all system users" \
+        "List taxi users" \
+        "Create new user" \
+        "Delete user" \
+        "Change user permissions" \
+        "Back to main menu"
+    
+    user_choice=$?
     
     case "$user_choice" in
         1) 
@@ -465,7 +560,7 @@ user_management_menu() {
             user_management_menu
             ;;
         6) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; user_management_menu ;;
+        *) user_management_menu ;;
     esac
 }
 
@@ -473,15 +568,15 @@ cleanup_menu() {
     clear
     print_header "System Cleanup"
     echo ""
-    echo -e "${BLUE}Cleanup Options:${NC}"
-    echo ""
-    echo -e "  ${GREEN}1${NC}  Clean temporary files"
-    echo -e "  ${GREEN}2${NC}  Clean Docker images and containers"
-    echo -e "  ${GREEN}3${NC}  Clean logs"
-    echo -e "  ${GREEN}4${NC}  Full system cleanup"
-    echo -e "  ${GREEN}5${NC}  Back to main menu"
-    echo ""
-    read_with_timeout clean_choice "Select an option [1-5]" "5"
+    
+    interactive_menu "Cleanup Options" 4 \
+        "Clean temporary files" \
+        "Clean Docker images and containers" \
+        "Clean logs" \
+        "Full system cleanup" \
+        "Back to main menu"
+    
+    clean_choice=$?
     
     case "$clean_choice" in
         1) log_info "Cleaning temporary files..."; sleep 2; cleanup_menu ;;
@@ -498,7 +593,7 @@ cleanup_menu() {
             cleanup_menu
             ;;
         5) show_main_menu ;;
-        *) log_error "Invalid option"; sleep 1; cleanup_menu ;;
+        *) cleanup_menu ;;
     esac
 }
 
