@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <script src="../js/magic-links-client.js"></script>
+    <script>
+        // Initialize magic links auth
+        const auth = new MagicLinksAuth({
+            redirectPath: '/customer/',
+            loginPath: '/auth/'
+        });
+        auth.init();
+    </script>
     <!-- Magic Link Login Screen -->
     <div class="magic-link-container" id="loginScreen">
         <div class="magic-link-card">
@@ -354,5 +363,10 @@
     </div>
 
     <script src="js/main.js"></script>
+    <script>
+        // Setup magic links auth
+        auth.displayUserInfo('userEmail');
+        auth.setupLogoutButton('logoutBtn');
+    </script>
 </body>
 </html>

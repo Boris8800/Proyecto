@@ -8,6 +8,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <script src="../js/magic-links-client.js"></script>
+    <script>
+        // Initialize magic links auth
+        const auth = new MagicLinksAuth({
+            redirectPath: '/admin/',
+            loginPath: '/auth/'
+        });
+        auth.init();
+    </script>
     <div class="dashboard">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -49,7 +58,11 @@
                 </a>
             </nav>
             <div class="sidebar-footer">
-                <a href="#" class="nav-item">
+                <div class="user-info">
+                    <small>Logged in as:</small>
+                    <p id="userEmail">admin@taxi.com</p>
+                </div>
+                <a href="#" class="nav-item" id="logoutBtn">
                     <i class="fas fa-sign-out-alt"></i>
                     <span>Logout</span>
                 </a>
@@ -262,5 +275,10 @@
     </div>
 
     <script src="js/main.js"></script>
+    <script>
+        // Setup magic links auth
+        auth.displayUserInfo('userEmail');
+        auth.setupLogoutButton('logoutBtn');
+    </script>
 </body>
 </html>
