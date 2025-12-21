@@ -218,13 +218,13 @@ EOF
 
 # Main execution
 main() {
-    local action="${1:-fix}"
+    local action="${1:---auto}"
     
     case "$action" in
         --check)
             manage_ports
             ;;
-        --fix|--auto)
+        --auto|--fix)
             auto_fix_ports
             ;;
         --list)
