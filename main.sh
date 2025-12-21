@@ -128,6 +128,10 @@ fresh_install() {
     systemctl stop taxi-system 2>/dev/null || true
     pkill -u taxi 2>/dev/null || true
     
+    # Pre-emptively kill any processes that might block our ports
+    log_info "Clearing potentially blocking processes..."
+    pkill -9 -f "nginx|apache|httpd|http-server" 2>/dev/null || true
+    
     # Remove taxi user and data
     userdel -f taxi 2>/dev/null || true
     groupdel taxi 2>/dev/null || true
@@ -138,6 +142,11 @@ fresh_install() {
     # Clean Docker
     docker system prune -f 2>/dev/null || true
     docker volume prune -f 2>/dev/null || true
+    docker system prune -f --all --volumes 2>/dev/null || true
+    
+    # Give system time to release ports
+    log_info "Allowing system to release ports..."
+    sleep 2
     
     # Clean temporary files
     rm -rf /tmp/taxi* 2>/dev/null || true
@@ -152,8 +161,7 @@ fresh_install() {
     # System initialization (create user FIRST before any permission checks)
     log_step "Initializing system..."
     initialize_system
-    
-    # Configure Docker mirror first to avoid image pull issues
+        # Configure Docker mirror first to avoid image pull issues
     log_step "Configuring Docker registry mirror..."
     configure_docker_mirror
     
@@ -166,10 +174,17 @@ fresh_install() {
     
     # Check and manage ports
     log_step "Checking for port conflicts..."
-    bash "${SCRIPT_DIR}/manage-ports.sh" --fix || {
+    if ! bash "${SCRIPT_DIR}/manage-ports.sh" --fix; then
         log_error "Port conflicts could not be resolved"
+        echo ""
+        echo "Please manually resolve conflicts:"
+        echo "  • Stop conflicting services: sudo pkill -9 nginx"
+        echo "  • Stop Docker: sudo docker stop \$(sudo docker ps -aq)"
+        echo "  • Clean Docker: sudo docker system prune -af"
+        echo "  • Check ports: sudo ss -tulpn | grep -E ':(80|443|3000|3001|3002|3003|5432|27017|6379)'"
+        echo ""
         return 1
-    }
+    fi
     
     # Install Docker
     log_step "Installing Docker..."
@@ -182,8 +197,7 @@ fresh_install() {
     log_step "Configuring security..."
     configure_firewall
     save_credentials
-    
-    # Start services
+        # Start services
     log_step "Starting services..."
     cd "$PROJECT_ROOT" || exit 1
     docker-compose up -d
