@@ -219,10 +219,10 @@ security_audit() {
     if [ -f "/home/taxi/app/.env" ]; then
         if grep -q "password123\|admin123\|taxipass" /home/taxi/app/.env 2>/dev/null; then
             echo -e "${RED}❌ CRITICAL: Default/weak passwords detected${NC}"
-            ((issues++))
+            issues=$((issues + 1))
         else
             echo -e "${GREEN}✅ Strong passwords configured${NC}"
-            ((passed++))
+            passed=$((passed + 1))
         fi
     fi
     
@@ -231,10 +231,10 @@ security_audit() {
     if [ "$exposed_ports" -gt 0 ]; then
         echo -e "${YELLOW}⚠️  WARNING: Database ports exposed to internet${NC}"
         echo -e "${YELLOW}   Consider using firewall to restrict access${NC}"
-        ((warnings++))
+        warnings=$((warnings + 1))
     else
         echo -e "${GREEN}✅ Database ports not exposed externally${NC}"
-        ((passed++))
+        passed=$((passed + 1))
     fi
     
     # Check 3: Docker socket permissions
@@ -243,10 +243,10 @@ security_audit() {
         if [ "$socket_perms" = "666" ]; then
             echo -e "${YELLOW}⚠️  WARNING: Docker socket is world-writable${NC}"
             echo -e "${YELLOW}   This is set for compatibility but reduces security${NC}"
-            ((warnings++))
+            warnings=$((warnings + 1))
         else
             echo -e "${GREEN}✅ Docker socket permissions are restrictive${NC}"
-            ((passed++))
+            passed=$((passed + 1))
         fi
     fi
     
@@ -254,25 +254,25 @@ security_audit() {
     if command -v ufw &> /dev/null; then
         if ufw status | grep -q "Status: active"; then
             echo -e "${GREEN}✅ Firewall (UFW) is active${NC}"
-            ((passed++))
+            passed=$((passed + 1))
         else
             echo -e "${RED}❌ CRITICAL: Firewall is not active${NC}"
-            ((issues++))
+            issues=$((issues + 1))
         fi
     else
         echo -e "${YELLOW}⚠️  WARNING: UFW firewall not installed${NC}"
-        ((warnings++))
+        warnings=$((warnings + 1))
     fi
     
     # Check 5: SSL/TLS
     if [ -d "/etc/nginx" ]; then
         if grep -r "ssl_certificate" /etc/nginx/sites-enabled/ 2>/dev/null | grep -v "#" >/dev/null; then
             echo -e "${GREEN}✅ SSL/TLS certificate configured${NC}"
-            ((passed++))
+            passed=$((passed + 1))
         else
             echo -e "${YELLOW}⚠️  WARNING: No SSL certificate configured (HTTP only)${NC}"
             echo -e "${YELLOW}   Consider setting up Let's Encrypt for HTTPS${NC}"
-            ((warnings++))
+            warnings=$((warnings + 1))
         fi
     fi
     
@@ -280,10 +280,10 @@ security_audit() {
     if [ -f "/etc/ssh/sshd_config" ]; then
         if grep -q "^PermitRootLogin yes" /etc/ssh/sshd_config 2>/dev/null; then
             echo -e "${YELLOW}⚠️  WARNING: Root SSH login is enabled${NC}"
-            ((warnings++))
+            warnings=$((warnings + 1))
         else
             echo -e "${GREEN}✅ Root SSH login is disabled/restricted${NC}"
-            ((passed++))
+            passed=$((passed + 1))
         fi
     fi
     
@@ -562,20 +562,20 @@ cleanup_system() {
     for port in "${ports[@]}"; do
         if netstat -tuln 2>/dev/null | grep -q ":$port "; then
             log_warn "Port $port is still in use"
-            ((cleanup_issues++))
+            cleanup_issues=$((cleanup_issues + 1))
         fi
     done
     
     # Check if taxi user exists
     if id "taxi" &>/dev/null; then
         log_warn "Taxi user still exists"
-        ((cleanup_issues++))
+        cleanup_issues=$((cleanup_issues + 1))
     fi
     
     # Check if installation directories exist
     if [ -d "/home/taxi" ]; then
         log_warn "/home/taxi directory still exists"
-        ((cleanup_issues++))
+        cleanup_issues=$((cleanup_issues + 1))
     fi
     
     echo ""
@@ -681,7 +681,7 @@ check_ports_status() {
     for port in "${ports[@]}"; do
         if netstat -tuln 2>/dev/null | grep -q ":$port "; then
             log_ok "Port $port is LISTENING"
-            ((listening++))
+            listening=$((listening + 1))
         fi
     done
     
@@ -1248,7 +1248,7 @@ check_ports() {
                 for port in "${in_use[@]}"; do
                     if netstat -tuln 2>/dev/null | grep -q ":$port "; then
                         log_warn "Port $port is still in use after kill attempt"
-                        ((still_in_use++))
+                        still_in_use=$((still_in_use + 1))
                     fi
                 done
                 
