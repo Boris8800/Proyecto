@@ -8,6 +8,18 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
+# Find the web directory (could be in multiple locations)
+if [ -d "$PROJECT_ROOT/web" ]; then
+    WEB_DIR="$PROJECT_ROOT/web"
+elif [ -d "$SCRIPT_DIR/web" ]; then
+    WEB_DIR="$SCRIPT_DIR/web"
+elif [ -d "/workspaces/Proyecto/web" ]; then
+    WEB_DIR="/workspaces/Proyecto/web"
+else
+    WEB_DIR=""
+fi
+export WEB_DIR
+
 # Source all library modules
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/lib/common.sh"

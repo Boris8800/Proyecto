@@ -9,6 +9,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 create_all_dashboards() {
     log_step "Creating dashboard applications..."
     
+    # Check if dashboards already exist from web directory
+    if [ -n "${WEB_DIR:-}" ] && [ -d "$WEB_DIR" ]; then
+        log_ok "Using existing dashboards from: $WEB_DIR"
+        return 0
+    fi
+    
+    # If no existing dashboards, create them
     log_info "Creating Admin Dashboard..."
     create_admin_dashboard
     
@@ -396,12 +403,26 @@ deploy_dashboards() {
     local dashboards_root="/var/www/taxi-dashboards"
     mkdir -p "$dashboards_root"
     
-    # Copy dashboards
-    cp -r /home/taxi/dashboards/* "$dashboards_root/" 2>/dev/null || true
+    # Try to copy from multiple possible locations
+    if [ -n "${WEB_DIR:-}" ] && [ -d "$WEB_DIR" ]; then
+        log_info "Copying dashboards from: $WEB_DIR"
+        cp -r "$WEB_DIR"/* "$dashboards_root/" 2>/dev/null || true
+    elif [ -d "/home/taxi/dashboards" ]; then
+        log_info "Copying dashboards from: /home/taxi/dashboards"
+        cp -r /home/taxi/dashboards/* "$dashboards_root/" 2>/dev/null || true
+    elif [ -d "/root/web" ]; then
+        log_info "Copying dashboards from: /root/web"
+        cp -r /root/web/* "$dashboards_root/" 2>/dev/null || true
+    elif [ -d "/workspaces/Proyecto/web" ]; then
+        log_info "Copying dashboards from: /workspaces/Proyecto/web"
+        cp -r /workspaces/Proyecto/web/* "$dashboards_root/" 2>/dev/null || true
+    else
+        log_warn "No web dashboard directory found. Creating empty structure..."
+    fi
     
     # Set permissions
-    chown -R www-data:www-data "$dashboards_root"
-    chmod -R 755 "$dashboards_root"
+    chown -R www-data:www-data "$dashboards_root" 2>/dev/null || true
+    chmod -R 755 "$dashboards_root" 2>/dev/null || true
     
     log_ok "Dashboards deployed to: $dashboards_root"
 }

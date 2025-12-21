@@ -8,5 +8,5 @@ set -euo pipefail
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Call the main installation script with all arguments
-exec "$SCRIPT_DIR/main.sh" "$@"
+# Call the environment preparation script first, then main installation script
+exec "$SCRIPT_DIR/prepare-environment.sh" "$@"
