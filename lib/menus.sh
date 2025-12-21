@@ -80,10 +80,11 @@ update_menu() {
     print_header "Update Installation"
     echo ""
     echo -e "${BLUE}Update Options:${NC}"
-    echo "  ${GREEN}1)${NC}  Update all services"
-    echo "  ${GREEN}2)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-2): " update_choice
+    echo "  ${GREEN}[1]${NC}  Update all services"
+    echo "  ${GREEN}[2]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-2]: " update_choice
     
     case "$update_choice" in
         1) 
@@ -103,14 +104,15 @@ service_management_menu() {
     print_header "Service Management"
     echo ""
     echo -e "${BLUE}Service Management Options:${NC}"
-    echo "  ${GREEN}1)${NC}  Start all services"
-    echo "  ${GREEN}2)${NC}  Stop all services"
-    echo "  ${GREEN}3)${NC}  Restart all services"
-    echo "  ${GREEN}4)${NC}  View service status"
-    echo "  ${GREEN}5)${NC}  View service logs"
-    echo "  ${GREEN}6)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-6): " service_choice
+    echo "  ${GREEN}[1]${NC}  Start all services"
+    echo "  ${GREEN}[2]${NC}  Stop all services"
+    echo "  ${GREEN}[3]${NC}  Restart all services"
+    echo "  ${GREEN}[4]${NC}  View service status"
+    echo "  ${GREEN}[5]${NC}  View service logs"
+    echo "  ${GREEN}[6]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-6]: " service_choice
     
     case "$service_choice" in
         1)
