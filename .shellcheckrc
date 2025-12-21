@@ -1,0 +1,7 @@
+# ShellCheck configuration
+# Suppress non-critical warnings for install-taxi-system.sh
+disable=SC2155  # Declare and assign separately (warning - not critical)
+disable=SC2162  # read without -r (info - rare edge case)
+disable=SC2059  # Don't use variables in printf (info - intentional)
+disable=SC1003  # Escape single quotes (info - acceptable)
+disable=SC2317  # Command unreachable (info - by design)

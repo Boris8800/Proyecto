@@ -18,7 +18,8 @@ MINSPACE=100000 # 100MB en KB
 
 check_space() {
     local dir="$1"
-    local avail=$(df -k "$dir" | awk 'NR==2 {print $4}')
+    local avail
+    avail=$(df -k "$dir" | awk 'NR==2 {print $4}')
     if [ "$avail" -lt "$MINSPACE" ]; then
         echo -e "${RED}Error: No hay suficiente espacio libre en $dir (${avail} KB disponibles).${NC}"
         exit 23
@@ -227,7 +228,8 @@ security_audit() {
     fi
     
     # Check 2: Database ports exposure
-    local exposed_ports=$(netstat -tuln 2>/dev/null | grep -E ":(5432|27017|6379).*0.0.0.0" | wc -l)
+    local exposed_ports
+    exposed_ports=$(netstat -tuln 2>/dev/null | grep -E ":(5432|27017|6379).*0.0.0.0" | wc -l)
     if [ "$exposed_ports" -gt 0 ]; then
         echo -e "${YELLOW}⚠️  WARNING: Database ports exposed to internet${NC}"
         echo -e "${YELLOW}   Consider using firewall to restrict access${NC}"
@@ -239,7 +241,8 @@ security_audit() {
     
     # Check 3: Docker socket permissions
     if [ -e "/var/run/docker.sock" ]; then
-        local socket_perms=$(stat -c %a /var/run/docker.sock 2>/dev/null)
+        local socket_perms
+    socket_perms=$(stat -c %a /var/run/docker.sock 2>/dev/null)
         if [ "$socket_perms" = "666" ]; then
             echo -e "${YELLOW}⚠️  WARNING: Docker socket is world-writable${NC}"
             echo -e "${YELLOW}   This is set for compatibility but reduces security${NC}"
@@ -335,7 +338,7 @@ check_docker_permissions() {
         echo "  2) Skip: Continue without fixing (may fail later)"
         echo "  3) Exit: Stop installation"
         echo ""
-        read -p "Choose option (1/2/3): " docker_option
+        read -r -p "Choose option (1/2/3): " docker_option
         
         case "$docker_option" in
             1)
@@ -356,7 +359,7 @@ check_docker_permissions() {
                     return 0
                 else
                     log_warn "Docker still not accessible. You may need to log out and back in."
-                    read -p "Continue anyway? (y/n): " continue_opt
+                    read -r -p "Continue anyway? (y/n): " continue_opt
                     if [[ "$continue_opt" =~ ^[Yy]$ ]]; then
                         return 0
                     else
@@ -395,7 +398,7 @@ cleanup_system() {
     log_warn "This will remove ALL previous Taxi System installations"
     log_warn "and free up all required ports for a clean installation"
     echo ""
-    read -p "Continue with cleanup? (yes/no): " cleanup_confirm
+    read -r -p "Continue with cleanup? (yes/no): " cleanup_confirm
     
     if [[ ! "$cleanup_confirm" =~ ^[Yy][Ee][Ss]$ ]]; then
         log_info "Cleanup cancelled"
@@ -410,10 +413,12 @@ cleanup_system() {
     for port in "${ports[@]}"; do
         if netstat -tuln 2>/dev/null | grep -q ":$port " || ss -tuln 2>/dev/null | grep -q ":$port "; then
             log_info "Port $port is in use, attempting to free it..."
-            local pids=$(lsof -t -i :"$port" 2>/dev/null || fuser "$port"/tcp 2>/dev/null || echo "")
+            local pids
+            pids=$(lsof -t -i :"$port" 2>/dev/null || fuser "$port"/tcp 2>/dev/null || echo "")
             if [ -n "$pids" ]; then
                 for pid in $pids; do
-                    local process_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
+                    local process_name
+                    process_name=$(ps -p "$pid" -o comm= 2>/dev/null || echo "unknown")
                     log_info "Killing process $process_name (PID: $pid) on port $port"
                     kill -9 "$pid" 2>/dev/null || true
                     killed_count=$((killed_count + 1))
@@ -827,7 +832,7 @@ show_error_recovery_menu() {
         echo "  ${GREEN}7)${NC} Exit and Fix Manually"
         echo ""
         
-        read -p "Choose an option (1-7): " recovery_choice
+        read -r -p "Choose an option (1-7): " recovery_choice
         recovery_choice=$(echo "$recovery_choice" | xargs)
         
         case "$recovery_choice" in
@@ -846,7 +851,7 @@ show_error_recovery_menu() {
                     fi
                 done
                 echo ""
-                read -p "Press Enter to continue..."
+                read -r -p "Press Enter to continue..."
                 ;;
             "2"|"2)")
                 echo ""
@@ -866,7 +871,7 @@ show_error_recovery_menu() {
                 echo "  6) Configuration"
                 echo "  7) Services Start"
                 echo ""
-                read -p "Choose phase (1-7): " phase_choice
+                read -r -p "Choose phase (1-7): " phase_choice
                 echo ""
                 case "$phase_choice" in
                     1) grep "PHASE 1" -A 50 "$LOG_FILE" | less ;;
@@ -887,7 +892,7 @@ show_error_recovery_menu() {
                 ;;
             "5"|"5)")
                 log_warn "This will remove all installations and start fresh!"
-                read -p "Are you sure? Type 'yes' to confirm: " confirm
+                read -r -p "Are you sure? Type 'yes' to confirm: " confirm
                 if [ "$confirm" = "yes" ]; then
                     cleanup_system
                     log_info "Returning to main menu..."
@@ -901,7 +906,7 @@ show_error_recovery_menu() {
             "6"|"6)")
                 system_status
                 echo ""
-                read -p "Press Enter to continue..."
+                read -r -p "Press Enter to continue..."
                 ;;
             "7"|"7)")
                 log_info "Exiting. You can check the log at: $LOG_FILE"
@@ -1131,7 +1136,8 @@ kill_port() {
         log_step "Killing process on port $port..."
         
         # Get PIDs using the port
-        local pids=$(lsof -t -i :"$port" 2>/dev/null)
+        local pids
+            pids=$(lsof -t -i :"$port" 2>/dev/null)
         
         if [ -z "$pids" ]; then
             log_warn "No process found on port $port, but port appears in use"
@@ -1257,7 +1263,7 @@ check_ports() {
                 else
                     log_warn "$still_in_use port(s) could not be freed"
                     echo ""
-                    read -p "Continue anyway? (y/n): " continue_anyway
+                    read -r -p "Continue anyway? (y/n): " continue_anyway
                     if [[ ! "$continue_anyway" =~ ^[Yy]$ ]]; then
                         log_error "Installation cancelled"
                         exit 1
@@ -1449,7 +1455,7 @@ show_main_menu() {
     echo "  ${GREEN}8)${NC} Exit"
     echo ""
     
-    read -p "Choose an option (1-8): " menu_choice
+    read -r -p "Choose an option (1-8): " menu_choice
     
     # Trim whitespace
     menu_choice=$(echo "$menu_choice" | xargs)
@@ -1463,7 +1469,7 @@ show_main_menu() {
             log_info "Running system status check..."
             system_status
             echo ""
-            read -p "Press Enter to return to menu..."
+            read -r -p "Press Enter to return to menu..."
             show_main_menu
             ;;
         "3"|"3)")
@@ -1491,7 +1497,7 @@ show_main_menu() {
             ;;
         "5"|"5)")
             log_warn "This will remove all Taxi System files and containers!"
-            read -p "Are you sure? Type 'yes' to confirm: " confirm
+            read -r -p "Are you sure? Type 'yes' to confirm: " confirm
             if [ "$confirm" = "yes" ]; then
                 cleanup_system
                 show_main_menu
@@ -1504,7 +1510,7 @@ show_main_menu() {
         "6"|"6)")
             security_audit
             echo ""
-            read -p "Press Enter to return to menu..."
+            read -r -p "Press Enter to return to menu..."
             show_main_menu
             ;;
         "7"|"7)")
@@ -1600,7 +1606,7 @@ main_installer() {
         echo "  2) Continue with existing installation"
         echo "  3) Exit"
         echo ""
-        read -p "Choose option (1/2/3): " cleanup_option
+        read -r -p "Choose option (1/2/3): " cleanup_option
         
         # Trim whitespace and normalize input
         cleanup_option=$(echo "$cleanup_option" | xargs)
@@ -1649,19 +1655,19 @@ while true; do
     echo "6. Continuar instalación taxi. ⭐ (DESPUÉS de opción 5)"
     echo "7. Salir"
     echo ""
-    read -p "Opción [1-7]: " opc
+    read -r -p "Opción [1-7]: " opc
     case $opc in
         1)
             echo "=== PUERTOS EN USO ==="
             ss -tulpn | grep ":80\|:443"
             lsof -i :80
-            read -p "Enter para continuar..."
+            read -r -p "Enter para continuar..."
             ;;
         2)
             echo "=== CONFIGURACIONES NGINX ==="
             sudo chown taxi:taxi /home/taxi/app/docker-compose.yml 2>/dev/null || true
             grep -n "listen" /etc/nginx/sites-enabled/* 2>/dev/null || echo "No hay configuraciones"
-            read -p "Enter para continuar..."
+            read -r -p "Enter para continuar..."
             ;;
         3)
             echo "Cambiando puerto 80 a 8080..."
@@ -1705,7 +1711,7 @@ EOF
             set -u
 
     # ===================== SYSTEM CLEANUP =====================
-    read -p "Do you want to clean up previous Taxi installation before starting? (y/n): " cleanup_choice
+    read -r -p "Do you want to clean up previous Taxi installation before starting? (y/n): " cleanup_choice
     if [[ "$cleanup_choice" =~ ^[Yy]$ ]]; then
         cleanup_system
     fi
@@ -2250,7 +2256,7 @@ main_installer() {
             echo -e "${BLUE}  [2]${NC} ${YELLOW}Refresh port list${NC}"
             echo -e "${BLUE}  [3]${NC} ${CYAN}Continue with installation${NC}"
             echo -e "${PURPLE}───────────────────────────────────────────────${NC}"
-            read -p "${CYAN}Select an option [1-3]: ${NC}" port_choice
+            read -r -p "${CYAN}Select an option [1-3]: ${NC}" port_choice
             case $port_choice in
                 1)
                     kill_ports
