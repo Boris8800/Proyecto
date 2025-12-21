@@ -38,7 +38,7 @@ sudo bash install-taxi-system.sh
 - 🔧 Interactive management menu
 - 🛡️ Automatic error recovery
 
-**[See full changelog →](CHANGELOG.md)** | **[View all improvements →](IMPROVEMENTS_SUGGESTIONS.md)**
+**[See full changelog →](CHANGELOG.md)** | **[View improvements →](WEB_IMPROVEMENTS_SUMMARY.md)**
 
 ---
 
@@ -686,7 +686,9 @@ docker exec mongodb mongorestore /backup
 |----------|-------------|
 | [CHANGELOG.md](CHANGELOG.md) | Version history and release notes |
 | [ERROR_RECOVERY_DEMO.md](ERROR_RECOVERY_DEMO.md) | Error recovery system guide |
-| [IMPROVEMENTS_SUGGESTIONS.md](IMPROVEMENTS_SUGGESTIONS.md) | Roadmap and planned features |
+| [WEB_IMPROVEMENTS_SUMMARY.md](WEB_IMPROVEMENTS_SUMMARY.md) | Dashboard improvements |
+| [MODULARIZATION_COMPLETE.md](MODULARIZATION_COMPLETE.md) | Script architecture details |
+| [WEB_DIRECTORY_FIX.md](WEB_DIRECTORY_FIX.md) | Environment setup system |
 
 ---
 

@@ -211,15 +211,9 @@
    - Usage examples for new features
    - Security best practices guide
 
-3. **IMPROVEMENTS_SUGGESTIONS.md**
-   - Created roadmap with 20 improvements
-   - Prioritized by impact and complexity
-   - 4-week implementation plan
-
-4. **ERROR_RECOVERY_DEMO.md**
+3. **ERROR_RECOVERY_DEMO.md**
    - Comprehensive error recovery documentation
-   - Usage examples and screenshots
-   - Recovery workflow diagrams
+   - Usage examples and recovery workflows
 
 ### �� New Commands
 
@@ -294,12 +288,9 @@ sudo bash install-taxi-system.sh
 
 ### 🚦 What's Next
 
-See [IMPROVEMENTS_SUGGESTIONS.md](IMPROVEMENTS_SUGGESTIONS.md) for:
-- SSL/TLS with Let's Encrypt
-- Multi-language support
-- Automated backup system
-- Update mode
-- Grafana + Prometheus integration
+See [WEB_IMPROVEMENTS_SUMMARY.md](WEB_IMPROVEMENTS_SUMMARY.md) for implemented features and improvements.
+
+For technical architecture details, see [MODULARIZATION_COMPLETE.md](MODULARIZATION_COMPLETE.md).
 
 ---
 
