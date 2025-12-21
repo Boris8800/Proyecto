@@ -17,6 +17,7 @@ interactive_menu() {
     local current=$default_idx
     local timeout=10
     local start_time=$(date +%s)
+    INTERACTIVE_MENU_SELECTION=0
     
     # Check if tput is available and working
     local has_tput=0
@@ -40,7 +41,8 @@ interactive_menu() {
             fi
             echo ""
             log_info "Timeout reached. Selecting recommended option: ${options[$default_idx]}"
-            return $((default_idx + 1))
+            INTERACTIVE_MENU_SELECTION=$((default_idx + 1))
+            return 0
         fi
 
         # Print Title
@@ -112,7 +114,8 @@ interactive_menu() {
                     fi
                     # Move cursor down to clear the menu area
                     for ((i=0; i<num_options+4; i++)); do echo ""; done
-                    return $((current + 1))
+                    INTERACTIVE_MENU_SELECTION=$((current + 1))
+                    return 0
                 fi
                 ;;
         esac
@@ -156,7 +159,6 @@ show_main_menu() {
         echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
         echo ""
         
-        set +e
         interactive_menu "Main Menu" 0 \
             "Fresh Installation" \
             "Update Existing Installation" \
@@ -169,8 +171,7 @@ show_main_menu() {
             "Backup & Restore" \
             "System Cleanup" \
             "Exit"
-        main_choice=$?
-        set -e
+        main_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$main_choice" in
             1) fresh_installation_menu ;;
@@ -204,12 +205,10 @@ fresh_installation_menu() {
     echo -e "${YELLOW}It is recommended to backup your data before proceeding.${NC}"
     echo ""
     
-    set +e
     interactive_menu "Continue with fresh installation?" 0 \
         "Yes, proceed with installation" \
         "No, cancel and go back"
-    confirm=$?
-    set -e
+    confirm=$INTERACTIVE_MENU_SELECTION
     
     if [ $confirm -eq 1 ]; then
         # Call the actual fresh install function
@@ -227,12 +226,10 @@ update_menu() {
     print_header "Update Installation"
     echo ""
     
-    set +e
     interactive_menu "Update Options" 0 \
         "Update all services" \
         "Back to main menu"
-    update_choice=$?
-    set -e
+    update_choice=$INTERACTIVE_MENU_SELECTION
     
     case "$update_choice" in
         1) 
@@ -251,7 +248,6 @@ service_management_menu() {
         print_header "Service Management"
         echo ""
         
-        set +e
         interactive_menu "Service Management Options" 0 \
             "Start all services" \
             "Stop all services" \
@@ -259,8 +255,7 @@ service_management_menu() {
             "View service status" \
             "View service logs" \
             "Back to main menu"
-        service_choice=$?
-        set -e
+        service_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$service_choice" in
             1)
@@ -296,7 +291,6 @@ service_management_menu() {
 service_logs_menu() {
     while true; do
         echo ""
-        set +e
         interactive_menu "Select service for logs" 5 \
             "API Gateway" \
             "PostgreSQL" \
@@ -304,8 +298,7 @@ service_logs_menu() {
             "Redis" \
             "Admin Dashboard" \
             "Back"
-        log_choice=$?
-        set -e
+        log_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$log_choice" in
             1) docker logs taxi-api -f ;;
@@ -324,7 +317,6 @@ diagnostics_menu() {
         print_header "System Diagnostics"
         echo ""
         
-        set +e
         interactive_menu "Diagnostics Options" 0 \
             "Full system check" \
             "Docker diagnostics" \
@@ -333,8 +325,7 @@ diagnostics_menu() {
             "Database connectivity test" \
             "Health check" \
             "Back to main menu"
-        diag_choice=$?
-        set -e
+        diag_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$diag_choice" in
             1) echo "Running full system check..."; sleep 2 ;;
@@ -359,7 +350,6 @@ database_menu() {
         print_header "Database Management"
         echo ""
         
-        set +e
         interactive_menu "Database Options" 0 \
             "Initialize databases" \
             "Create database backup" \
@@ -367,8 +357,7 @@ database_menu() {
             "View database status" \
             "Reset databases (DESTRUCTIVE)" \
             "Back to main menu"
-        db_choice=$?
-        set -e
+        db_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$db_choice" in
             1) log_info "Initializing databases..."; sleep 2 ;;
@@ -395,15 +384,13 @@ security_menu() {
         print_header "Security Audit"
         echo ""
         
-        set +e
         interactive_menu "Security Options" 0 \
             "Run security audit" \
             "Configure firewall" \
             "Update security credentials" \
             "View security report" \
             "Back to main menu"
-        sec_choice=$?
-        set -e
+        sec_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$sec_choice" in
             1) log_info "Running security audit..."; sleep 2 ;;
@@ -421,7 +408,6 @@ error_recovery_menu() {
         print_header "Error Recovery"
         echo ""
         
-        set +e
         interactive_menu "Error Recovery Options" 0 \
             "View recent errors" \
             "Automatic error recovery" \
@@ -429,8 +415,7 @@ error_recovery_menu() {
             "Restart failed services" \
             "System reset" \
             "Back to main menu"
-        err_choice=$?
-        set -e
+        err_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$err_choice" in
             1) log_info "Recent errors..."; sleep 2 ;;
@@ -457,7 +442,6 @@ backup_menu() {
         print_header "Backup & Restore"
         echo ""
         
-        set +e
         interactive_menu "Backup Options" 0 \
             "Create full backup" \
             "Create database backup only" \
@@ -465,8 +449,7 @@ backup_menu() {
             "List backups" \
             "Restore from backup" \
             "Back to main menu"
-        backup_choice=$?
-        set -e
+        backup_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$backup_choice" in
             1) log_info "Creating full backup..."; sleep 2 ;;
@@ -485,7 +468,6 @@ user_management_menu() {
         print_header "User Management"
         echo ""
         
-        set +e
         interactive_menu "User Management Options" 0 \
             "List all system users" \
             "List taxi users" \
@@ -493,8 +475,7 @@ user_management_menu() {
             "Delete user" \
             "Change user permissions" \
             "Back to main menu"
-        user_choice=$?
-        set -e
+        user_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$user_choice" in
             1) 
@@ -601,15 +582,13 @@ cleanup_menu() {
         print_header "System Cleanup"
         echo ""
         
-        set +e
         interactive_menu "Cleanup Options" 4 \
             "Clean temporary files" \
             "Clean Docker images and containers" \
             "Clean logs" \
             "Full system cleanup" \
             "Back to main menu"
-        clean_choice=$?
-        set -e
+        clean_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$clean_choice" in
             1) log_info "Cleaning temporary files..."; sleep 2 ;;
