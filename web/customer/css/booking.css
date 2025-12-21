@@ -1,16 +1,16 @@
-/* Booking Page Styles */
+/* SwiftCab Booking System - Modern Responsive Design */
+
 :root {
-    --primary: #4facfe;
-    --primary-dark: #0080ff;
-    --secondary: #00f2fe;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --dark: #1f2937;
-    --light: #f3f4f6;
-    --border: #e5e7eb;
-    --text: #374151;
-    --text-light: #6b7280;
+    --primary: #FFB800;
+    --primary-dark: #FF9800;
+    --secondary: #333333;
+    --light: #F5F5F5;
+    --white: #FFFFFF;
+    --border: #E0E0E0;
+    --text: #333333;
+    --text-light: #666666;
+    --success: #4CAF50;
+    --danger: #F44336;
 }
 
 * {
@@ -19,24 +19,28 @@
     box-sizing: border-box;
 }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    min-height: 100vh;
-    color: var(--text);
+html, body {
+    height: 100%;
+    width: 100%;
 }
 
-/* Top Navigation */
-.top-nav {
-    background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+    color: var(--text);
+    background: var(--light);
+}
+
+/* ==================== HEADER ==================== */
+.header {
+    background: var(--white);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     position: sticky;
     top: 0;
-    z-index: 100;
+    z-index: 1000;
 }
 
-.nav-container {
-    max-width: 1400px;
+.header-container {
+    max-width: 1200px;
     margin: 0 auto;
     padding: 1rem 2rem;
     display: flex;
@@ -44,7 +48,7 @@ body {
     align-items: center;
 }
 
-.logo-section {
+.logo {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -53,305 +57,655 @@ body {
     color: var(--primary);
 }
 
-.logo-section i {
-    font-size: 1.75rem;
+.logo i {
+    font-size: 2rem;
 }
 
-.nav-actions {
+.logo-text {
+    color: var(--secondary);
+}
+
+.nav-menu {
     display: flex;
-    gap: 1rem;
+    align-items: center;
+    gap: 2rem;
 }
 
-.btn-help, .btn-profile {
+.nav-link {
+    text-decoration: none;
+    color: var(--text-light);
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--primary);
+}
+
+.nav-profile {
     background: none;
     border: none;
+    font-size: 1.5rem;
     cursor: pointer;
-    font-size: 1rem;
-    color: var(--text);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-}
-
-.btn-help:hover, .btn-profile:hover {
-    background: var(--light);
     color: var(--primary);
+    transition: transform 0.3s;
 }
 
-/* Main Booking Container */
-.booking-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    min-height: calc(100vh - 80px);
+.nav-profile:hover {
+    transform: scale(1.1);
 }
 
-/* Map Section */
-.map-section {
-    position: relative;
-}
-
-.map-placeholder {
-    width: 100%;
-    height: 100%;
-    background: white;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    min-height: 600px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.map-content {
+/* ==================== HERO ==================== */
+.hero {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: var(--white);
+    padding: 3rem 2rem;
     text-align: center;
+}
+
+.hero-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    opacity: 0.95;
+}
+
+/* ==================== BOOKING WRAPPER ==================== */
+.booking-wrapper {
+    max-width: 1200px;
+    margin: -2rem auto 2rem;
+    padding: 0 1rem;
+}
+
+.booking-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+/* ==================== BOOKING CARD ==================== */
+.booking-card {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    padding: 2rem;
+    width: 100%;
+    max-width: 500px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.card-header h2 {
+    font-size: 1.5rem;
+    color: var(--secondary);
+}
+
+.progress-text {
+    font-size: 0.9rem;
     color: var(--text-light);
+    font-weight: 500;
 }
 
-.map-content i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    color: var(--primary);
+/* Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 2rem;
+    overflow: hidden;
 }
 
-.map-content p {
-    font-size: 1.25rem;
+.progress-fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s ease;
+}
+
+/* ==================== FORM STYLES ==================== */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-label {
+    display: block;
     font-weight: 600;
     margin-bottom: 0.5rem;
     color: var(--text);
+    font-size: 0.95rem;
 }
 
-.map-content small {
-    display: block;
-    font-size: 0.875rem;
-    margin-bottom: 2rem;
-}
-
-.mock-drivers {
-    display: flex;
-    justify-content: center;
-    gap: 3rem;
-}
-
-.driver-marker {
-    width: 50px;
-    height: 50px;
-    background: var(--primary);
-    border-radius: 50%;
+.input-wrapper {
+    position: relative;
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.5rem;
-    animation: pulse 2s ease-in-out infinite;
 }
 
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.1);
-        opacity: 0.8;
-    }
-}
-
-/* Ride Status Card */
-.ride-status-card {
+.input-wrapper i {
     position: absolute;
-    bottom: 2rem;
-    left: 2rem;
-    right: 2rem;
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    left: 1rem;
+    color: var(--primary);
+    font-size: 1.1rem;
 }
 
-.status-header {
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.75rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    font-family: inherit;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.1);
+}
+
+.btn-current-location {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-light);
+    font-size: 1rem;
+    padding: 0.5rem;
+    transition: color 0.3s;
+}
+
+.btn-current-location:hover {
+    color: var(--primary);
+}
+
+/* ==================== QUICK LOCATIONS ==================== */
+.quick-locations {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.quick-location-btn {
+    padding: 0.75rem;
+    background: var(--light);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    margin-bottom: 1rem;
-}
-
-.status-header h3 {
-    margin: 0;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     color: var(--text);
 }
 
-.btn-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--text-light);
+.quick-location-btn:hover {
+    border-color: var(--primary);
+    background: rgba(255, 184, 0, 0.05);
 }
 
-.driver-info {
+.quick-location-btn i {
+    font-size: 1.5rem;
+    color: var(--primary);
+}
+
+/* ==================== CHECKBOX STYLES ==================== */
+.checkbox-group {
+    margin: 1.5rem 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.75rem;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+/* ==================== ESTIMATE BOX ==================== */
+.estimate-box {
+    background: var(--light);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.estimate-item {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.estimate-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.estimate-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* ==================== BUTTONS ==================== */
+.btn-primary,
+.btn-secondary,
+.btn-success {
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: var(--light);
+    color: var(--text);
+    border: 2px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: var(--border);
+}
+
+.btn-success {
+    background: var(--success);
+    color: var(--white);
+    width: 100%;
+    font-size: 1.1rem;
+}
+
+.btn-success:hover {
+    background: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-apply {
+    padding: 0.75rem 1rem;
+    background: var(--primary);
+    color: var(--white);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.3s;
+}
+
+.btn-apply:hover {
+    background: var(--primary-dark);
+}
+
+/* ==================== RIDE OPTIONS ==================== */
+.step-subtitle {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+}
+
+.ride-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.ride-option {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.ride-option:hover {
+    border-color: var(--primary);
+    background: rgba(255, 184, 0, 0.05);
+}
+
+.ride-option[data-type="standard"] .ride-icon {
+    background: rgba(255, 184, 0, 0.1);
+    color: var(--primary);
+}
+
+.ride-option[data-type="premium"] .ride-icon {
+    background: rgba(100, 200, 255, 0.1);
+    color: #64C8FF;
+}
+
+.ride-option[data-type="xl"] .ride-icon {
+    background: rgba(100, 255, 150, 0.1);
+    color: #64FF96;
+}
+
+.ride-header {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.75rem;
 }
 
-.driver-avatar {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    object-fit: cover;
+.ride-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    flex-shrink: 0;
 }
 
-.driver-details {
+.ride-details {
     flex: 1;
 }
 
-.driver-details h4 {
-    margin: 0 0 0.25rem 0;
-    color: var(--text);
-}
-
-.driver-rating {
-    font-size: 0.875rem;
-    color: var(--text-light);
+.ride-details h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--secondary);
     margin-bottom: 0.25rem;
 }
 
-.driver-rating i {
-    color: var(--warning);
-}
-
-.car-info {
-    font-size: 0.875rem;
+.ride-desc {
+    font-size: 0.85rem;
     color: var(--text-light);
 }
 
-.eta {
-    text-align: center;
+.ride-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
 }
 
-.eta-time {
-    font-size: 1.5rem;
-    font-weight: 700;
+.ride-features {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.ride-features span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ride-features i {
     color: var(--primary);
 }
 
-.eta-label {
-    font-size: 0.75rem;
-    color: var(--text-light);
-    text-transform: uppercase;
+/* ==================== SUMMARY CARDS ==================== */
+.summary-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
-.status-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+.summary-card {
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.summary-card h3 {
+    font-size: 1rem;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.summary-card h3 i {
+    color: var(--primary);
+}
+
+.summary-content {
+    display: flex;
+    flex-direction: column;
     gap: 0.75rem;
 }
 
-.btn-call, .btn-message {
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    background: white;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 0.875rem;
+.location-point {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
+    gap: 0.75rem;
 }
 
-.btn-call:hover, .btn-message:hover {
-    background: var(--light);
+.point-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.point-marker.pickup {
+    background: var(--primary);
+}
+
+.point-marker.dropoff {
+    background: var(--success);
+}
+
+.point-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.point-address {
+    font-size: 0.95rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.location-divider {
+    width: 2px;
+    height: 20px;
+    background: var(--border);
+    margin: 0.25rem 0 0.25rem 6px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.95rem;
+    padding: 0.5rem 0;
+}
+
+.detail-row span {
+    color: var(--text-light);
+}
+
+.detail-row strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* ==================== PRICE BREAKDOWN ==================== */
+.price-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+    padding: 0.5rem 0;
+}
+
+.price-row span {
+    color: var(--text-light);
+}
+
+.price-row strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.price-row.total {
+    font-size: 1.1rem;
+    color: var(--primary);
+    padding-top: 0.75rem;
+}
+
+.price-row.total strong {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.price-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.5rem 0;
+}
+
+.price-row.discount {
+    color: var(--success);
+}
+
+.price-row.discount strong {
+    color: var(--success);
+}
+
+/* ==================== PAYMENT OPTIONS ==================== */
+.payment-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.payment-option:hover {
     border-color: var(--primary);
+    background: rgba(255, 184, 0, 0.05);
+}
+
+.payment-option input[type="radio"] {
+    margin-right: 0.75rem;
+    cursor: pointer;
+    accent-color: var(--primary);
+}
+
+.payment-option span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.payment-option i {
     color: var(--primary);
 }
 
-/* Booking Form Section */
-.booking-form-section {
+/* ==================== TERMS AGREEMENT ==================== */
+.terms-agreement {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: var(--light);
+    border-radius: 8px;
+}
+
+.terms-agreement .checkbox-label {
+    margin: 0;
+}
+
+.terms-agreement a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.terms-agreement a:hover {
+    text-decoration: underline;
+}
+
+/* ==================== STEP ACTIONS ==================== */
+.step-actions {
     display: flex;
-    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
 }
 
-.booking-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2rem;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* Step Indicator */
-.step-indicator {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.step-indicator::before {
-    content: '';
-    position: absolute;
-    top: 20px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: var(--border);
-    z-index: -1;
-}
-
-.step {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    position: relative;
-    z-index: 1;
+.step-actions .btn-secondary {
     flex: 1;
 }
 
-.step span {
-    width: 40px;
-    height: 40px;
-    background: white;
-    border: 2px solid var(--border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    color: var(--text-light);
-    transition: all 0.3s ease;
+.step-actions .btn-primary,
+.step-actions .btn-success {
+    flex: 1;
 }
 
-.step label {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-light);
-}
-
-.step.active span {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.step.active label {
-    color: var(--text);
-}
-
-/* Booking Steps */
+/* ==================== BOOKING STEP VISIBILITY ==================== */
 .booking-step {
     display: none;
     animation: fadeIn 0.3s ease;
@@ -372,555 +726,7 @@ body {
     }
 }
 
-.booking-step h2 {
-    margin: 0 0 1rem 0;
-    color: var(--text);
-    font-size: 1.5rem;
-}
-
-.step-subtitle {
-    color: var(--text-light);
-    margin-bottom: 1.5rem;
-}
-
-/* Location Form */
-.location-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.location-input-group {
-    position: relative;
-}
-
-.input-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
-}
-
-.pickup-icon {
-    color: var(--primary);
-    font-size: 0.75rem;
-}
-
-.destination-icon {
-    color: var(--success);
-}
-
-.input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.location-input {
-    width: 100%;
-    padding: 1rem;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-}
-
-.location-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
-}
-
-.btn-current-location {
-    position: absolute;
-    right: 1rem;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--primary);
-    font-size: 1.2rem;
-    padding: 0.5rem;
-}
-
-.btn-current-location:hover {
-    transform: scale(1.1);
-}
-
-.recent-locations {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    border: 1px solid var(--border);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    overflow: hidden;
-    z-index: 10;
-}
-
-.location-item {
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    border-bottom: 1px solid var(--border);
-    transition: background 0.2s ease;
-}
-
-.location-item:last-child {
-    border-bottom: none;
-}
-
-.location-item:hover {
-    background: var(--light);
-}
-
-.location-item i {
-    color: var(--text-light);
-}
-
-/* Schedule Option */
-.schedule-option {
-    margin: 1.5rem 0;
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    cursor: pointer;
-    color: var(--text);
-    font-weight: 500;
-}
-
-.checkbox-label input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--primary);
-}
-
-.schedule-datetime {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.form-input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    font-family: inherit;
-}
-
-.form-input:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-
-/* Quote Section */
-.quote-section {
-    background: var(--light);
-    padding: 1rem;
-    border-radius: 8px;
-    display: flex;
-    justify-content: space-around;
-    margin: 1.5rem 0;
-}
-
-.quote-info {
-    display: flex;
-    gap: 2rem;
-}
-
-.quote-distance, .quote-time {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--text);
-    font-weight: 600;
-}
-
-.quote-distance i, .quote-time i {
-    color: var(--primary);
-}
-
-/* Ride Types Grid */
-.ride-types-grid {
-    display: grid;
-    gap: 1rem;
-    margin: 1.5rem 0;
-}
-
-.ride-type-card {
-    display: grid;
-    grid-template-columns: 60px 1fr 100px auto;
-    align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.ride-type-card:hover {
-    border-color: var(--primary);
-    background: linear-gradient(135deg, rgba(79, 172, 254, 0.05) 0%, transparent 100%);
-}
-
-.ride-type-card.active {
-    border-color: var(--primary);
-    background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, transparent 100%);
-}
-
-.ride-icon {
-    width: 60px;
-    height: 60px;
-    background: var(--light);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    color: var(--primary);
-}
-
-.ride-icon.premium {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-    color: white;
-}
-
-.ride-icon.xl {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-}
-
-.ride-info {
-    min-width: 0;
-}
-
-.ride-info h3 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1rem;
-}
-
-.ride-description {
-    font-size: 0.875rem;
-    color: var(--text-light);
-    margin-bottom: 0.5rem;
-}
-
-.ride-features {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.75rem;
-    color: var(--text-light);
-}
-
-.ride-features span {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.ride-price {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.ride-eta {
-    font-size: 0.875rem;
-    color: var(--text-light);
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    white-space: nowrap;
-}
-
-.selection-indicator {
-    position: absolute;
-    right: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.ride-type-card.active .selection-indicator {
-    opacity: 1;
-    color: var(--primary);
-}
-
-/* Special Options */
-.special-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    margin: 1.5rem 0;
-    padding: 1rem;
-    background: var(--light);
-    border-radius: 8px;
-}
-
-/* Step Buttons */
-.step-buttons {
-    display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-}
-
-.btn-next-step, .btn-back, .btn-confirm-booking {
-    flex: 1;
-    padding: 1rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.btn-next-step, .btn-confirm-booking {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
-}
-
-.btn-next-step:hover, .btn-confirm-booking:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(79, 172, 254, 0.4);
-}
-
-.btn-back {
-    background: white;
-    color: var(--primary);
-    border: 2px solid var(--primary);
-}
-
-.btn-back:hover {
-    background: var(--light);
-}
-
-/* Confirmation Details */
-.confirmation-details {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-    margin: 1.5rem 0;
-}
-
-.detail-card {
-    background: var(--light);
-    padding: 1.25rem;
-    border-radius: 12px;
-}
-
-.detail-card h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
-    color: var(--text);
-}
-
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.95rem;
-}
-
-.detail-row:last-child {
-    border-bottom: none;
-}
-
-.detail-row span {
-    color: var(--text-light);
-}
-
-.detail-row strong {
-    color: var(--text);
-}
-
-/* Route Summary */
-.route-summary {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    position: relative;
-}
-
-.route-point {
-    display: flex;
-    gap: 1rem;
-    padding: 0.75rem 0;
-    position: relative;
-}
-
-.route-marker {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: white;
-    border: 3px solid var(--primary);
-    flex-shrink: 0;
-    margin-top: 0.25rem;
-}
-
-.route-point.destination .route-marker {
-    border-color: var(--success);
-}
-
-.route-connector {
-    position: absolute;
-    left: 5.5px;
-    top: 12px;
-    bottom: 12px;
-    width: 2px;
-    background: linear-gradient(180deg, var(--primary) 0%, var(--success) 100%);
-}
-
-.route-text {
-    padding-left: 1rem;
-}
-
-.route-label {
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--text-light);
-    margin-bottom: 0.25rem;
-}
-
-.route-address {
-    font-weight: 600;
-    color: var(--text);
-}
-
-/* Payment Method */
-.payment-method {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: white;
-    border-radius: 8px;
-    border: 2px solid var(--border);
-}
-
-.payment-icon {
-    font-size: 2rem;
-    color: var(--primary);
-}
-
-.payment-info {
-    flex: 1;
-}
-
-.payment-type {
-    font-weight: 600;
-    color: var(--text);
-}
-
-.payment-account {
-    font-size: 0.875rem;
-    color: var(--text-light);
-}
-
-.btn-change-payment {
-    padding: 0.5rem 1rem;
-    background: var(--light);
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    color: var(--primary);
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.btn-change-payment:hover {
-    background: var(--border);
-}
-
-/* Price Breakdown */
-.price-breakdown {
-    background: white;
-    padding: 1rem;
-    border-radius: 8px;
-    border: 2px solid var(--border);
-}
-
-.breakdown-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    font-size: 0.95rem;
-}
-
-.breakdown-row strong {
-    color: var(--text);
-}
-
-.breakdown-row.promo strong {
-    color: var(--success);
-}
-
-.breakdown-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 0.75rem 0;
-}
-
-.breakdown-row.total {
-    font-size: 1.1rem;
-    font-weight: 700;
-    padding-top: 0.5rem;
-}
-
-.breakdown-row.total strong {
-    color: var(--primary);
-}
-
-/* Promo Input */
-.promo-input-group {
-    display: grid;
-    grid-template-columns: 1fr 120px;
-    gap: 0.75rem;
-    margin-top: 1rem;
-}
-
-.btn-apply-promo {
-    padding: 0.75rem;
-    background: var(--light);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--primary);
-    transition: all 0.3s ease;
-}
-
-.btn-apply-promo:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* Modals */
+/* ==================== MODALS ==================== */
 .modal {
     display: none;
     position: fixed;
@@ -928,38 +734,95 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    align-items: center;
+    z-index: 2000;
     justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease;
 }
 
 .modal.active {
     display: flex;
 }
 
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    cursor: pointer;
+}
+
 .modal-content {
-    background: white;
-    border-radius: 16px;
+    background: var(--white);
+    border-radius: 12px;
     padding: 2rem;
-    max-width: 500px;
+    max-width: 400px;
     width: 90%;
+    text-align: center;
     position: relative;
-    animation: slideUp 0.3s ease;
+    z-index: 2001;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(50px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+.modal-content h2 {
+    font-size: 1.5rem;
+    margin: 1rem 0 0.5rem;
+    color: var(--secondary);
 }
 
-.btn-close-modal {
+.modal-content p {
+    color: var(--text-light);
+    margin: 0.5rem 0;
+    line-height: 1.6;
+}
+
+/* Success Modal */
+.success-modal .modal-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.success-modal .modal-icon i {
+    font-size: 2.5rem;
+    color: var(--success);
+}
+
+.booking-reference {
+    background: var(--light);
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 1rem 0;
+}
+
+.booking-reference strong {
+    display: block;
+    font-size: 1.25rem;
+    color: var(--primary);
+    margin-top: 0.5rem;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 1px;
+}
+
+.driver-info-text {
+    color: var(--text-light);
+    margin-top: 1rem;
+}
+
+/* Profile Modal */
+.profile-modal {
+    max-width: 450px;
+}
+
+.modal-close {
     position: absolute;
     top: 1rem;
     right: 1rem;
@@ -970,156 +833,204 @@ body {
     color: var(--text-light);
 }
 
-.btn-close-modal:hover {
-    color: var(--text);
-}
-
-/* Help Modal */
-.help-modal h2 {
-    margin-bottom: 1.5rem;
-}
-
-.help-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
-.help-item {
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    background: var(--light);
-    border-radius: 8px;
-    text-decoration: none;
-    color: var(--text);
-    transition: all 0.3s ease;
-}
-
-.help-item:hover {
-    background: var(--primary);
-    color: white;
-}
-
-.help-item i {
-    font-size: 1.25rem;
-    min-width: 30px;
-}
-
-/* Success Modal */
-.success-modal {
+.profile-info {
     text-align: center;
-    max-width: 400px;
+    margin: 1.5rem 0;
 }
 
-.success-icon {
+.profile-avatar {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    margin: 0 auto 1rem;
     border-radius: 50%;
+    background: var(--light);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 3rem;
-    color: white;
-    margin: 0 auto 1.5rem;
+    font-size: 2.5rem;
+    color: var(--primary);
 }
 
-.success-modal h2 {
-    margin-bottom: 0.75rem;
+.profile-details {
+    text-align: left;
+    margin: 1.5rem 0;
+}
+
+.profile-details p {
+    margin: 0.75rem 0;
+    font-size: 0.95rem;
+}
+
+.profile-details strong {
     color: var(--text);
 }
 
-.success-modal p {
-    color: var(--text-light);
-    margin-bottom: 1.5rem;
+.profile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
 }
 
-.booking-reference {
-    background: var(--light);
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-}
-
-.booking-reference small {
-    color: var(--text-light);
-    font-size: 0.75rem;
-}
-
-.booking-reference strong {
-    display: block;
-    font-size: 1.25rem;
-    color: var(--primary);
-    font-family: 'Courier New', monospace;
-    margin-top: 0.5rem;
-}
-
-.btn-primary {
-    width: 100%;
-    padding: 1rem;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
+.btn-danger {
+    background: var(--danger);
+    color: var(--white);
+    padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    font-weight: 600;
+    transition: background 0.3s;
+    width: 100%;
 }
 
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(79, 172, 254, 0.4);
+.btn-danger:hover {
+    background: #e53935;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-    .booking-container {
-        grid-template-columns: 1fr;
-    }
-
-    .map-placeholder {
-        min-height: 400px;
-    }
-}
-
+/* ==================== RESPONSIVE DESIGN ==================== */
 @media (max-width: 768px) {
-    .booking-container {
-        padding: 1rem;
+    .header-container {
+        padding: 0.75rem 1rem;
+    }
+
+    .logo {
+        font-size: 1.2rem;
+    }
+
+    .nav-menu {
         gap: 1rem;
+    }
+
+    .nav-link {
+        display: none;
+    }
+
+    .hero-content h1 {
+        font-size: 1.8rem;
+    }
+
+    .hero-content p {
+        font-size: 1rem;
     }
 
     .booking-card {
         padding: 1.5rem;
+        margin: 0 1rem;
     }
 
-    .ride-type-card {
-        grid-template-columns: 50px 1fr;
-        gap: 0.75rem;
+    .quick-locations {
+        grid-template-columns: 1fr 1fr;
     }
 
-    .ride-price, .ride-eta {
-        grid-column: 2;
-        font-size: 0.875rem;
-    }
-
-    .selection-indicator {
-        position: static;
-        transform: none;
-        opacity: 1;
-    }
-
-    .step-buttons {
+    .step-actions {
         flex-direction: column;
     }
 
-    .promo-input-group {
-        grid-template-columns: 1fr;
+    .step-actions button {
+        width: 100%;
     }
 
-    .btn-apply-promo {
-        width: 100%;
+    .modal-content {
+        width: 85%;
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .hero {
+        padding: 2rem 1rem;
+    }
+
+    .hero-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .booking-card {
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .card-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .form-input {
+        padding: 0.7rem 1rem 0.7rem 2.5rem;
+        font-size: 16px;
+    }
+
+    .quick-locations {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+
+    .quick-location-btn {
+        padding: 0.6rem;
+        font-size: 0.8rem;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 0.75rem;
+    }
+
+    .quick-location-btn i {
+        font-size: 1.2rem;
+    }
+
+    .ride-option {
+        padding: 0.8rem;
+    }
+
+    .ride-header {
+        gap: 0.75rem;
+    }
+
+    .ride-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+
+    .ride-details h3 {
+        font-size: 0.9rem;
+    }
+
+    .price-row {
+        font-size: 0.85rem;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-success {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.95rem;
+    }
+
+    .modal-content {
+        width: 90%;
+        padding: 1.25rem;
+    }
+
+    .modal-content h2 {
+        font-size: 1.25rem;
+    }
+
+    .success-modal .modal-icon {
+        width: 50px;
+        height: 50px;
+    }
+
+    .success-modal .modal-icon i {
+        font-size: 2rem;
     }
 }

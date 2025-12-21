@@ -3,431 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book a Ride - QuickRide Taxi</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>Book a Taxi - SwiftCab</title>
     <link rel="stylesheet" href="css/booking.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="top-nav">
-        <div class="nav-container">
-            <div class="logo-section">
+    <!-- Header Navigation -->
+    <header class="header">
+        <div class="header-container">
+            <div class="logo">
                 <i class="fas fa-taxi"></i>
-                <h1>QuickRide</h1>
+                <span class="logo-text">SwiftCab</span>
             </div>
-            <div class="nav-actions">
-                <button class="btn-help" id="helpBtn">
-                    <i class="fas fa-headset"></i> Help
-                </button>
-                <button class="btn-profile" id="profileBtn">
+            <nav class="nav-menu">
+                <a href="#" class="nav-link">Home</a>
+                <a href="#" class="nav-link">Services</a>
+                <a href="#" class="nav-link">Contact</a>
+                <button id="profileBtn" class="nav-profile">
                     <i class="fas fa-user-circle"></i>
                 </button>
-            </div>
+            </nav>
         </div>
-    </nav>
+    </header>
 
-    <!-- Main Booking Container -->
-    <div class="booking-container">
-        <!-- Left Side: Map & Ride Status -->
-        <div class="map-section">
-            <div class="map-placeholder">
-                <div class="map-content">
-                    <i class="fas fa-map"></i>
-                    <p>Live Map View</p>
-                    <small>Showing available drivers in your area</small>
-                    <div class="mock-drivers">
-                        <div class="driver-marker">
-                            <i class="fas fa-car"></i>
-                        </div>
-                        <div class="driver-marker">
-                            <i class="fas fa-car"></i>
-                        </div>
-                        <div class="driver-marker">
-                            <i class="fas fa-car"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Active Ride Status (Hidden by default) -->
-            <div class="ride-status-card" id="rideStatus" style="display: none;">
-                <div class="status-header">
-                    <h3>Your Ride is Here!</h3>
-                    <button class="btn-close" id="closeStatus">&times;</button>
-                </div>
-                <div class="driver-info">
-                    <img src="https://ui-avatars.com/api/?name=John+Driver&background=4facfe&color=fff" alt="Driver" class="driver-avatar">
-                    <div class="driver-details">
-                        <h4>John D.</h4>
-                        <div class="driver-rating">
-                            <i class="fas fa-star"></i> 4.9 • 342 trips
-                        </div>
-                        <div class="car-info">Toyota Camry • ABC 1234</div>
-                    </div>
-                    <div class="eta">
-                        <div class="eta-time">3 min</div>
-                        <div class="eta-label">ETA</div>
-                    </div>
-                </div>
-                <div class="status-actions">
-                    <button class="btn-call"><i class="fas fa-phone"></i> Call</button>
-                    <button class="btn-message"><i class="fas fa-sms"></i> Message</button>
-                </div>
-            </div>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Reliable Taxi Service</h1>
+            <p>Book your taxi online in seconds</p>
         </div>
+    </section>
 
-        <!-- Right Side: Booking Form -->
-        <div class="booking-form-section">
+    <!-- Main Booking Section -->
+    <main class="booking-wrapper">
+        <div class="booking-container">
+            <!-- Booking Card -->
             <div class="booking-card">
-                <!-- Step Indicator -->
-                <div class="step-indicator">
-                    <div class="step active" data-step="1">
-                        <span>1</span>
-                        <label>Location</label>
-                    </div>
-                    <div class="step" data-step="2">
-                        <span>2</span>
-                        <label>Ride Type</label>
-                    </div>
-                    <div class="step" data-step="3">
-                        <span>3</span>
-                        <label>Confirm</label>
-                    </div>
+                <div class="card-header">
+                    <h2>Book Your Ride</h2>
+                    <span class="progress-text" id="progressText">Step 1 of 3</span>
                 </div>
 
-                <!-- Step 1: Location Input -->
+                <!-- Progress Bar -->
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+
+                <!-- Step 1: Location Selection -->
                 <div class="booking-step active" id="step1">
-                    <h2>Where would you like to go?</h2>
-                    
-                    <form class="location-form" id="locationForm">
-                        <!-- Pickup Location -->
-                        <div class="location-input-group">
-                            <label class="input-label">
-                                <i class="fas fa-circle pickup-icon"></i>
-                                <span>Pickup</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <input 
-                                    type="text" 
-                                    id="pickupInput" 
-                                    class="location-input" 
-                                    placeholder="Enter pickup location"
-                                    autocomplete="off"
-                                >
-                                <button type="button" class="btn-current-location" id="useCurrentLocation">
-                                    <i class="fas fa-crosshairs"></i>
-                                </button>
-                            </div>
-                            <div class="recent-locations" id="pickupRecent" style="display: none;">
-                                <div class="location-item">
-                                    <i class="fas fa-home"></i>
-                                    <span>Home</span>
-                                </div>
-                                <div class="location-item">
-                                    <i class="fas fa-briefcase"></i>
-                                    <span>Work</span>
-                                </div>
-                            </div>
+                    <div class="form-group">
+                        <label for="pickupLocation" class="form-label">Pickup Location</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-location-dot"></i>
+                            <input type="text" id="pickupLocation" class="form-input" placeholder="Enter pickup location" required>
+                            <button type="button" class="btn-current-location" id="currentLocationBtn" title="Use current location">
+                                <i class="fas fa-location-crosshairs"></i>
+                            </button>
                         </div>
+                    </div>
 
-                        <!-- Destination Location -->
-                        <div class="location-input-group">
-                            <label class="input-label">
-                                <i class="fas fa-map-marker-alt destination-icon"></i>
-                                <span>Destination</span>
-                            </label>
-                            <div class="input-wrapper">
-                                <input 
-                                    type="text" 
-                                    id="destinationInput" 
-                                    class="location-input" 
-                                    placeholder="Where to?"
-                                    autocomplete="off"
-                                >
-                            </div>
-                            <div class="recent-locations" id="destinationRecent" style="display: none;">
-                                <div class="location-item">
-                                    <i class="fas fa-store"></i>
-                                    <span>Shopping Center</span>
-                                </div>
-                                <div class="location-item">
-                                    <i class="fas fa-utensils"></i>
-                                    <span>Downtown Restaurant</span>
-                                </div>
-                            </div>
+                    <div class="form-group">
+                        <label for="dropoffLocation" class="form-label">Dropoff Location</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-location-dot"></i>
+                            <input type="text" id="dropoffLocation" class="form-input" placeholder="Where to?" required>
                         </div>
+                    </div>
 
-                        <!-- Scheduled Ride Option -->
-                        <div class="schedule-option">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="scheduleRide">
-                                <span><i class="fas fa-clock"></i> Schedule for later</span>
-                            </label>
-                            <div class="schedule-datetime" id="scheduleDateTime" style="display: none;">
-                                <input type="date" id="scheduleDate" class="form-input">
-                                <input type="time" id="scheduleTime" class="form-input">
-                            </div>
-                        </div>
-
-                        <!-- Quote Display -->
-                        <div class="quote-section" id="quoteSection" style="display: none;">
-                            <div class="quote-info">
-                                <span class="quote-distance">
-                                    <i class="fas fa-route"></i>
-                                    <span id="distanceDisplay">--</span> km
-                                </span>
-                                <span class="quote-time">
-                                    <i class="fas fa-clock"></i>
-                                    <span id="timeDisplay">--</span> min
-                                </span>
-                            </div>
-                        </div>
-
-                        <button type="button" class="btn-next-step" id="nextToRideType">
-                            Continue to Ride Type <i class="fas fa-arrow-right"></i>
+                    <!-- Quick Locations -->
+                    <div class="quick-locations">
+                        <button type="button" class="quick-location-btn">
+                            <i class="fas fa-home"></i>
+                            <span>Home</span>
                         </button>
-                    </form>
+                        <button type="button" class="quick-location-btn">
+                            <i class="fas fa-briefcase"></i>
+                            <span>Work</span>
+                        </button>
+                        <button type="button" class="quick-location-btn">
+                            <i class="fas fa-plane"></i>
+                            <span>Airport</span>
+                        </button>
+                    </div>
+
+                    <!-- Schedule Option -->
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="scheduleRide">
+                            <span>Schedule for later?</span>
+                        </label>
+                    </div>
+
+                    <div class="datetime-inputs" id="datetimeInputs" style="display: none;">
+                        <div class="form-group">
+                            <input type="date" id="scheduleDate" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <input type="time" id="scheduleTime" class="form-input">
+                        </div>
+                    </div>
+
+                    <!-- Estimate Display -->
+                    <div class="estimate-box" id="estimateBox" style="display: none;">
+                        <div class="estimate-item">
+                            <span class="estimate-label">Distance:</span>
+                            <span class="estimate-value" id="estimateDistance">--</span>
+                        </div>
+                        <div class="estimate-item">
+                            <span class="estimate-label">Estimated Time:</span>
+                            <span class="estimate-value" id="estimateTime">--</span>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-primary btn-block" id="nextBtn1">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
                 </div>
 
                 <!-- Step 2: Ride Type Selection -->
                 <div class="booking-step" id="step2">
-                    <h2>Choose Your Ride</h2>
-                    <p class="step-subtitle">Select the ride type that best fits your needs</p>
+                    <p class="step-subtitle">Choose your ride type</p>
 
-                    <div class="ride-types-grid" id="rideTypesGrid">
-                        <!-- Standard Ride -->
-                        <div class="ride-type-card" data-type="standard" data-price="12.50">
-                            <div class="ride-icon">
-                                <i class="fas fa-car"></i>
-                            </div>
-                            <div class="ride-info">
-                                <h3>Standard</h3>
-                                <p class="ride-description">Economy car for 1-4 passengers</p>
-                                <div class="ride-features">
-                                    <span><i class="fas fa-users"></i> 4 seats</span>
-                                    <span><i class="fas fa-tag"></i> Best price</span>
+                    <div class="ride-options">
+                        <!-- Standard -->
+                        <div class="ride-option" data-type="standard" data-price="15.00">
+                            <div class="ride-header">
+                                <div class="ride-icon standard">
+                                    <i class="fas fa-car"></i>
                                 </div>
+                                <div class="ride-details">
+                                    <h3>Standard</h3>
+                                    <p class="ride-desc">Economy taxi</p>
+                                </div>
+                                <div class="ride-price">£15.00</div>
                             </div>
-                            <div class="ride-price">$12.50</div>
-                            <div class="ride-eta">
-                                <i class="fas fa-clock"></i> 3 min away
-                            </div>
-                            <div class="selection-indicator">
-                                <i class="fas fa-check-circle"></i>
+                            <div class="ride-features">
+                                <span><i class="fas fa-users"></i> 4 passengers</span>
+                                <span><i class="fas fa-bag"></i> 2 large bags</span>
                             </div>
                         </div>
 
-                        <!-- Premium Ride -->
-                        <div class="ride-type-card" data-type="premium" data-price="18.00">
-                            <div class="ride-icon premium">
-                                <i class="fas fa-car-side"></i>
-                            </div>
-                            <div class="ride-info">
-                                <h3>Premium</h3>
-                                <p class="ride-description">Luxury car for 1-4 passengers</p>
-                                <div class="ride-features">
-                                    <span><i class="fas fa-star"></i> Premium experience</span>
-                                    <span><i class="fas fa-wifi"></i> WiFi</span>
+                        <!-- Premium -->
+                        <div class="ride-option" data-type="premium" data-price="22.00">
+                            <div class="ride-header">
+                                <div class="ride-icon premium">
+                                    <i class="fas fa-car-side"></i>
                                 </div>
+                                <div class="ride-details">
+                                    <h3>Premium</h3>
+                                    <p class="ride-desc">Executive car</p>
+                                </div>
+                                <div class="ride-price">£22.00</div>
                             </div>
-                            <div class="ride-price">$18.00</div>
-                            <div class="ride-eta">
-                                <i class="fas fa-clock"></i> 5 min away
-                            </div>
-                            <div class="selection-indicator">
-                                <i class="fas fa-check-circle"></i>
+                            <div class="ride-features">
+                                <span><i class="fas fa-star"></i> Premium service</span>
+                                <span><i class="fas fa-wifi"></i> WiFi & charging</span>
                             </div>
                         </div>
 
-                        <!-- XL Ride -->
-                        <div class="ride-type-card" data-type="xl" data-price="22.00">
-                            <div class="ride-icon xl">
-                                <i class="fas fa-shuttle-van"></i>
-                            </div>
-                            <div class="ride-info">
-                                <h3>XL</h3>
-                                <p class="ride-description">Spacious van for up to 6 passengers</p>
-                                <div class="ride-features">
-                                    <span><i class="fas fa-users"></i> 6 seats</span>
-                                    <span><i class="fas fa-luggage-cart"></i> More luggage</span>
+                        <!-- XL -->
+                        <div class="ride-option" data-type="xl" data-price="28.00">
+                            <div class="ride-header">
+                                <div class="ride-icon xl">
+                                    <i class="fas fa-van-shuttle"></i>
                                 </div>
+                                <div class="ride-details">
+                                    <h3>XL</h3>
+                                    <p class="ride-desc">Large vehicle</p>
+                                </div>
+                                <div class="ride-price">£28.00</div>
                             </div>
-                            <div class="ride-price">$22.00</div>
-                            <div class="ride-eta">
-                                <i class="fas fa-clock"></i> 8 min away
-                            </div>
-                            <div class="selection-indicator">
-                                <i class="fas fa-check-circle"></i>
+                            <div class="ride-features">
+                                <span><i class="fas fa-users"></i> Up to 6 passengers</span>
+                                <span><i class="fas fa-box"></i> Extra luggage space</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Special Options -->
-                    <div class="special-options">
+                    <!-- Special Requests -->
+                    <div class="special-requests">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="needAirport">
-                            <span><i class="fas fa-plane"></i> Airport ride</span>
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="needWheelchair">
-                            <span><i class="fas fa-wheelchair"></i> Wheelchair accessible</span>
+                            <input type="checkbox" id="wheelchairNeeded">
+                            <span><i class="fas fa-wheelchair"></i> Wheelchair accessible vehicle</span>
                         </label>
                     </div>
 
-                    <div class="step-buttons">
-                        <button type="button" class="btn-back" id="backToLocation">
+                    <div class="step-actions">
+                        <button type="button" class="btn-secondary" id="backBtn2">
                             <i class="fas fa-arrow-left"></i> Back
                         </button>
-                        <button type="button" class="btn-next-step" id="nextToConfirm">
-                            Continue to Confirm <i class="fas fa-arrow-right"></i>
+                        <button type="button" class="btn-primary" id="nextBtn2">
+                            Next <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Step 3: Confirmation -->
                 <div class="booking-step" id="step3">
-                    <h2>Confirm Your Booking</h2>
-                    
-                    <div class="confirmation-details">
+                    <p class="step-subtitle">Review your booking</p>
+
+                    <!-- Summary Cards -->
+                    <div class="summary-section">
                         <!-- Route Summary -->
-                        <div class="detail-card">
+                        <div class="summary-card">
                             <h3><i class="fas fa-route"></i> Route</h3>
-                            <div class="route-summary">
-                                <div class="route-point pickup">
-                                    <div class="route-marker"></div>
-                                    <div class="route-text">
-                                        <div class="route-label">Pickup</div>
-                                        <div class="route-address" id="confirmPickup">--</div>
+                            <div class="summary-content">
+                                <div class="location-point">
+                                    <div class="point-marker pickup"></div>
+                                    <div>
+                                        <div class="point-label">Pickup</div>
+                                        <div class="point-address" id="summaryPickup">--</div>
                                     </div>
                                 </div>
-                                <div class="route-connector"></div>
-                                <div class="route-point destination">
-                                    <div class="route-marker"></div>
-                                    <div class="route-text">
-                                        <div class="route-label">Destination</div>
-                                        <div class="route-address" id="confirmDestination">--</div>
+                                <div class="location-divider"></div>
+                                <div class="location-point">
+                                    <div class="point-marker dropoff"></div>
+                                    <div>
+                                        <div class="point-label">Dropoff</div>
+                                        <div class="point-address" id="summaryDropoff">--</div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Ride Details -->
-                        <div class="detail-card">
-                            <h3><i class="fas fa-car"></i> Ride Details</h3>
-                            <div class="detail-row">
-                                <span>Ride Type:</span>
-                                <strong id="confirmRideType">Standard</strong>
-                            </div>
-                            <div class="detail-row">
-                                <span>Distance:</span>
-                                <strong id="confirmDistance">--</strong>
-                            </div>
-                            <div class="detail-row">
-                                <span>Estimated Duration:</span>
-                                <strong id="confirmDuration">--</strong>
+                        <!-- Ride Summary -->
+                        <div class="summary-card">
+                            <h3><i class="fas fa-info-circle"></i> Ride Details</h3>
+                            <div class="summary-content">
+                                <div class="detail-row">
+                                    <span>Ride Type:</span>
+                                    <strong id="summaryRideType">--</strong>
+                                </div>
+                                <div class="detail-row">
+                                    <span>Distance:</span>
+                                    <strong id="summaryDistance">--</strong>
+                                </div>
+                                <div class="detail-row">
+                                    <span>Duration:</span>
+                                    <strong id="summaryDuration">--</strong>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Payment Details -->
-                        <div class="detail-card">
+                        <!-- Price Summary -->
+                        <div class="summary-card">
+                            <h3><i class="fas fa-pound-sign"></i> Price Breakdown</h3>
+                            <div class="summary-content price-breakdown">
+                                <div class="price-row">
+                                    <span>Base fare:</span>
+                                    <span id="baseFare">£0.00</span>
+                                </div>
+                                <div class="price-row">
+                                    <label for="promoCode" style="flex: 1;">Promo code:</label>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <input type="text" id="promoCode" placeholder="Enter code" class="form-input" style="width: 120px;">
+                                        <button type="button" class="btn-apply" id="applyPromoBtn">Apply</button>
+                                    </div>
+                                </div>
+                                <div class="price-row discount" id="discountRow" style="display: none;">
+                                    <span>Discount:</span>
+                                    <span id="discountAmount">-£0.00</span>
+                                </div>
+                                <div class="price-divider"></div>
+                                <div class="price-row total">
+                                    <span>Total:</span>
+                                    <span id="totalPrice">£0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="summary-card">
                             <h3><i class="fas fa-credit-card"></i> Payment</h3>
-                            <div class="payment-method">
-                                <div class="payment-icon">
-                                    <i class="fas fa-credit-card"></i>
-                                </div>
-                                <div class="payment-info">
-                                    <div class="payment-type">Visa</div>
-                                    <div class="payment-account">•••• 4242</div>
-                                </div>
-                                <button type="button" class="btn-change-payment">Change</button>
+                            <div class="payment-options">
+                                <label class="payment-option selected">
+                                    <input type="radio" name="payment" value="card" checked>
+                                    <span><i class="fas fa-credit-card"></i> Credit Card</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="cash">
+                                    <span><i class="fas fa-money-bill"></i> Cash</span>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="payment" value="wallet">
+                                    <span><i class="fas fa-wallet"></i> Digital Wallet</span>
+                                </label>
                             </div>
-                        </div>
-
-                        <!-- Price Breakdown -->
-                        <div class="price-breakdown">
-                            <div class="breakdown-row">
-                                <span>Ride fare:</span>
-                                <strong id="baseFare">$12.50</strong>
-                            </div>
-                            <div class="breakdown-row">
-                                <span>Service fee:</span>
-                                <strong>$0.50</strong>
-                            </div>
-                            <div class="breakdown-row promo" id="promoRow" style="display: none;">
-                                <span>Promo discount:</span>
-                                <strong id="promoDiscount">-$2.00</strong>
-                            </div>
-                            <div class="breakdown-divider"></div>
-                            <div class="breakdown-row total">
-                                <span>Total:</span>
-                                <strong id="totalPrice">$13.00</strong>
-                            </div>
-                        </div>
-
-                        <!-- Promo Code -->
-                        <div class="promo-input-group">
-                            <input type="text" id="promoCode" class="form-input" placeholder="Enter promo code">
-                            <button type="button" class="btn-apply-promo">Apply</button>
                         </div>
                     </div>
 
-                    <div class="step-buttons">
-                        <button type="button" class="btn-back" id="backToRideType">
+                    <!-- Terms -->
+                    <div class="terms-agreement">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="agreeTerms" required>
+                            <span>I agree to the <a href="#">terms & conditions</a></span>
+                        </label>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="step-actions">
+                        <button type="button" class="btn-secondary" id="backBtn3">
                             <i class="fas fa-arrow-left"></i> Back
                         </button>
-                        <button type="button" class="btn-confirm-booking" id="confirmBooking">
-                            <i class="fas fa-check-circle"></i> Confirm & Book Ride
+                        <button type="button" class="btn-success btn-block" id="confirmBtn">
+                            <i class="fas fa-check"></i> Confirm & Book <span id="finalPrice">£0.00</span>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Help Modal -->
-    <div class="modal" id="helpModal">
-        <div class="modal-content help-modal">
-            <button class="btn-close-modal">&times;</button>
-            <h2>Need Help?</h2>
-            <div class="help-options">
-                <a href="#" class="help-item">
-                    <i class="fas fa-question-circle"></i>
-                    <span>How does QuickRide work?</span>
-                </a>
-                <a href="#" class="help-item">
-                    <i class="fas fa-headset"></i>
-                    <span>Contact Support</span>
-                </a>
-                <a href="#" class="help-item">
-                    <i class="fas fa-file-alt"></i>
-                    <span>Terms & Conditions</span>
-                </a>
-                <a href="#" class="help-item">
-                    <i class="fas fa-shield-alt"></i>
-                    <span>Safety Tips</span>
-                </a>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <!-- Success Modal -->
     <div class="modal" id="successModal">
         <div class="modal-content success-modal">
-            <div class="success-icon">
+            <div class="modal-icon success">
                 <i class="fas fa-check-circle"></i>
             </div>
-            <h2>Ride Booked Successfully!</h2>
-            <p>Your driver will arrive in approximately <strong id="successEta">3 minutes</strong></p>
-            <div class="booking-reference">
-                <small>Booking Reference</small>
-                <strong id="bookingRef">QB-2025-12345</strong>
-            </div>
-            <button type="button" class="btn-primary" id="viewRideStatus">
-                View Ride Status
-            </button>
+            <h2>Booking Confirmed!</h2>
+            <p class="booking-reference">
+                Booking Reference: <strong id="bookingRef">--</strong>
+            </p>
+            <p class="driver-info-text">Your driver will be assigned shortly</p>
+            <button type="button" class="btn-primary" id="closeSuccessBtn">Continue</button>
         </div>
     </div>
+
+    <!-- Profile Modal -->
+    <div class="modal" id="profileModal">
+        <div class="modal-content profile-modal">
+            <button class="modal-close" id="closeProfileBtn">&times;</button>
+            <h2>Your Profile</h2>
+            <div class="profile-info">
+                <div class="profile-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="profile-details">
+                    <p>Name: <strong id="userName">Guest User</strong></p>
+                    <p>Email: <strong id="userEmail">user@example.com</strong></p>
+                    <p>Phone: <strong id="userPhone">+44 (0)000 000 0000</strong></p>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button type="button" class="btn-secondary">Edit Profile</button>
+                <button type="button" class="btn-secondary">Ride History</button>
+                <button type="button" class="btn-danger">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="modal-overlay" id="modalOverlay"></div>
 
     <script src="js/magic-links-client.js"></script>
     <script src="js/booking.js"></script>

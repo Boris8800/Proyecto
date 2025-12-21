@@ -1,368 +1,292 @@
-/**
- * Booking Page JavaScript
- * Handles the multi-step booking flow and interactions
- */
-
-class BookingSystem {
+class SwiftCabBookingSystem {
     constructor() {
         this.currentStep = 1;
         this.bookingData = {
             pickup: '',
-            destination: '',
+            dropoff: '',
             rideType: 'standard',
-            scheduled: false,
-            scheduleDate: '',
-            scheduleTime: '',
-            distance: 0,
-            duration: 0,
-            price: 12.50,
+            basePrice: 15.00,
+            distance: '5.2 km',
+            duration: '12 mins',
+            discount: 0,
             promoCode: '',
-            promoDiscount: 0
+            paymentMethod: 'card'
         };
 
-        this.rideTypePrices = {
-            standard: 12.50,
-            premium: 18.00,
-            xl: 22.00
+        this.validPromos = {
+            'WELCOME': 5.00,
+            'SAVE10': 2.50,
+            'WEEKEND': 7.50,
+            'SWIFTCAB': 3.00
         };
 
         this.init();
     }
 
     init() {
-        this.setupEventListeners();
-        this.loadUserData();
+        this.cacheElements();
+        this.attachEventListeners();
+        this.updateProgressBar();
     }
 
-    setupEventListeners() {
-        // Step Navigation
-        document.getElementById('nextToRideType')?.addEventListener('click', () => this.nextStep());
-        document.getElementById('nextToConfirm')?.addEventListener('click', () => this.nextStep());
-        document.getElementById('backToLocation')?.addEventListener('click', () => this.prevStep());
-        document.getElementById('backToRideType')?.addEventListener('click', () => this.prevStep());
+    cacheElements() {
+        // Step 1
+        this.pickupInput = document.getElementById('pickupLocation');
+        this.dropoffInput = document.getElementById('dropoffLocation');
+        this.scheduleRideCheckbox = document.getElementById('scheduleRide');
+        this.datetimeInputs = document.getElementById('datetimeInputs');
+        this.currentLocationBtn = document.getElementById('currentLocationBtn');
+        this.estimateBox = document.getElementById('estimateBox');
+        this.nextBtn1 = document.getElementById('nextBtn1');
 
-        // Location Inputs
-        document.getElementById('useCurrentLocation')?.addEventListener('click', () => this.useCurrentLocation());
-        document.getElementById('pickupInput')?.addEventListener('focus', () => this.showRecent('pickup'));
-        document.getElementById('destinationInput')?.addEventListener('focus', () => this.showRecent('destination'));
+        // Step 2
+        this.rideOptions = document.querySelectorAll('.ride-option');
+        this.wheelchairCheckbox = document.getElementById('wheelchairNeeded');
+        this.backBtn2 = document.getElementById('backBtn2');
+        this.nextBtn2 = document.getElementById('nextBtn2');
 
-        // Schedule Ride
-        document.getElementById('scheduleRide')?.addEventListener('change', (e) => {
-            this.toggleScheduleDateTime(e.target.checked);
+        // Step 3
+        this.summaryPickup = document.getElementById('summaryPickup');
+        this.summaryDropoff = document.getElementById('summaryDropoff');
+        this.summaryRideType = document.getElementById('summaryRideType');
+        this.summaryDistance = document.getElementById('summaryDistance');
+        this.summaryDuration = document.getElementById('summaryDuration');
+        this.baseFareElement = document.getElementById('baseFare');
+        this.discountRow = document.getElementById('discountRow');
+        this.discountAmount = document.getElementById('discountAmount');
+        this.totalPriceElement = document.getElementById('totalPrice');
+        this.promoCodeInput = document.getElementById('promoCode');
+        this.applyPromoBtn = document.getElementById('applyPromoBtn');
+        this.paymentRadios = document.querySelectorAll('input[name="payment"]');
+        this.agreeTermsCheckbox = document.getElementById('agreeTerms');
+        this.backBtn3 = document.getElementById('backBtn3');
+        this.confirmBtn = document.getElementById('confirmBtn');
+        this.finalPrice = document.getElementById('finalPrice');
+
+        // Modals
+        this.successModal = document.getElementById('successModal');
+        this.profileModal = document.getElementById('profileModal');
+        this.modalOverlay = document.getElementById('modalOverlay');
+        this.profileBtn = document.getElementById('profileBtn');
+        this.closeProfileBtn = document.getElementById('closeProfileBtn');
+        this.closeSuccessBtn = document.getElementById('closeSuccessBtn');
+        this.bookingRefElement = document.getElementById('bookingRef');
+
+        // Progress
+        this.progressFill = document.getElementById('progressFill');
+        this.progressText = document.getElementById('progressText');
+
+        // Quick location buttons
+        this.quickLocationBtns = document.querySelectorAll('.quick-location-btn');
+    }
+
+    attachEventListeners() {
+        // Step 1 Events
+        this.scheduleRideCheckbox.addEventListener('change', () => this.toggleScheduleInputs());
+        this.currentLocationBtn.addEventListener('click', () => this.useCurrentLocation());
+        this.nextBtn1.addEventListener('click', () => this.goToStep(2));
+
+        // Step 2 Events
+        this.rideOptions.forEach(option => {
+            option.addEventListener('click', () => this.selectRideType(option));
         });
+        this.backBtn2.addEventListener('click', () => this.goToStep(1));
+        this.nextBtn2.addEventListener('click', () => this.goToStep(3));
 
-        // Ride Type Selection
-        document.querySelectorAll('.ride-type-card').forEach(card => {
-            card.addEventListener('click', () => this.selectRideType(card));
+        // Step 3 Events
+        this.applyPromoBtn.addEventListener('click', () => this.applyPromoCode());
+        this.promoCodeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.applyPromoCode();
         });
-
-        // Confirm Booking
-        document.getElementById('confirmBooking')?.addEventListener('click', () => this.confirmBooking());
-
-        // Promo Code
-        document.querySelector('.btn-apply-promo')?.addEventListener('click', () => this.applyPromo());
-
-        // Modal Buttons
-        document.getElementById('helpBtn')?.addEventListener('click', () => this.showModal('helpModal'));
-        document.querySelectorAll('.btn-close-modal').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.target.closest('.modal').classList.remove('active');
+        this.paymentRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.bookingData.paymentMethod = e.target.value;
             });
         });
+        this.backBtn3.addEventListener('click', () => this.goToStep(2));
+        this.confirmBtn.addEventListener('click', () => this.confirmBooking());
 
-        document.getElementById('viewRideStatus')?.addEventListener('click', () => {
-            this.showModal('');
-            document.getElementById('rideStatus').style.display = 'block';
+        // Modal Events
+        this.profileBtn.addEventListener('click', () => this.openProfileModal());
+        this.closeProfileBtn.addEventListener('click', () => this.closeProfileModal());
+        this.closeSuccessBtn.addEventListener('click', () => this.closeSuccessModal());
+        this.modalOverlay.addEventListener('click', () => this.closeAllModals());
+
+        // Quick locations
+        this.quickLocationBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const location = btn.textContent.trim();
+                this.dropoffInput.value = location;
+                this.updateEstimate();
+            });
         });
     }
 
-    loadUserData() {
-        // Simulate loading user data
-        // In real app, this would come from the backend
-        const userName = 'Maria';
-        document.querySelector('.user-profile')?.innerHTML = `
-            <img src="https://ui-avatars.com/api/?name=${userName}&background=4facfe&color=fff" alt="Customer">
-            <span>${userName} S.</span>
-        `;
-    }
-
-    // Step Navigation
     goToStep(step) {
-        if (step < 1 || step > 3) return;
+        // Validation
+        if (step === 2) {
+            if (!this.pickupInput.value || !this.dropoffInput.value) {
+                alert('Please enter both pickup and dropoff locations');
+                return;
+            }
+        }
+        if (step === 3) {
+            if (!document.querySelector('.ride-option[data-selected="true"]')) {
+                alert('Please select a ride type');
+                return;
+            }
+        }
 
         // Hide all steps
-        document.querySelectorAll('.booking-step').forEach(s => {
-            s.classList.remove('active');
-        });
-
-        // Deactivate all step indicators
-        document.querySelectorAll('.step').forEach((s, idx) => {
-            if (idx + 1 <= step) {
-                s.classList.add('active');
-            } else {
-                s.classList.remove('active');
-            }
+        document.querySelectorAll('.booking-step').forEach(step => {
+            step.classList.remove('active');
         });
 
         // Show current step
-        document.getElementById(`step${step}`)?.classList.add('active');
+        document.getElementById(`step${step}`).classList.add('active');
+
         this.currentStep = step;
+        this.updateProgressBar();
 
-        // Update confirmation details when going to step 3
         if (step === 3) {
-            this.updateConfirmationDetails();
+            this.updateSummary();
         }
-
-        // Scroll to top
-        document.querySelector('.booking-card').scrollTop = 0;
     }
 
-    nextStep() {
-        if (this.currentStep === 1) {
-            if (!this.validateStep1()) return;
-        } else if (this.currentStep === 2) {
-            if (!this.validateStep2()) return;
-        }
-        this.goToStep(this.currentStep + 1);
+    updateProgressBar() {
+        const progress = (this.currentStep / 3) * 100;
+        this.progressFill.style.width = progress + '%';
+        this.progressText.textContent = `Step ${this.currentStep} of 3`;
     }
 
-    prevStep() {
-        this.goToStep(this.currentStep - 1);
+    toggleScheduleInputs() {
+        this.datetimeInputs.style.display = this.scheduleRideCheckbox.checked ? 'grid' : 'none';
     }
 
-    // Validation
-    validateStep1() {
-        const pickup = document.getElementById('pickupInput')?.value.trim();
-        const destination = document.getElementById('destinationInput')?.value.trim();
-
-        if (!pickup || !destination) {
-            alert('Please enter both pickup and destination locations');
-            return false;
-        }
-
-        this.bookingData.pickup = pickup;
-        this.bookingData.destination = destination;
-        this.bookingData.scheduled = document.getElementById('scheduleRide')?.checked || false;
-
-        if (this.bookingData.scheduled) {
-            const date = document.getElementById('scheduleDate')?.value;
-            const time = document.getElementById('scheduleTime')?.value;
-            if (!date || !time) {
-                alert('Please select schedule date and time');
-                return false;
-            }
-            this.bookingData.scheduleDate = date;
-            this.bookingData.scheduleTime = time;
-        }
-
-        // Simulate distance calculation
-        this.bookingData.distance = (Math.random() * 15 + 5).toFixed(1);
-        this.bookingData.duration = Math.ceil(this.bookingData.distance * 2);
-        this.showQuote();
-
-        return true;
-    }
-
-    validateStep2() {
-        const selected = document.querySelector('.ride-type-card.active');
-        if (!selected) {
-            alert('Please select a ride type');
-            return false;
-        }
-        return true;
-    }
-
-    // Location Functions
     useCurrentLocation() {
-        this.bookingData.pickup = 'Current Location';
-        document.getElementById('pickupInput').value = 'Current Location';
-        document.getElementById('pickupRecent').style.display = 'none';
+        this.pickupInput.value = 'Current Location (123 Main St)';
+        this.updateEstimate();
     }
 
-    showRecent(type) {
-        const recentEl = document.getElementById(`${type}Recent`);
-        if (recentEl) {
-            recentEl.style.display = 'block';
-        }
-
-        // Hide on blur
-        const inputEl = document.getElementById(`${type}Input`);
-        inputEl?.addEventListener('blur', () => {
-            setTimeout(() => {
-                recentEl.style.display = 'none';
-            }, 200);
-        }, { once: true });
+    selectRideType(option) {
+        // Remove selection from all
+        this.rideOptions.forEach(o => o.removeAttribute('data-selected'));
+        
+        // Set current selection
+        option.setAttribute('data-selected', 'true');
+        
+        const type = option.dataset.type;
+        const price = parseFloat(option.dataset.price);
+        
+        this.bookingData.rideType = type;
+        this.bookingData.basePrice = price;
     }
 
-    showQuote() {
-        const quoteSection = document.getElementById('quoteSection');
-        if (quoteSection) {
-            document.getElementById('distanceDisplay').textContent = this.bookingData.distance;
-            document.getElementById('timeDisplay').textContent = this.bookingData.duration;
-            quoteSection.style.display = 'block';
-        }
-    }
-
-    // Schedule Ride
-    toggleScheduleDateTime(show) {
-        const scheduleDateTime = document.getElementById('scheduleDateTime');
-        if (scheduleDateTime) {
-            scheduleDateTime.style.display = show ? 'grid' : 'none';
+    updateEstimate() {
+        if (this.pickupInput.value && this.dropoffInput.value) {
+            this.estimateBox.style.display = 'grid';
+            document.getElementById('estimateDistance').textContent = '5.2 km';
+            document.getElementById('estimateTime').textContent = '12 mins';
+            this.bookingData.distance = '5.2 km';
+            this.bookingData.duration = '12 mins';
         }
     }
 
-    // Ride Type Selection
-    selectRideType(card) {
-        // Remove active class from all cards
-        document.querySelectorAll('.ride-type-card').forEach(c => {
-            c.classList.remove('active');
-        });
+    updateSummary() {
+        this.summaryPickup.textContent = this.pickupInput.value || '--';
+        this.summaryDropoff.textContent = this.dropoffInput.value || '--';
+        this.summaryRideType.textContent = this.bookingData.rideType.charAt(0).toUpperCase() + this.bookingData.rideType.slice(1);
+        this.summaryDistance.textContent = this.bookingData.distance;
+        this.summaryDuration.textContent = this.bookingData.duration;
 
-        // Add active class to clicked card
-        card.classList.add('active');
-
-        // Update booking data
-        const rideType = card.dataset.type;
-        const price = parseFloat(card.dataset.price);
-        this.bookingData.rideType = rideType;
-        this.bookingData.price = price;
-
-        // Update total price display (if visible)
-        this.updatePriceDisplay();
+        this.updatePriceSummary();
     }
 
-    updatePriceDisplay() {
-        const baseFare = this.bookingData.price;
-        const serviceFee = 0.50;
-        const discount = this.bookingData.promoDiscount;
-        const total = baseFare + serviceFee - discount;
+    updatePriceSummary() {
+        const base = this.bookingData.basePrice;
+        const discount = this.bookingData.discount;
+        const total = base - discount;
 
-        document.getElementById('baseFare').textContent = `$${baseFare.toFixed(2)}`;
-        document.getElementById('totalPrice').textContent = `$${Math.max(0, total).toFixed(2)}`;
+        this.baseFareElement.textContent = '£' + base.toFixed(2);
+        this.finalPrice.textContent = '£' + total.toFixed(2);
+        this.totalPriceElement.textContent = '£' + total.toFixed(2);
+
+        if (discount > 0) {
+            this.discountRow.style.display = 'flex';
+            this.discountAmount.textContent = '-£' + discount.toFixed(2);
+        } else {
+            this.discountRow.style.display = 'none';
+        }
     }
 
-    // Promo Code
-    applyPromo() {
-        const promoCode = document.getElementById('promoCode')?.value.trim().toUpperCase();
-
-        if (!promoCode) {
+    applyPromoCode() {
+        const code = this.promoCodeInput.value.trim().toUpperCase();
+        
+        if (!code) {
             alert('Please enter a promo code');
             return;
         }
 
-        // Simulate promo code validation
-        const validPromos = {
-            'SAVE10': 2.00,
-            'WELCOME': 5.00,
-            'WEEKEND': 3.50
-        };
-
-        if (validPromos[promoCode]) {
-            this.bookingData.promoDiscount = validPromos[promoCode];
-            const promoRow = document.getElementById('promoRow');
-            if (promoRow) {
-                document.getElementById('promoDiscount').textContent = `-$${this.bookingData.promoDiscount.toFixed(2)}`;
-                promoRow.style.display = 'flex';
-            }
-            alert(`Promo code "${promoCode}" applied successfully!`);
-            this.updatePriceDisplay();
+        if (this.validPromos[code]) {
+            this.bookingData.discount = this.validPromos[code];
+            this.bookingData.promoCode = code;
+            this.updatePriceSummary();
+            alert(`Promo code ${code} applied! Discount: £${this.validPromos[code].toFixed(2)}`);
+            this.promoCodeInput.value = '';
         } else {
             alert('Invalid promo code');
         }
     }
 
-    // Confirmation
-    updateConfirmationDetails() {
-        // Route Summary
-        document.getElementById('confirmPickup').textContent = this.bookingData.pickup;
-        document.getElementById('confirmDestination').textContent = this.bookingData.destination;
+    confirmBooking() {
+        if (!this.agreeTermsCheckbox.checked) {
+            alert('Please agree to the terms and conditions');
+            return;
+        }
 
-        // Ride Details
-        const rideTypeDisplay = this.bookingData.rideType.charAt(0).toUpperCase() + this.bookingData.rideType.slice(1);
-        document.getElementById('confirmRideType').textContent = rideTypeDisplay;
-        document.getElementById('confirmDistance').textContent = `${this.bookingData.distance} km`;
-        document.getElementById('confirmDuration').textContent = `${this.bookingData.duration} min`;
+        // Generate booking reference
+        const bookingRef = `SC-${Date.now().toString().slice(-6).toUpperCase()}`;
+        this.bookingRefElement.textContent = bookingRef;
 
-        // Update prices
-        this.updatePriceDisplay();
+        // Show success modal
+        this.successModal.classList.add('active');
     }
 
-    confirmBooking() {
-        // Simulate booking confirmation
-        const bookingRef = `QB-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000000).toString().padStart(6, '0')}`;
-        
-        // Show success modal
-        document.getElementById('bookingRef').textContent = bookingRef;
-        document.getElementById('successEta').textContent = '3 minutes';
-        this.showModal('successModal');
+    closeSuccessModal() {
+        this.successModal.classList.remove('active');
+        this.resetForm();
+    }
 
-        // Reset form after 5 seconds
-        setTimeout(() => {
-            this.resetForm();
-        }, 5000);
+    openProfileModal() {
+        this.profileModal.classList.add('active');
+    }
+
+    closeProfileModal() {
+        this.profileModal.classList.remove('active');
+    }
+
+    closeAllModals() {
+        this.closeProfileModal();
+        this.closeSuccessModal();
     }
 
     resetForm() {
-        this.bookingData = {
-            pickup: '',
-            destination: '',
-            rideType: 'standard',
-            scheduled: false,
-            scheduleDate: '',
-            scheduleTime: '',
-            distance: 0,
-            duration: 0,
-            price: 12.50,
-            promoCode: '',
-            promoDiscount: 0
-        };
+        this.pickupInput.value = '';
+        this.dropoffInput.value = '';
+        this.scheduleRideCheckbox.checked = false;
+        this.datetimeInputs.style.display = 'none';
+        this.estimateBox.style.display = 'none';
+        this.promoCodeInput.value = '';
+        this.agreeTermsCheckbox.checked = false;
+        this.wheelchairCheckbox.checked = false;
+        this.rideOptions.forEach(o => o.removeAttribute('data-selected'));
+        this.bookingData.discount = 0;
 
-        document.getElementById('locationForm').reset();
-        document.getElementById('scheduleRide').checked = false;
-        document.getElementById('scheduleDateTime').style.display = 'none';
-        document.getElementById('quoteSection').style.display = 'none';
-
-        // Reset ride type selection
-        document.querySelectorAll('.ride-type-card').forEach((c, idx) => {
-            if (idx === 0) {
-                c.classList.add('active');
-            } else {
-                c.classList.remove('active');
-            }
-        });
-
-        // Reset step
         this.goToStep(1);
-
-        // Hide modal and show ride status
-        document.getElementById('successModal').classList.remove('active');
-        document.getElementById('rideStatus').style.display = 'block';
-    }
-
-    // Modal Management
-    showModal(modalId) {
-        document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
-        if (modalId) {
-            document.getElementById(modalId)?.classList.add('active');
-        }
     }
 }
 
-// Initialize on page load
+// Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-    const bookingSystem = new BookingSystem();
-
-    // Close modal on outside click
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('active');
-            }
-        });
-    });
-
-    // Close ride status card
-    document.getElementById('closeStatus')?.addEventListener('click', () => {
-        document.getElementById('rideStatus').style.display = 'none';
-    });
+    new SwiftCabBookingSystem();
 });
