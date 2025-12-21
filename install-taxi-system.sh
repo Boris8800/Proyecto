@@ -408,9 +408,9 @@ cleanup_system() {
     local killed_count=0
     
     for port in "${ports[@]}"; do
-        if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+        if netstat -tuln 2>/dev/null | grep -q ":$port " || ss -tuln 2>/dev/null | grep -q ":$port "; then
             log_info "Port $port is in use, attempting to free it..."
-            local pids=$(lsof -t -i :$port 2>/dev/null)
+            local pids=$(lsof -t -i :$port 2>/dev/null || fuser $port/tcp 2>/dev/null || echo "")
             if [ -n "$pids" ]; then
                 for pid in $pids; do
                     local process_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
