@@ -5,6 +5,28 @@
 # Source dependencies
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
+# ===================== HELPER FUNCTIONS =====================
+# Read user input with 10-second timeout
+# Usage: read_with_timeout variable_name "prompt" default_value
+read_with_timeout() {
+    local var_name=$1
+    local prompt=$2
+    local default=$3
+    local timeout=10
+    
+    echo -n -e "$prompt (default: $default in ${timeout}s): "
+    
+    # Read with timeout
+    if read -r -t $timeout user_input; then
+        eval "$var_name='$user_input'"
+    else
+        # Timeout occurred, use default
+        eval "$var_name='$default'"
+        echo ""
+        log_info "No input received. Using default option: $default"
+    fi
+}
+
 # ===================== MENU FUNCTIONS =====================
 show_main_menu() {
     clear
@@ -27,7 +49,7 @@ show_main_menu() {
     echo -e "  ${GREEN}9${NC}  System Cleanup"
     echo -e "  ${GREEN}0${NC}  Exit"
     echo ""
-    read -r -p "Select an option [0-9]: " main_choice
+    read_with_timeout main_choice "Select an option [0-9]" "1"
     
     case "$main_choice" in
         1) fresh_installation_menu ;;
@@ -60,7 +82,7 @@ fresh_installation_menu() {
     echo -e "${YELLOW}⚠️  WARNING: This may overwrite existing installations!${NC}"
     echo -e "${YELLOW}It is recommended to backup your data before proceeding.${NC}"
     echo ""
-    read -r -p "Continue with fresh installation? (y/n): " confirm
+    read_with_timeout confirm "Continue with fresh installation? (y/n)" "y"
     
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
         # Call the actual fresh install function
@@ -84,7 +106,7 @@ update_menu() {
     echo -e "  ${GREEN}1${NC}  Update all services"
     echo -e "  ${GREEN}2${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1-2]: " update_choice
+    read_with_timeout update_choice "Select an option [1-2]" "1"
     
     case "$update_choice" in
         1) 
@@ -112,7 +134,7 @@ service_management_menu() {
     echo -e "  ${GREEN}5${NC}  View service logs"
     echo -e "  ${GREEN}6${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1-6]: " service_choice
+    read_with_timeout service_choice "Select an option [1-6]" "1"
     
     case "$service_choice" in
         1)
@@ -163,7 +185,7 @@ service_logs_menu() {
     echo -e "  ${GREEN}5${NC}  Admin Dashboard"
     echo -e "  ${GREEN}6${NC}  Back"
     echo ""
-    read -r -p "Select (1-6): " log_choice
+    read_with_timeout log_choice "Select (1-6)" "6"
     
     case "$log_choice" in
         1) docker logs taxi-api -f ;;
@@ -189,7 +211,7 @@ diagnostics_menu() {
     echo -e "  ${GREEN}6${NC}  Health check"
     echo -e "  ${GREEN}7${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-7): " diag_choice
+    read_with_timeout diag_choice "Select an option (1-7)" "1"
     
     case "$diag_choice" in
         1) echo "Running full system check..."; sleep 2; diagnostics_menu ;;
@@ -221,7 +243,7 @@ database_menu() {
     echo -e "  ${GREEN}5${NC}  Reset databases (DESTRUCTIVE)"
     echo -e "  ${GREEN}6${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-6): " db_choice
+    read_with_timeout db_choice "Select an option (1-6)" "1"
     
     case "$db_choice" in
         1) log_info "Initializing databases..."; sleep 2; database_menu ;;
@@ -254,7 +276,7 @@ security_menu() {
     echo -e "  ${GREEN}4${NC}  View security report"
     echo -e "  ${GREEN}5${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-5): " sec_choice
+    read_with_timeout sec_choice "Select an option (1-5)" "1"
     
     case "$sec_choice" in
         1) log_info "Running security audit..."; sleep 2; security_menu ;;
@@ -278,7 +300,7 @@ error_recovery_menu() {
     echo -e "  ${GREEN}5${NC}  System reset"
     echo -e "  ${GREEN}6${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-6): " err_choice
+    read_with_timeout err_choice "Select an option (1-6)" "1"
     
     case "$err_choice" in
         1) log_info "Recent errors..."; sleep 2; error_recovery_menu ;;
@@ -312,7 +334,7 @@ backup_menu() {
     echo -e "  ${GREEN}5${NC}  Restore from backup"
     echo -e "  ${GREEN}6${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-6): " backup_choice
+    read_with_timeout backup_choice "Select an option (1-6)" "1"
     
     case "$backup_choice" in
         1) log_info "Creating full backup..."; sleep 2; backup_menu ;;
@@ -337,7 +359,7 @@ cleanup_menu() {
     echo -e "  ${GREEN}4${NC}  Full system cleanup"
     echo -e "  ${GREEN}5${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1-5]: " clean_choice
+    read_with_timeout clean_choice "Select an option [1-5]" "5"
     
     case "$clean_choice" in
         1) log_info "Cleaning temporary files..."; sleep 2; cleanup_menu ;;
