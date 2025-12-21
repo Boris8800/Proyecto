@@ -56,7 +56,8 @@ fresh_installation_menu() {
     print_header "Fresh Installation"
     echo ""
     echo -e "${YELLOW}This will perform a complete installation of the Taxi System.${NC}"
-    echo -e "${YELLOW}Existing installations will not be affected.${NC}"
+    echo -e "${YELLOW}⚠️  WARNING: This may overwrite existing installations!${NC}"
+    echo -e "${YELLOW}It is recommended to backup your data before proceeding.${NC}"
     echo ""
     read -r -p "Continue with fresh installation? (y/n): " confirm
     
