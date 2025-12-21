@@ -187,8 +187,6 @@ setup_docker_compose() {
     local compose_file="${1:-docker-compose.yml}"
     
     cat > "$compose_file" << 'EOF'
-version: '3.8'
-
 services:
   taxi-postgres:
     image: postgres:15-alpine
