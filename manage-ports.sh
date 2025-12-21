@@ -38,29 +38,35 @@ check_port() {
     local port=$1
     local timeout=1
     
-    # Try multiple methods to check if port is in use
-    # Method 1: Using /dev/tcp (most reliable in bash)
-    if bash -c "</dev/tcp/127.0.0.1/$port" 2>/dev/null; then
+    # Method 1: Using ss (most reliable and available on all modern systems)
+    if command -v ss &> /dev/null; then
+        if ss -tulpn 2>/dev/null | grep -q ":$port "; then
+            return 0
+        fi
+    fi
+    
+    # Method 2: Using netstat if available
+    if command -v netstat &> /dev/null; then
+        if netstat -tln 2>/dev/null | grep -qE "[:.]$port\s"; then
+            return 0
+        fi
+    fi
+    
+    # Method 3: Using lsof if available
+    if command -v lsof &> /dev/null; then
+        if lsof -Pi :$port -sTCP:LISTEN -t 2>/dev/null | grep -q .; then
+            return 0
+        fi
+    fi
+    
+    # Method 4: Using /dev/tcp (bash builtin, checks connection)
+    if timeout $timeout bash -c "</dev/tcp/127.0.0.1/$port" 2>/dev/null; then
         return 0
     fi
     
-    # Method 2: Using nc if available
+    # Method 5: Using nc if available
     if command -v nc &> /dev/null; then
         if nc -z -w $timeout 127.0.0.1 "$port" 2>/dev/null; then
-            return 0
-        fi
-    fi
-    
-    # Method 3: Using curl if available
-    if command -v curl &> /dev/null; then
-        if curl -s --max-time $timeout http://127.0.0.1:"$port" >/dev/null 2>&1; then
-            return 0
-        fi
-    fi
-    
-    # Method 4: Using netstat if available (most direct)
-    if command -v netstat &> /dev/null; then
-        if netstat -tln 2>/dev/null | grep -q "127.0.0.1:$port"; then
             return 0
         fi
     fi
@@ -74,9 +80,11 @@ find_process_using_port() {
     local port=$1
     
     if command -v lsof &> /dev/null; then
-        lsof -i :"$port" 2>/dev/null | grep -v COMMAND | awk '{print $2}' || true
+        lsof -i :"$port" 2>/dev/null | tail -1 | awk '{print $2}' || echo ""
     elif command -v ss &> /dev/null; then
-        ss -tulpn 2>/dev/null | grep ":$port " | awk '{print $7}' | cut -d'/' -f1 || true
+        ss -tulpn 2>/dev/null | grep ":$port " | grep -oP 'pid=\K[^,]*' | head -1 || echo ""
+    elif command -v netstat &> /dev/null; then
+        netstat -tulpn 2>/dev/null | grep ":$port " | awk '{print $NF}' | cut -d'/' -f1 || echo ""
     else
         return 1
     fi
@@ -87,13 +95,35 @@ kill_port_process() {
     local port=$1
     local pid=$(find_process_using_port "$port")
     
-    if [ -n "$pid" ]; then
-        log_warn "Killing process $pid using port $port"
-        kill -9 "$pid" 2>/dev/null || sudo kill -9 "$pid" 2>/dev/null || true
-        sleep 1
-        return 0
+    if [ -n "$pid" ] && [ "$pid" -gt 0 ] 2>/dev/null; then
+        log_warn "Killing process $pid on port $port"
+        if kill -9 "$pid" 2>/dev/null; then
+            sleep 1
+            return 0
+        elif sudo kill -9 "$pid" 2>/dev/null; then
+            sleep 1
+            return 0
+        fi
     fi
-    return 1
+    
+    # Alternative: Kill all processes matching common services
+    case $port in
+        80|443)
+            sudo pkill -9 -f "nginx|apache|httpd|http-server" 2>/dev/null || true
+            ;;
+        5432)
+            sudo pkill -9 -f "postgres|psql" 2>/dev/null || true
+            ;;
+        27017)
+            sudo pkill -9 -f "mongod|mongodb" 2>/dev/null || true
+            ;;
+        6379)
+            sudo pkill -9 -f "redis" 2>/dev/null || true
+            ;;
+    esac
+    
+    sleep 1
+    return 0
 }
 
 # Function to stop Docker containers using specific ports
@@ -173,28 +203,38 @@ auto_fix_ports() {
         # Attempt to resolve conflicts
         log_warn "Attempt $attempt/$max_attempts to resolve $conflicts port conflict(s)..."
         
-        # Kill any nginx processes (common port 80 user)
-        log_info "Stopping Nginx (if running)..."
-        sudo pkill -9 nginx 2>/dev/null || true
+        # Kill nginx and apache directly
+        log_info "Stopping web servers (nginx, apache)..."
+        sudo pkill -9 -f "nginx|apache|httpd" 2>/dev/null || true
         
-        # Stop Docker completely
+        # Stop all Docker containers
         log_info "Stopping all Docker containers..."
-        sudo docker stop $(sudo docker ps -q) 2>/dev/null || true
         sudo docker-compose down -v 2>/dev/null || true
+        sudo docker stop $(sudo docker ps -aq) 2>/dev/null || true
         docker-compose down -v 2>/dev/null || true
+        docker stop $(docker ps -aq) 2>/dev/null || true
         
-        # Clean Docker
-        log_info "Cleaning Docker resources..."
-        sudo docker system prune -f -a 2>/dev/null || true
-        docker system prune -f -a 2>/dev/null || true
+        # Clean Docker system
+        log_info "Cleaning Docker system..."
+        sudo docker system prune -f --all --volumes 2>/dev/null || true
+        docker system prune -f --all --volumes 2>/dev/null || true
         
-        # Kill any remaining processes using the ports
+        # Kill any remaining processes using the specific ports
         for port in "${ports_in_use[@]}"; do
-            kill_port_process "$port"
+            log_info "Releasing port $port..."
+            kill_port_process "$port" || true
         done
         
+        # Force release of ports using fuser if available
+        if command -v fuser &> /dev/null; then
+            for port in "${ports_in_use[@]}"; do
+                sudo fuser -k "$port/tcp" 2>/dev/null || true
+                sudo fuser -k "$port/udp" 2>/dev/null || true
+            done
+        fi
+        
         # Wait and retry with fresh port check
-        sleep 3
+        sleep 4
         ((attempt++))
         
         if [ $attempt -le $max_attempts ]; then
