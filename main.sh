@@ -119,6 +119,36 @@ fresh_install() {
     
     log_step "Starting Taxi System Fresh Installation..."
     
+    # Clean the server first
+    log_step "Cleaning Ubuntu Server..."
+    log_info "Removing old installations, users, and temporary files..."
+    
+    # Stop and remove existing services
+    systemctl stop docker 2>/dev/null || true
+    systemctl stop taxi-system 2>/dev/null || true
+    pkill -u taxi 2>/dev/null || true
+    
+    # Remove taxi user and data
+    userdel -f taxi 2>/dev/null || true
+    groupdel taxi 2>/dev/null || true
+    rm -rf /home/taxi 2>/dev/null || true
+    rm -rf /var/log/taxi 2>/dev/null || true
+    rm -rf /var/lib/taxi 2>/dev/null || true
+    
+    # Clean Docker
+    docker system prune -f 2>/dev/null || true
+    docker volume prune -f 2>/dev/null || true
+    
+    # Clean temporary files
+    rm -rf /tmp/taxi* 2>/dev/null || true
+    rm -rf /var/tmp/* 2>/dev/null || true
+    
+    # Clean cache
+    apt-get clean 2>/dev/null || true
+    apt-get autoclean 2>/dev/null || true
+    
+    log_ok "Server cleaned"
+    
     # Configure Docker mirror first to avoid image pull issues
     log_step "Configuring Docker registry mirror..."
     configure_docker_mirror
