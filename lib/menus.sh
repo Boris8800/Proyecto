@@ -61,11 +61,8 @@ fresh_installation_menu() {
     read -r -p "Continue with fresh installation? (y/n): " confirm
     
     if [[ "$confirm" =~ ^[Yy]$ ]]; then
-        # Run installation
-        log_info "Starting fresh installation..."
-        # Installation logic would go here
-        echo ""
-        echo -e "${GREEN}✅ Fresh installation completed!${NC}"
+        # Call the actual fresh install function
+        fresh_install
         echo ""
         read -r -p "Press Enter to return to main menu..."
         show_main_menu
@@ -82,19 +79,19 @@ update_menu() {
     echo ""
     echo -e "${BLUE}Update Options:${NC}"
     echo "  ${GREEN}1)${NC}  Update all services"
-    echo "  ${GREEN}2)${NC}  Update API gateway only"
-    echo "  ${GREEN}3)${NC}  Update dashboards only"
-    echo "  ${GREEN}4)${NC}  Update database schemas"
-    echo "  ${GREEN}5)${NC}  Back to main menu"
+    echo "  ${GREEN}2)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1-5): " update_choice
+    read -r -p "Select an option (1-2): " update_choice
     
     case "$update_choice" in
-        1) log_info "Updating all services..."; sleep 2; show_main_menu ;;
-        2) log_info "Updating API gateway..."; sleep 2; show_main_menu ;;
-        3) log_info "Updating dashboards..."; sleep 2; show_main_menu ;;
-        4) log_info "Updating database schemas..."; sleep 2; show_main_menu ;;
-        5) show_main_menu ;;
+        1) 
+            log_info "Updating all services..."
+            update_installation
+            echo ""
+            read -r -p "Press Enter to return to main menu..."
+            show_main_menu 
+            ;;
+        2) show_main_menu ;;
         *) log_error "Invalid option"; sleep 1; update_menu ;;
     esac
 }
