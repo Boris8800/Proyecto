@@ -27,7 +27,7 @@ show_main_menu() {
     echo "  ${GREEN}[9]${NC}  System Cleanup"
     echo "  ${GREEN}[0]${NC}  Exit"
     echo ""
-    read -r -p "Select an option [1/2/3/4/5/6/7/8/9/0]: " main_choice
+    read -r -p "Select an option [0-9]: " main_choice
     
     case "$main_choice" in
         1) fresh_installation_menu ;;
@@ -84,7 +84,7 @@ update_menu() {
     echo "  ${GREEN}[1]${NC}  Update all services"
     echo "  ${GREEN}[2]${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1/2]: " update_choice
+    read -r -p "Select an option [1-2]: " update_choice
     
     case "$update_choice" in
         1) 
@@ -112,7 +112,7 @@ service_management_menu() {
     echo "  ${GREEN}[5]${NC}  View service logs"
     echo "  ${GREEN}[6]${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1/2/3/4/5/6]: " service_choice
+    read -r -p "Select an option [1-6]: " service_choice
     
     case "$service_choice" in
         1)
@@ -163,7 +163,7 @@ service_logs_menu() {
     echo "  5) Admin Dashboard"
     echo "  6) Back"
     echo ""
-    read -r -p "Select (1/2/3/4/5/6): " log_choice
+    read -r -p "Select (1-6): " log_choice
     
     case "$log_choice" in
         1) docker logs taxi-api -f ;;
@@ -181,15 +181,16 @@ diagnostics_menu() {
     print_header "System Diagnostics"
     echo ""
     echo -e "${BLUE}Diagnostics Options:${NC}"
-    echo "  ${GREEN}1)${NC}  Full system check"
-    echo "  ${GREEN}2)${NC}  Docker diagnostics"
-    echo "  ${GREEN}3)${NC}  Port availability check"
-    echo "  ${GREEN}4)${NC}  Network connectivity test"
-    echo "  ${GREEN}5)${NC}  Database connectivity test"
-    echo "  ${GREEN}6)${NC}  Health check"
-    echo "  ${GREEN}7)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1/2/3/4/5/6/7): " diag_choice
+    echo "  ${GREEN}[1]${NC}  Full system check"
+    echo "  ${GREEN}[2]${NC}  Docker diagnostics"
+    echo "  ${GREEN}[3]${NC}  Port availability check"
+    echo "  ${GREEN}[4]${NC}  Network connectivity test"
+    echo "  ${GREEN}[5]${NC}  Database connectivity test"
+    echo "  ${GREEN}[6]${NC}  Health check"
+    echo "  ${GREEN}[7]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-7]: " diag_choice
     
     case "$diag_choice" in
         1) echo "Running full system check..."; sleep 2; diagnostics_menu ;;
@@ -208,14 +209,15 @@ database_menu() {
     print_header "Database Management"
     echo ""
     echo -e "${BLUE}Database Options:${NC}"
-    echo "  ${GREEN}1)${NC}  Initialize databases"
-    echo "  ${GREEN}2)${NC}  Create database backup"
-    echo "  ${GREEN}3)${NC}  Restore from backup"
-    echo "  ${GREEN}4)${NC}  View database status"
-    echo "  ${GREEN}5)${NC}  Reset databases (DESTRUCTIVE)"
-    echo "  ${GREEN}6)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1/2/3/4/5/6): " db_choice
+    echo "  ${GREEN}[1]${NC}  Initialize databases"
+    echo "  ${GREEN}[2]${NC}  Create database backup"
+    echo "  ${GREEN}[3]${NC}  Restore from backup"
+    echo "  ${GREEN}[4]${NC}  View database status"
+    echo "  ${GREEN}[5]${NC}  Reset databases (DESTRUCTIVE)"
+    echo "  ${GREEN}[6]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-6]: " db_choice
     
     case "$db_choice" in
         1) log_info "Initializing databases..."; sleep 2; database_menu ;;
@@ -242,13 +244,14 @@ security_menu() {
     print_header "Security Audit"
     echo ""
     echo -e "${BLUE}Security Options:${NC}"
-    echo "  ${GREEN}1)${NC}  Run security audit"
-    echo "  ${GREEN}2)${NC}  Configure firewall"
-    echo "  ${GREEN}3)${NC}  Update security credentials"
-    echo "  ${GREEN}4)${NC}  View security report"
-    echo "  ${GREEN}5)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1/2/3/4/5): " sec_choice
+    echo "  ${GREEN}[1]${NC}  Run security audit"
+    echo "  ${GREEN}[2]${NC}  Configure firewall"
+    echo "  ${GREEN}[3]${NC}  Update security credentials"
+    echo "  ${GREEN}[4]${NC}  View security report"
+    echo "  ${GREEN}[5]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-5]: " sec_choice
     
     case "$sec_choice" in
         1) log_info "Running security audit..."; sleep 2; security_menu ;;
@@ -265,14 +268,15 @@ error_recovery_menu() {
     print_header "Error Recovery"
     echo ""
     echo -e "${BLUE}Error Recovery Options:${NC}"
-    echo "  ${GREEN}1)${NC}  View recent errors"
-    echo "  ${GREEN}2)${NC}  Automatic error recovery"
-    echo "  ${GREEN}3)${NC}  Manual troubleshooting guide"
-    echo "  ${GREEN}4)${NC}  Restart failed services"
-    echo "  ${GREEN}5)${NC}  System reset"
-    echo "  ${GREEN}6)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option (1/2/3/4/5/6): " err_choice
+    echo "  ${GREEN}[1]${NC}  View recent errors"
+    echo "  ${GREEN}[2]${NC}  Automatic error recovery"
+    echo "  ${GREEN}[3]${NC}  Manual troubleshooting guide"
+    echo "  ${GREEN}[4]${NC}  Restart failed services"
+    echo "  ${GREEN}[5]${NC}  System reset"
+    echo "  ${GREEN}[6]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-6]: " err_choice
     
     case "$err_choice" in
         1) log_info "Recent errors..."; sleep 2; error_recovery_menu ;;
@@ -299,14 +303,15 @@ backup_menu() {
     print_header "Backup & Restore"
     echo ""
     echo -e "${BLUE}Backup Options:${NC}"
-    echo "  ${GREEN}1)${NC}  Create full backup"
-    echo "  ${GREEN}2)${NC}  Create database backup only"
-    echo "  ${GREEN}3)${NC}  Create configuration backup"
-    echo "  ${GREEN}4)${NC}  List backups"
-    echo "  ${GREEN}5)${NC}  Restore from backup"
-    echo "  ${GREEN}6)${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1/2/3/4/5/6]: " backup_choice
+    echo "  ${GREEN}[1]${NC}  Create full backup"
+    echo "  ${GREEN}[2]${NC}  Create database backup only"
+    echo "  ${GREEN}[3]${NC}  Create configuration backup"
+    echo "  ${GREEN}[4]${NC}  List backups"
+    echo "  ${GREEN}[5]${NC}  Restore from backup"
+    echo "  ${GREEN}[6]${NC}  Back to main menu"
+    echo ""
+    read -r -p "Select an option [1-6]: " backup_choice
     
     case "$backup_choice" in
         1) log_info "Creating full backup..."; sleep 2; backup_menu ;;
@@ -331,7 +336,7 @@ cleanup_menu() {
     echo "  ${GREEN}[4]${NC}  Full system cleanup"
     echo "  ${GREEN}[5]${NC}  Back to main menu"
     echo ""
-    read -r -p "Select an option [1/2/3/4/5]: " clean_choice
+    read -r -p "Select an option [1-5]: " clean_choice
     
     case "$clean_choice" in
         1) log_info "Cleaning temporary files..."; sleep 2; cleanup_menu ;;
