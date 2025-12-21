@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book a Ride - QuickRide Taxi</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/booking.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <div class="logo-section">
+                <i class="fas fa-taxi"></i>
+                <h1>QuickRide</h1>
+            </div>
+            <div class="nav-actions">
+                <button class="btn-help" id="helpBtn">
+                    <i class="fas fa-headset"></i> Help
+                </button>
+                <button class="btn-profile" id="profileBtn">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Booking Container -->
+    <div class="booking-container">
+        <!-- Left Side: Map & Ride Status -->
+        <div class="map-section">
+            <div class="map-placeholder">
+                <div class="map-content">
+                    <i class="fas fa-map"></i>
+                    <p>Live Map View</p>
+                    <small>Showing available drivers in your area</small>
+                    <div class="mock-drivers">
+                        <div class="driver-marker">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="driver-marker">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="driver-marker">
+                            <i class="fas fa-car"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Ride Status (Hidden by default) -->
+            <div class="ride-status-card" id="rideStatus" style="display: none;">
+                <div class="status-header">
+                    <h3>Your Ride is Here!</h3>
+                    <button class="btn-close" id="closeStatus">&times;</button>
+                </div>
+                <div class="driver-info">
+                    <img src="https://ui-avatars.com/api/?name=John+Driver&background=4facfe&color=fff" alt="Driver" class="driver-avatar">
+                    <div class="driver-details">
+                        <h4>John D.</h4>
+                        <div class="driver-rating">
+                            <i class="fas fa-star"></i> 4.9 • 342 trips
+                        </div>
+                        <div class="car-info">Toyota Camry • ABC 1234</div>
+                    </div>
+                    <div class="eta">
+                        <div class="eta-time">3 min</div>
+                        <div class="eta-label">ETA</div>
+                    </div>
+                </div>
+                <div class="status-actions">
+                    <button class="btn-call"><i class="fas fa-phone"></i> Call</button>
+                    <button class="btn-message"><i class="fas fa-sms"></i> Message</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Booking Form -->
+        <div class="booking-form-section">
+            <div class="booking-card">
+                <!-- Step Indicator -->
+                <div class="step-indicator">
+                    <div class="step active" data-step="1">
+                        <span>1</span>
+                        <label>Location</label>
+                    </div>
+                    <div class="step" data-step="2">
+                        <span>2</span>
+                        <label>Ride Type</label>
+                    </div>
+                    <div class="step" data-step="3">
+                        <span>3</span>
+                        <label>Confirm</label>
+                    </div>
+                </div>
+
+                <!-- Step 1: Location Input -->
+                <div class="booking-step active" id="step1">
+                    <h2>Where would you like to go?</h2>
+                    
+                    <form class="location-form" id="locationForm">
+                        <!-- Pickup Location -->
+                        <div class="location-input-group">
+                            <label class="input-label">
+                                <i class="fas fa-circle pickup-icon"></i>
+                                <span>Pickup</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="pickupInput" 
+                                    class="location-input" 
+                                    placeholder="Enter pickup location"
+                                    autocomplete="off"
+                                >
+                                <button type="button" class="btn-current-location" id="useCurrentLocation">
+                                    <i class="fas fa-crosshairs"></i>
+                                </button>
+                            </div>
+                            <div class="recent-locations" id="pickupRecent" style="display: none;">
+                                <div class="location-item">
+                                    <i class="fas fa-home"></i>
+                                    <span>Home</span>
+                                </div>
+                                <div class="location-item">
+                                    <i class="fas fa-briefcase"></i>
+                                    <span>Work</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Destination Location -->
+                        <div class="location-input-group">
+                            <label class="input-label">
+                                <i class="fas fa-map-marker-alt destination-icon"></i>
+                                <span>Destination</span>
+                            </label>
+                            <div class="input-wrapper">
+                                <input 
+                                    type="text" 
+                                    id="destinationInput" 
+                                    class="location-input" 
+                                    placeholder="Where to?"
+                                    autocomplete="off"
+                                >
+                            </div>
+                            <div class="recent-locations" id="destinationRecent" style="display: none;">
+                                <div class="location-item">
+                                    <i class="fas fa-store"></i>
+                                    <span>Shopping Center</span>
+                                </div>
+                                <div class="location-item">
+                                    <i class="fas fa-utensils"></i>
+                                    <span>Downtown Restaurant</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scheduled Ride Option -->
+                        <div class="schedule-option">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="scheduleRide">
+                                <span><i class="fas fa-clock"></i> Schedule for later</span>
+                            </label>
+                            <div class="schedule-datetime" id="scheduleDateTime" style="display: none;">
+                                <input type="date" id="scheduleDate" class="form-input">
+                                <input type="time" id="scheduleTime" class="form-input">
+                            </div>
+                        </div>
+
+                        <!-- Quote Display -->
+                        <div class="quote-section" id="quoteSection" style="display: none;">
+                            <div class="quote-info">
+                                <span class="quote-distance">
+                                    <i class="fas fa-route"></i>
+                                    <span id="distanceDisplay">--</span> km
+                                </span>
+                                <span class="quote-time">
+                                    <i class="fas fa-clock"></i>
+                                    <span id="timeDisplay">--</span> min
+                                </span>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn-next-step" id="nextToRideType">
+                            Continue to Ride Type <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Step 2: Ride Type Selection -->
+                <div class="booking-step" id="step2">
+                    <h2>Choose Your Ride</h2>
+                    <p class="step-subtitle">Select the ride type that best fits your needs</p>
+
+                    <div class="ride-types-grid" id="rideTypesGrid">
+                        <!-- Standard Ride -->
+                        <div class="ride-type-card" data-type="standard" data-price="12.50">
+                            <div class="ride-icon">
+                                <i class="fas fa-car"></i>
+                            </div>
+                            <div class="ride-info">
+                                <h3>Standard</h3>
+                                <p class="ride-description">Economy car for 1-4 passengers</p>
+                                <div class="ride-features">
+                                    <span><i class="fas fa-users"></i> 4 seats</span>
+                                    <span><i class="fas fa-tag"></i> Best price</span>
+                                </div>
+                            </div>
+                            <div class="ride-price">$12.50</div>
+                            <div class="ride-eta">
+                                <i class="fas fa-clock"></i> 3 min away
+                            </div>
+                            <div class="selection-indicator">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+
+                        <!-- Premium Ride -->
+                        <div class="ride-type-card" data-type="premium" data-price="18.00">
+                            <div class="ride-icon premium">
+                                <i class="fas fa-car-side"></i>
+                            </div>
+                            <div class="ride-info">
+                                <h3>Premium</h3>
+                                <p class="ride-description">Luxury car for 1-4 passengers</p>
+                                <div class="ride-features">
+                                    <span><i class="fas fa-star"></i> Premium experience</span>
+                                    <span><i class="fas fa-wifi"></i> WiFi</span>
+                                </div>
+                            </div>
+                            <div class="ride-price">$18.00</div>
+                            <div class="ride-eta">
+                                <i class="fas fa-clock"></i> 5 min away
+                            </div>
+                            <div class="selection-indicator">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+
+                        <!-- XL Ride -->
+                        <div class="ride-type-card" data-type="xl" data-price="22.00">
+                            <div class="ride-icon xl">
+                                <i class="fas fa-shuttle-van"></i>
+                            </div>
+                            <div class="ride-info">
+                                <h3>XL</h3>
+                                <p class="ride-description">Spacious van for up to 6 passengers</p>
+                                <div class="ride-features">
+                                    <span><i class="fas fa-users"></i> 6 seats</span>
+                                    <span><i class="fas fa-luggage-cart"></i> More luggage</span>
+                                </div>
+                            </div>
+                            <div class="ride-price">$22.00</div>
+                            <div class="ride-eta">
+                                <i class="fas fa-clock"></i> 8 min away
+                            </div>
+                            <div class="selection-indicator">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Special Options -->
+                    <div class="special-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="needAirport">
+                            <span><i class="fas fa-plane"></i> Airport ride</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="needWheelchair">
+                            <span><i class="fas fa-wheelchair"></i> Wheelchair accessible</span>
+                        </label>
+                    </div>
+
+                    <div class="step-buttons">
+                        <button type="button" class="btn-back" id="backToLocation">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" class="btn-next-step" id="nextToConfirm">
+                            Continue to Confirm <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Confirmation -->
+                <div class="booking-step" id="step3">
+                    <h2>Confirm Your Booking</h2>
+                    
+                    <div class="confirmation-details">
+                        <!-- Route Summary -->
+                        <div class="detail-card">
+                            <h3><i class="fas fa-route"></i> Route</h3>
+                            <div class="route-summary">
+                                <div class="route-point pickup">
+                                    <div class="route-marker"></div>
+                                    <div class="route-text">
+                                        <div class="route-label">Pickup</div>
+                                        <div class="route-address" id="confirmPickup">--</div>
+                                    </div>
+                                </div>
+                                <div class="route-connector"></div>
+                                <div class="route-point destination">
+                                    <div class="route-marker"></div>
+                                    <div class="route-text">
+                                        <div class="route-label">Destination</div>
+                                        <div class="route-address" id="confirmDestination">--</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ride Details -->
+                        <div class="detail-card">
+                            <h3><i class="fas fa-car"></i> Ride Details</h3>
+                            <div class="detail-row">
+                                <span>Ride Type:</span>
+                                <strong id="confirmRideType">Standard</strong>
+                            </div>
+                            <div class="detail-row">
+                                <span>Distance:</span>
+                                <strong id="confirmDistance">--</strong>
+                            </div>
+                            <div class="detail-row">
+                                <span>Estimated Duration:</span>
+                                <strong id="confirmDuration">--</strong>
+                            </div>
+                        </div>
+
+                        <!-- Payment Details -->
+                        <div class="detail-card">
+                            <h3><i class="fas fa-credit-card"></i> Payment</h3>
+                            <div class="payment-method">
+                                <div class="payment-icon">
+                                    <i class="fas fa-credit-card"></i>
+                                </div>
+                                <div class="payment-info">
+                                    <div class="payment-type">Visa</div>
+                                    <div class="payment-account">•••• 4242</div>
+                                </div>
+                                <button type="button" class="btn-change-payment">Change</button>
+                            </div>
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <div class="price-breakdown">
+                            <div class="breakdown-row">
+                                <span>Ride fare:</span>
+                                <strong id="baseFare">$12.50</strong>
+                            </div>
+                            <div class="breakdown-row">
+                                <span>Service fee:</span>
+                                <strong>$0.50</strong>
+                            </div>
+                            <div class="breakdown-row promo" id="promoRow" style="display: none;">
+                                <span>Promo discount:</span>
+                                <strong id="promoDiscount">-$2.00</strong>
+                            </div>
+                            <div class="breakdown-divider"></div>
+                            <div class="breakdown-row total">
+                                <span>Total:</span>
+                                <strong id="totalPrice">$13.00</strong>
+                            </div>
+                        </div>
+
+                        <!-- Promo Code -->
+                        <div class="promo-input-group">
+                            <input type="text" id="promoCode" class="form-input" placeholder="Enter promo code">
+                            <button type="button" class="btn-apply-promo">Apply</button>
+                        </div>
+                    </div>
+
+                    <div class="step-buttons">
+                        <button type="button" class="btn-back" id="backToRideType">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button type="button" class="btn-confirm-booking" id="confirmBooking">
+                            <i class="fas fa-check-circle"></i> Confirm & Book Ride
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content help-modal">
+            <button class="btn-close-modal">&times;</button>
+            <h2>Need Help?</h2>
+            <div class="help-options">
+                <a href="#" class="help-item">
+                    <i class="fas fa-question-circle"></i>
+                    <span>How does QuickRide work?</span>
+                </a>
+                <a href="#" class="help-item">
+                    <i class="fas fa-headset"></i>
+                    <span>Contact Support</span>
+                </a>
+                <a href="#" class="help-item">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Terms & Conditions</span>
+                </a>
+                <a href="#" class="help-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Safety Tips</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal" id="successModal">
+        <div class="modal-content success-modal">
+            <div class="success-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Ride Booked Successfully!</h2>
+            <p>Your driver will arrive in approximately <strong id="successEta">3 minutes</strong></p>
+            <div class="booking-reference">
+                <small>Booking Reference</small>
+                <strong id="bookingRef">QB-2025-12345</strong>
+            </div>
+            <button type="button" class="btn-primary" id="viewRideStatus">
+                View Ride Status
+            </button>
+        </div>
+    </div>
+
+    <script src="js/magic-links-client.js"></script>
+    <script src="js/booking.js"></script>
+</body>
+</html>
