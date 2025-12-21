@@ -443,13 +443,13 @@ cleanup_system() {
         # Stop all running containers safely
         if [ -n "$(docker ps -q)" ]; then
             log_info "Stopping $(docker ps -q | wc -l) running container(s)..."
-            docker stop $(docker ps -q) 2>/dev/null || true
+            docker stop $(docker ps -q 2>/dev/null) 2>/dev/null || true
         fi
         
         # Remove all containers safely
         if [ -n "$(docker ps -a -q)" ]; then
             log_info "Removing $(docker ps -a -q | wc -l) container(s)..."
-            docker rm -f $(docker ps -a -q) 2>/dev/null || true
+            docker rm -f $(docker ps -a -q 2>/dev/null) 2>/dev/null || true
         fi
         
         # Remove all taxi-related images
@@ -549,7 +549,7 @@ cleanup_system() {
     )
     
     for log_pattern in "${logs_to_remove[@]}"; do
-        rm -rf $log_pattern 2>/dev/null || true
+        rm -rf "$log_pattern" 2>/dev/null || true
     done
     log_ok "Logs and temporary files removed"
     
