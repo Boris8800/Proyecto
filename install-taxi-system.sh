@@ -416,7 +416,7 @@ cleanup_system() {
                     local process_name=$(ps -p $pid -o comm= 2>/dev/null || echo "unknown")
                     log_info "Killing process $process_name (PID: $pid) on port $port"
                     kill -9 $pid 2>/dev/null || true
-                    ((killed_count++))
+                    killed_count=$((killed_count + 1))
                 done
             fi
         fi
