@@ -3,122 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book a Taxi - SwiftCab</title>
+    <title>SwiftCab - Book Your Taxi</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #FFB800;
-            --primary-dark: #FF9800;
-            --secondary: #333333;
-            --light: #F5F5F5;
-            --white: #FFFFFF;
-            --border: #E0E0E0;
-            --text: #333333;
-            --text-light: #666666;
-            --success: #4CAF50;
-            --danger: #F44336;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html, body { 
+            width: 100%; 
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F5F5F5;
+            color: #333;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-            color: var(--text);
-            background: var(--light);
-            line-height: 1.6;
-        }
-
-        .header {
-            background: var(--white);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .header-container {
-            max-width: 1200px;
-            margin: 0 auto;
+        header {
+            background: white;
             padding: 1rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #FFB800; }
+        .logo i { margin-right: 0.5rem; }
 
-        .logo i {
-            font-size: 2rem;
-        }
-
-        .logo-text {
-            color: var(--secondary);
-        }
-
-        .nav-menu {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--text-light);
+        nav a { 
+            text-decoration: none; 
+            color: #666; 
+            margin: 0 1rem; 
             font-weight: 500;
-            transition: color 0.3s;
         }
 
-        .nav-link:hover {
-            color: var(--primary);
-        }
+        nav a:hover { color: #FFB800; }
 
         .hero {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: var(--white);
-            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #FFB800 0%, #FF9800 100%);
+            color: white;
+            padding: 2rem;
             text-align: center;
         }
 
-        .hero-content h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
+        .hero h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        .hero p { font-size: 1.1rem; opacity: 0.9; }
 
-        .hero-content p {
-            font-size: 1.2rem;
-            opacity: 0.95;
-        }
-
-        .booking-wrapper {
+        main {
             max-width: 1200px;
-            margin: -2rem auto 2rem;
+            margin: -50px auto 2rem;
             padding: 0 1rem;
         }
 
-        .booking-container {
-            display: flex;
-            justify-content: center;
-        }
-
         .booking-card {
-            background: var(--white);
+            background: white;
             border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
             padding: 2rem;
-            width: 100%;
             max-width: 500px;
+            margin: 0 auto;
         }
 
         .card-header {
@@ -128,21 +69,13 @@
             margin-bottom: 1.5rem;
         }
 
-        .card-header h2 {
-            font-size: 1.5rem;
-            color: var(--secondary);
-        }
-
-        .progress-text {
-            font-size: 0.9rem;
-            color: var(--text-light);
-            font-weight: 500;
-        }
+        .card-header h2 { font-size: 1.5rem; }
+        .progress-text { font-size: 0.9rem; color: #999; }
 
         .progress-bar {
             width: 100%;
             height: 4px;
-            background: var(--border);
+            background: #ddd;
             border-radius: 2px;
             margin-bottom: 2rem;
             overflow: hidden;
@@ -150,21 +83,15 @@
 
         .progress-fill {
             height: 100%;
-            background: var(--primary);
-            transition: width 0.3s ease;
+            background: #FFB800;
+            transition: width 0.3s;
         }
 
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
+        .booking-step { display: none; }
+        .booking-step.active { display: block; }
 
-        .form-label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text);
-            font-size: 0.95rem;
-        }
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
 
         .input-wrapper {
             position: relative;
@@ -175,22 +102,22 @@
         .input-wrapper i {
             position: absolute;
             left: 1rem;
-            color: var(--primary);
-            font-size: 1.1rem;
+            color: #FFB800;
         }
 
-        .form-input {
+        input[type="text"],
+        input[type="date"],
+        input[type="time"] {
             width: 100%;
             padding: 0.75rem 1rem 0.75rem 2.75rem;
-            border: 2px solid var(--border);
+            border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 1rem;
-            transition: border-color 0.3s, box-shadow 0.3s;
         }
 
-        .form-input:focus {
+        input:focus {
             outline: none;
-            border-color: var(--primary);
+            border-color: #FFB800;
             box-shadow: 0 0 0 3px rgba(255, 184, 0, 0.1);
         }
 
@@ -203,35 +130,28 @@
 
         .quick-location-btn {
             padding: 0.75rem;
-            background: var(--light);
-            border: 2px solid var(--border);
+            background: #F5F5F5;
+            border: 2px solid #ddd;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 0.5rem;
             font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text);
+            transition: all 0.3s;
         }
 
         .quick-location-btn:hover {
-            border-color: var(--primary);
+            border-color: #FFB800;
             background: rgba(255, 184, 0, 0.05);
         }
 
-        .quick-location-btn i {
-            font-size: 1.5rem;
-            color: var(--primary);
-        }
+        .quick-location-btn i { color: #FFB800; font-size: 1.5rem; }
 
-        .btn-primary {
+        button {
             width: 100%;
-            padding: 0.875rem 1.5rem;
-            background: var(--primary);
-            color: var(--white);
+            padding: 0.875rem;
             border: none;
             border-radius: 8px;
             font-weight: 600;
@@ -240,46 +160,21 @@
             transition: all 0.3s;
         }
 
+        .btn-primary {
+            background: #FFB800;
+            color: white;
+        }
+
         .btn-primary:hover {
-            background: var(--primary-dark);
+            background: #FF9800;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
         }
 
-        .booking-step {
-            display: none;
-        }
-
-        .booking-step.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .step-subtitle {
-            color: var(--text-light);
-            margin-bottom: 1.5rem;
-        }
-
-        .ride-options {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
+        .ride-options { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; }
 
         .ride-option {
-            border: 2px solid var(--border);
+            border: 2px solid #ddd;
             border-radius: 8px;
             padding: 1rem;
             cursor: pointer;
@@ -287,7 +182,7 @@
         }
 
         .ride-option:hover {
-            border-color: var(--primary);
+            border-color: #FFB800;
             background: rgba(255, 184, 0, 0.05);
         }
 
@@ -305,47 +200,18 @@
             align-items: center;
             justify-content: center;
             border-radius: 8px;
-            font-size: 1.5rem;
-            flex-shrink: 0;
             background: rgba(255, 184, 0, 0.1);
-            color: var(--primary);
+            color: #FFB800;
+            font-size: 1.5rem;
         }
 
-        .ride-details {
-            flex: 1;
-        }
+        .ride-details { flex: 1; }
+        .ride-details h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+        .ride-details p { font-size: 0.85rem; color: #666; }
+        .ride-price { font-size: 1.25rem; font-weight: 700; color: #FFB800; }
 
-        .ride-details h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--secondary);
-            margin-bottom: 0.25rem;
-        }
-
-        .ride-desc {
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-
-        .ride-price {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .ride-features {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-
-        .ride-features span {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        .ride-features { display: flex; gap: 1rem; flex-wrap: wrap; font-size: 0.85rem; color: #666; }
+        .ride-features span { display: flex; align-items: center; gap: 0.5rem; }
 
         .step-actions {
             display: flex;
@@ -354,338 +220,258 @@
         }
 
         .btn-secondary {
-            flex: 1;
-            padding: 0.875rem 1.5rem;
-            background: var(--light);
-            color: var(--text);
-            border: 2px solid var(--border);
+            background: #F5F5F5;
+            color: #333;
+            border: 2px solid #ddd;
+        }
+
+        .btn-secondary:hover { background: #ddd; }
+
+        .summary-card {
+            border: 2px solid #ddd;
             border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
+            padding: 1rem;
+            margin-bottom: 1rem;
         }
 
-        .btn-secondary:hover {
-            background: var(--border);
+        .summary-card h3 { font-size: 1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .summary-card h3 i { color: #FFB800; }
+
+        .location-point { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+        .point-marker { width: 12px; height: 12px; border-radius: 50%; background: #FFB800; }
+        .detail-row { display: flex; justify-content: space-between; padding: 0.5rem 0; }
+
+        .price-row { display: flex; justify-content: space-between; padding: 0.5rem 0; }
+        .price-divider { border-top: 1px solid #ddd; margin: 0.5rem 0; }
+        .price-row.total { font-size: 1.1rem; font-weight: 700; color: #FFB800; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 2000; justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1999; }
+        .modal-overlay.active { display: block; }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            z-index: 2001;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
-        .modal {
-            display: none;
-        }
+        .modal-content h2 { margin: 1rem 0; font-size: 1.5rem; }
+        .modal-content p { color: #666; margin: 0.5rem 0; }
 
-        .modal.active {
+        .modal-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1rem;
+            border-radius: 50%;
             display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(76, 175, 80, 0.1);
         }
 
-        .modal-overlay {
-            display: none;
+        .modal-icon i { font-size: 2.5rem; color: #4CAF50; }
+
+        .booking-reference {
+            background: #F5F5F5;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
         }
 
-        .modal-overlay.active {
+        .booking-reference strong {
             display: block;
+            font-size: 1.25rem;
+            color: #FFB800;
+            margin-top: 0.5rem;
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 1rem; }
+            nav { display: flex; gap: 1rem; justify-content: center; }
+            .quick-locations { grid-template-columns: 1fr 1fr; }
+            main { margin: -30px auto 1rem; }
         }
     </style>
 </head>
 <body>
-    <!-- Header Navigation -->
-    <header class="header">
-        <div class="header-container">
-            <div class="logo">
-                <i class="fas fa-taxi"></i>
-                <span class="logo-text">SwiftCab</span>
-            </div>
-            <nav class="nav-menu">
-                <a href="/" class="nav-link">Home</a>
-                <a href="/#services" class="nav-link">Services</a>
-                <a href="/#contact" class="nav-link">Contact</a>
-            </nav>
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <i class="fas fa-taxi"></i>
+            <span>SwiftCab</span>
         </div>
+        <nav>
+            <a href="/">Home</a>
+            <a href="/#services">Services</a>
+            <a href="/#contact">Contact</a>
+        </nav>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero">
-        <div class="hero-content">
-            <h1>Reliable Taxi Service</h1>
-            <p>Book your taxi online in seconds</p>
-        </div>
+        <h1>Reliable Taxi Service</h1>
+        <p>Book your taxi online in seconds</p>
     </section>
 
-    <!-- Main Booking Section -->
-    <main class="booking-wrapper">
-        <div class="booking-container">
-            <!-- Booking Card -->
-            <div class="booking-card">
-                <div class="card-header">
-                    <h2>Book Your Ride</h2>
-                    <span class="progress-text" id="progressText">Step 1 of 3</span>
+    <!-- Main Content -->
+    <main>
+        <div class="booking-card">
+            <div class="card-header">
+                <h2>Book Your Ride</h2>
+                <span class="progress-text" id="progressText">Step 1 of 3</span>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <!-- Step 1 -->
+            <div class="booking-step active" id="step1">
+                <div class="form-group">
+                    <label>Pickup Location</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-location-dot"></i>
+                        <input type="text" id="pickupLocation" placeholder="Enter pickup location" required>
+                    </div>
                 </div>
 
-                <!-- Progress Bar -->
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
+                <div class="form-group">
+                    <label>Dropoff Location</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-location-dot"></i>
+                        <input type="text" id="dropoffLocation" placeholder="Where to?" required>
+                    </div>
                 </div>
 
-                <!-- Step 1: Location Selection -->
-                <div class="booking-step active" id="step1">
-                    <div class="form-group">
-                        <label for="pickupLocation" class="form-label">Pickup Location</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-location-dot"></i>
-                            <input type="text" id="pickupLocation" class="form-input" placeholder="Enter pickup location" required>
-                            <button type="button" class="btn-current-location" id="currentLocationBtn" title="Use current location">
-                                <i class="fas fa-location-crosshairs"></i>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dropoffLocation" class="form-label">Dropoff Location</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-location-dot"></i>
-                            <input type="text" id="dropoffLocation" class="form-input" placeholder="Where to?" required>
-                        </div>
-                    </div>
-
-                    <!-- Quick Locations -->
-                    <div class="quick-locations">
-                        <button type="button" class="quick-location-btn">
-                            <i class="fas fa-home"></i>
-                            <span>Home</span>
-                        </button>
-                        <button type="button" class="quick-location-btn">
-                            <i class="fas fa-briefcase"></i>
-                            <span>Work</span>
-                        </button>
-                        <button type="button" class="quick-location-btn">
-                            <i class="fas fa-plane"></i>
-                            <span>Airport</span>
-                        </button>
-                    </div>
-
-                    <!-- Schedule Option -->
-                    <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="scheduleRide">
-                            <span>Schedule for later?</span>
-                        </label>
-                    </div>
-
-                    <div class="datetime-inputs" id="datetimeInputs" style="display: none;">
-                        <div class="form-group">
-                            <input type="date" id="scheduleDate" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <input type="time" id="scheduleTime" class="form-input">
-                        </div>
-                    </div>
-
-                    <!-- Estimate Display -->
-                    <div class="estimate-box" id="estimateBox" style="display: none;">
-                        <div class="estimate-item">
-                            <span class="estimate-label">Distance:</span>
-                            <span class="estimate-value" id="estimateDistance">--</span>
-                        </div>
-                        <div class="estimate-item">
-                            <span class="estimate-label">Estimated Time:</span>
-                            <span class="estimate-value" id="estimateTime">--</span>
-                        </div>
-                    </div>
-
-                    <button type="button" class="btn-primary btn-block" id="nextBtn1">
-                        Next <i class="fas fa-arrow-right"></i>
+                <div class="quick-locations">
+                    <button type="button" class="quick-location-btn">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </button>
+                    <button type="button" class="quick-location-btn">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Work</span>
+                    </button>
+                    <button type="button" class="quick-location-btn">
+                        <i class="fas fa-plane"></i>
+                        <span>Airport</span>
                     </button>
                 </div>
 
-                <!-- Step 2: Ride Type Selection -->
-                <div class="booking-step" id="step2">
-                    <p class="step-subtitle">Choose your ride type</p>
+                <button type="button" class="btn-primary" id="nextBtn1">Next <i class="fas fa-arrow-right"></i></button>
+            </div>
 
-                    <div class="ride-options">
-                        <!-- Standard -->
-                        <div class="ride-option" data-type="standard" data-price="15.00">
-                            <div class="ride-header">
-                                <div class="ride-icon standard">
-                                    <i class="fas fa-car"></i>
-                                </div>
-                                <div class="ride-details">
-                                    <h3>Standard</h3>
-                                    <p class="ride-desc">Economy taxi</p>
-                                </div>
-                                <div class="ride-price">£15.00</div>
+            <!-- Step 2 -->
+            <div class="booking-step" id="step2">
+                <p style="color: #666; margin-bottom: 1.5rem;">Choose your ride type</p>
+
+                <div class="ride-options">
+                    <div class="ride-option" data-type="standard" data-price="15.00">
+                        <div class="ride-header">
+                            <div class="ride-icon"><i class="fas fa-car"></i></div>
+                            <div class="ride-details">
+                                <h3>Standard</h3>
+                                <p>Economy taxi</p>
                             </div>
-                            <div class="ride-features">
-                                <span><i class="fas fa-users"></i> 4 passengers</span>
-                                <span><i class="fas fa-bag"></i> 2 large bags</span>
-                            </div>
+                            <div class="ride-price">£15.00</div>
                         </div>
-
-                        <!-- Premium -->
-                        <div class="ride-option" data-type="premium" data-price="22.00">
-                            <div class="ride-header">
-                                <div class="ride-icon premium">
-                                    <i class="fas fa-car-side"></i>
-                                </div>
-                                <div class="ride-details">
-                                    <h3>Premium</h3>
-                                    <p class="ride-desc">Executive car</p>
-                                </div>
-                                <div class="ride-price">£22.00</div>
-                            </div>
-                            <div class="ride-features">
-                                <span><i class="fas fa-star"></i> Premium service</span>
-                                <span><i class="fas fa-wifi"></i> WiFi & charging</span>
-                            </div>
-                        </div>
-
-                        <!-- XL -->
-                        <div class="ride-option" data-type="xl" data-price="28.00">
-                            <div class="ride-header">
-                                <div class="ride-icon xl">
-                                    <i class="fas fa-van-shuttle"></i>
-                                </div>
-                                <div class="ride-details">
-                                    <h3>XL</h3>
-                                    <p class="ride-desc">Large vehicle</p>
-                                </div>
-                                <div class="ride-price">£28.00</div>
-                            </div>
-                            <div class="ride-features">
-                                <span><i class="fas fa-users"></i> Up to 6 passengers</span>
-                                <span><i class="fas fa-box"></i> Extra luggage space</span>
-                            </div>
+                        <div class="ride-features">
+                            <span><i class="fas fa-users"></i> 4 passengers</span>
+                            <span><i class="fas fa-bag"></i> 2 large bags</span>
                         </div>
                     </div>
 
-                    <!-- Special Requests -->
-                    <div class="special-requests">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="wheelchairNeeded">
-                            <span><i class="fas fa-wheelchair"></i> Wheelchair accessible vehicle</span>
-                        </label>
+                    <div class="ride-option" data-type="premium" data-price="22.00">
+                        <div class="ride-header">
+                            <div class="ride-icon"><i class="fas fa-car-side"></i></div>
+                            <div class="ride-details">
+                                <h3>Premium</h3>
+                                <p>Executive car</p>
+                            </div>
+                            <div class="ride-price">£22.00</div>
+                        </div>
+                        <div class="ride-features">
+                            <span><i class="fas fa-star"></i> Premium service</span>
+                            <span><i class="fas fa-wifi"></i> WiFi & charging</span>
+                        </div>
                     </div>
 
-                    <div class="step-actions">
-                        <button type="button" class="btn-secondary" id="backBtn2">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
-                        <button type="button" class="btn-primary" id="nextBtn2">
-                            Next <i class="fas fa-arrow-right"></i>
-                        </button>
+                    <div class="ride-option" data-type="xl" data-price="28.00">
+                        <div class="ride-header">
+                            <div class="ride-icon"><i class="fas fa-van-shuttle"></i></div>
+                            <div class="ride-details">
+                                <h3>XL</h3>
+                                <p>Large vehicle</p>
+                            </div>
+                            <div class="ride-price">£28.00</div>
+                        </div>
+                        <div class="ride-features">
+                            <span><i class="fas fa-users"></i> Up to 6 passengers</span>
+                            <span><i class="fas fa-box"></i> Extra luggage space</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Step 3: Confirmation -->
-                <div class="booking-step" id="step3">
-                    <p class="step-subtitle">Review your booking</p>
+                <div class="step-actions">
+                    <button type="button" class="btn-secondary" id="backBtn2"><i class="fas fa-arrow-left"></i> Back</button>
+                    <button type="button" class="btn-primary" id="nextBtn2">Next <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </div>
 
-                    <!-- Summary Cards -->
-                    <div class="summary-section">
-                        <!-- Route Summary -->
-                        <div class="summary-card">
-                            <h3><i class="fas fa-route"></i> Route</h3>
-                            <div class="summary-content">
-                                <div class="location-point">
-                                    <div class="point-marker pickup"></div>
-                                    <div>
-                                        <div class="point-label">Pickup</div>
-                                        <div class="point-address" id="summaryPickup">--</div>
-                                    </div>
-                                </div>
-                                <div class="location-divider"></div>
-                                <div class="location-point">
-                                    <div class="point-marker dropoff"></div>
-                                    <div>
-                                        <div class="point-label">Dropoff</div>
-                                        <div class="point-address" id="summaryDropoff">--</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+            <!-- Step 3 -->
+            <div class="booking-step" id="step3">
+                <p style="color: #666; margin-bottom: 1.5rem;">Review your booking</p>
 
-                        <!-- Ride Summary -->
-                        <div class="summary-card">
-                            <h3><i class="fas fa-info-circle"></i> Ride Details</h3>
-                            <div class="summary-content">
-                                <div class="detail-row">
-                                    <span>Ride Type:</span>
-                                    <strong id="summaryRideType">--</strong>
-                                </div>
-                                <div class="detail-row">
-                                    <span>Distance:</span>
-                                    <strong id="summaryDistance">--</strong>
-                                </div>
-                                <div class="detail-row">
-                                    <span>Duration:</span>
-                                    <strong id="summaryDuration">--</strong>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Price Summary -->
-                        <div class="summary-card">
-                            <h3><i class="fas fa-pound-sign"></i> Price Breakdown</h3>
-                            <div class="summary-content price-breakdown">
-                                <div class="price-row">
-                                    <span>Base fare:</span>
-                                    <span id="baseFare">£0.00</span>
-                                </div>
-                                <div class="price-row">
-                                    <label for="promoCode" style="flex: 1;">Promo code:</label>
-                                    <div style="display: flex; gap: 0.5rem;">
-                                        <input type="text" id="promoCode" placeholder="Enter code" class="form-input" style="width: 120px;">
-                                        <button type="button" class="btn-apply" id="applyPromoBtn">Apply</button>
-                                    </div>
-                                </div>
-                                <div class="price-row discount" id="discountRow" style="display: none;">
-                                    <span>Discount:</span>
-                                    <span id="discountAmount">-£0.00</span>
-                                </div>
-                                <div class="price-divider"></div>
-                                <div class="price-row total">
-                                    <span>Total:</span>
-                                    <span id="totalPrice">£0.00</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Payment Method -->
-                        <div class="summary-card">
-                            <h3><i class="fas fa-credit-card"></i> Payment</h3>
-                            <div class="payment-options">
-                                <label class="payment-option selected">
-                                    <input type="radio" name="payment" value="card" checked>
-                                    <span><i class="fas fa-credit-card"></i> Credit Card</span>
-                                </label>
-                                <label class="payment-option">
-                                    <input type="radio" name="payment" value="cash">
-                                    <span><i class="fas fa-money-bill"></i> Cash</span>
-                                </label>
-                                <label class="payment-option">
-                                    <input type="radio" name="payment" value="wallet">
-                                    <span><i class="fas fa-wallet"></i> Digital Wallet</span>
-                                </label>
-                            </div>
-                        </div>
+                <div class="summary-card">
+                    <h3><i class="fas fa-route"></i> Route</h3>
+                    <div class="location-point">
+                        <div class="point-marker"></div>
+                        <div><strong>Pickup:</strong> <span id="summaryPickup">--</span></div>
                     </div>
+                    <div class="location-point" style="margin-top: 0.75rem;">
+                        <div class="point-marker" style="background: #4CAF50;"></div>
+                        <div><strong>Dropoff:</strong> <span id="summaryDropoff">--</span></div>
+                    </div>
+                </div>
 
-                    <!-- Terms -->
-                    <div class="terms-agreement">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="agreeTerms" required>
-                            <span>I agree to the <a href="#">terms & conditions</a></span>
+                <div class="summary-card">
+                    <h3><i class="fas fa-info-circle"></i> Ride Details</h3>
+                    <div class="detail-row">
+                        <span>Ride Type:</span>
+                        <strong id="summaryRideType">--</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Price:</span>
+                        <strong id="totalPrice" style="color: #FFB800;">£0.00</strong>
+                    </div>
+                </div>
+
+                <div class="summary-card">
+                    <h3><i class="fas fa-pound-sign"></i> Payment</h3>
+                    <div style="text-align: left;">
+                        <label style="margin: 0.5rem 0;">
+                            <input type="radio" name="payment" value="card" checked>
+                            <i class="fas fa-credit-card"></i> Credit Card
+                        </label>
+                        <label style="margin: 0.5rem 0;">
+                            <input type="radio" name="payment" value="cash">
+                            <i class="fas fa-money-bill"></i> Cash
                         </label>
                     </div>
+                </div>
 
-                    <!-- Action Buttons -->
-                    <div class="step-actions">
-                        <button type="button" class="btn-secondary" id="backBtn3">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </button>
-                        <button type="button" class="btn-success btn-block" id="confirmBtn">
-                            <i class="fas fa-check"></i> Confirm & Book <span id="finalPrice">£0.00</span>
-                        </button>
-                    </div>
+                <div class="step-actions">
+                    <button type="button" class="btn-secondary" id="backBtn3"><i class="fas fa-arrow-left"></i> Back</button>
+                    <button type="button" class="btn-primary" id="confirmBtn"><i class="fas fa-check"></i> Book Now <span id="finalPrice">£0.00</span></button>
                 </div>
             </div>
         </div>
@@ -693,22 +479,133 @@
 
     <!-- Success Modal -->
     <div class="modal" id="successModal">
-        <div class="modal-content success-modal">
-            <div class="modal-icon success">
-                <i class="fas fa-check-circle"></i>
-            </div>
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <div class="modal-icon"><i class="fas fa-check-circle"></i></div>
             <h2>Booking Confirmed!</h2>
             <p class="booking-reference">
-                Booking Reference: <strong id="bookingRef">--</strong>
+                Booking Reference:<br>
+                <strong id="bookingRef">SC-000000</strong>
             </p>
-            <p class="driver-info-text">Your driver will be assigned shortly</p>
-            <button type="button" class="btn-primary" id="closeSuccessBtn">Continue</button>
+            <p style="margin-top: 1rem; color: #666;">Your driver will be assigned shortly</p>
+            <button type="button" class="btn-primary" id="closeSuccessBtn" style="margin-top: 1.5rem;">Continue</button>
         </div>
     </div>
 
-    <!-- Overlay -->
-    <div class="modal-overlay" id="modalOverlay"></div>
+    <script>
+        class SwiftCabBooking {
+            constructor() {
+                this.currentStep = 1;
+                this.data = {
+                    pickup: '',
+                    dropoff: '',
+                    rideType: 'standard',
+                    price: 15.00
+                };
+                this.init();
+            }
 
-    <script src="js/booking.js"></script>
+            init() {
+                this.nextBtn1 = document.getElementById('nextBtn1');
+                this.nextBtn2 = document.getElementById('nextBtn2');
+                this.backBtn2 = document.getElementById('backBtn2');
+                this.backBtn3 = document.getElementById('backBtn3');
+                this.confirmBtn = document.getElementById('confirmBtn');
+                this.closeSuccessBtn = document.getElementById('closeSuccessBtn');
+                this.pickupInput = document.getElementById('pickupLocation');
+                this.dropoffInput = document.getElementById('dropoffLocation');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.rideOptions = document.querySelectorAll('.ride-option');
+                this.modalOverlay = document.getElementById('modalOverlay');
+                this.successModal = document.getElementById('successModal');
+
+                this.attachEvents();
+            }
+
+            attachEvents() {
+                this.nextBtn1.addEventListener('click', () => this.goToStep(2));
+                this.nextBtn2.addEventListener('click', () => this.goToStep(3));
+                this.backBtn2.addEventListener('click', () => this.goToStep(1));
+                this.backBtn3.addEventListener('click', () => this.goToStep(2));
+                this.confirmBtn.addEventListener('click', () => this.confirmBooking());
+                this.closeSuccessBtn.addEventListener('click', () => this.closeModal());
+                this.modalOverlay.addEventListener('click', () => this.closeModal());
+
+                this.rideOptions.forEach(opt => {
+                    opt.addEventListener('click', () => this.selectRide(opt));
+                });
+
+                document.querySelectorAll('.quick-location-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.dropoffInput.value = btn.textContent.trim();
+                    });
+                });
+            }
+
+            goToStep(step) {
+                if (step === 2 && (!this.pickupInput.value || !this.dropoffInput.value)) {
+                    alert('Please enter both locations');
+                    return;
+                }
+                if (step === 3 && !document.querySelector('.ride-option[data-selected]')) {
+                    alert('Please select a ride type');
+                    return;
+                }
+
+                document.querySelectorAll('.booking-step').forEach(el => el.classList.remove('active'));
+                document.getElementById(`step${step}`).classList.add('active');
+
+                this.currentStep = step;
+                this.updateProgress();
+
+                if (step === 3) this.updateSummary();
+            }
+
+            updateProgress() {
+                const pct = (this.currentStep / 3) * 100;
+                this.progressFill.style.width = pct + '%';
+                this.progressText.textContent = `Step ${this.currentStep} of 3`;
+            }
+
+            selectRide(option) {
+                this.rideOptions.forEach(o => o.removeAttribute('data-selected'));
+                option.setAttribute('data-selected', 'true');
+                this.data.rideType = option.dataset.type;
+                this.data.price = parseFloat(option.dataset.price);
+            }
+
+            updateSummary() {
+                document.getElementById('summaryPickup').textContent = this.pickupInput.value;
+                document.getElementById('summaryDropoff').textContent = this.dropoffInput.value;
+                document.getElementById('summaryRideType').textContent = this.data.rideType.charAt(0).toUpperCase() + this.data.rideType.slice(1);
+                const price = '£' + this.data.price.toFixed(2);
+                document.getElementById('totalPrice').textContent = price;
+                document.getElementById('finalPrice').textContent = price;
+            }
+
+            confirmBooking() {
+                const ref = `SC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+                document.getElementById('bookingRef').textContent = ref;
+                this.successModal.classList.add('active');
+                this.modalOverlay.classList.add('active');
+            }
+
+            closeModal() {
+                this.successModal.classList.remove('active');
+                this.modalOverlay.classList.remove('active');
+                this.reset();
+            }
+
+            reset() {
+                this.pickupInput.value = '';
+                this.dropoffInput.value = '';
+                this.rideOptions.forEach(o => o.removeAttribute('data-selected'));
+                this.goToStep(1);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => new SwiftCabBooking());
+    </script>
 </body>
 </html>
