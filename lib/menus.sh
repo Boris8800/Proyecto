@@ -44,12 +44,13 @@ show_main_menu() {
     echo -e "  ${GREEN}4${NC}  System Diagnostics"
     echo -e "  ${GREEN}5${NC}  Database Management"
     echo -e "  ${GREEN}6${NC}  Security Audit"
-    echo -e "  ${GREEN}7${NC}  Error Recovery"
-    echo -e "  ${GREEN}8${NC}  Backup & Restore"
-    echo -e "  ${GREEN}9${NC}  System Cleanup"
+    echo -e "  ${GREEN}7${NC}  User Management"
+    echo -e "  ${GREEN}8${NC}  Error Recovery"
+    echo -e "  ${GREEN}9${NC}  Backup & Restore"
+    echo -e "  ${GREEN}*${NC}  System Cleanup"
     echo -e "  ${GREEN}0${NC}  Exit"
     echo ""
-    read_with_timeout main_choice "Select an option [0-9]" "1"
+    read_with_timeout main_choice "Select an option [0-9,*]" "1"
     
     case "$main_choice" in
         1) fresh_installation_menu ;;
@@ -58,9 +59,9 @@ show_main_menu() {
         4) diagnostics_menu ;;
         5) database_menu ;;
         6) security_menu ;;
-        7) error_recovery_menu ;;
-        8) backup_menu ;;
-        9) cleanup_menu ;;
+        7) user_management_menu ;;
+        8) error_recovery_menu ;;
+        9) backup_menu ;;
         0) 
             echo ""
             echo -e "${CYAN}Goodbye!${NC}"
@@ -344,6 +345,124 @@ backup_menu() {
         5) log_info "Restore from backup..."; sleep 2; backup_menu ;;
         6) show_main_menu ;;
         *) log_error "Invalid option"; sleep 1; backup_menu ;;
+    esac
+}
+
+user_management_menu() {
+    clear
+    print_header "User Management"
+    echo ""
+    echo -e "${BLUE}User Management Options:${NC}"
+    echo -e "  ${GREEN}1${NC}  List all system users"
+    echo -e "  ${GREEN}2${NC}  List taxi users"
+    echo -e "  ${GREEN}3${NC}  Create new user"
+    echo -e "  ${GREEN}4${NC}  Delete user"
+    echo -e "  ${GREEN}5${NC}  Change user permissions"
+    echo -e "  ${GREEN}6${NC}  Back to main menu"
+    echo ""
+    read_with_timeout user_choice "Select an option (1-6)" "1"
+    
+    case "$user_choice" in
+        1) 
+            echo ""
+            log_info "System Users:"
+            echo ""
+            cut -d: -f1 /etc/passwd | grep -v "^_" | sort
+            echo ""
+            read -r -p "Press Enter to continue..."
+            user_management_menu
+            ;;
+        2)
+            echo ""
+            log_info "Taxi-related Users:"
+            echo ""
+            cut -d: -f1 /etc/passwd | grep -i taxi || echo "No taxi users found"
+            echo ""
+            read -r -p "Press Enter to continue..."
+            user_management_menu
+            ;;
+        3)
+            echo ""
+            read -r -p "Enter new username: " new_user
+            if [ -n "$new_user" ]; then
+                if sudo useradd -m -s /bin/bash "$new_user" 2>/dev/null; then
+                    log_ok "User '$new_user' created successfully"
+                    echo "Set password for $new_user:"
+                    sudo passwd "$new_user"
+                else
+                    log_error "Failed to create user '$new_user'"
+                fi
+            fi
+            echo ""
+            read -r -p "Press Enter to continue..."
+            user_management_menu
+            ;;
+        4)
+            echo ""
+            log_warn "Available users to delete:"
+            cut -d: -f1 /etc/passwd | grep -v "^root$" | grep -v "^_" | head -20
+            echo ""
+            read -r -p "Enter username to delete (or press Enter to cancel): " del_user
+            if [ -n "$del_user" ]; then
+                echo ""
+                echo -e "${RED}⚠️  WARNING: This will delete the user and their home directory!${NC}"
+                read -r -p "Type the username again to confirm deletion: " confirm_user
+                if [ "$del_user" = "$confirm_user" ]; then
+                    if sudo userdel -r "$del_user" 2>/dev/null; then
+                        log_ok "User '$del_user' deleted successfully"
+                    else
+                        log_error "Failed to delete user '$del_user'"
+                    fi
+                else
+                    log_info "Deletion cancelled"
+                fi
+            fi
+            echo ""
+            read -r -p "Press Enter to continue..."
+            user_management_menu
+            ;;
+        5)
+            echo ""
+            log_info "User Permissions Management"
+            cut -d: -f1 /etc/passwd | grep -v "^root$" | grep -v "^_" | head -20
+            echo ""
+            read -r -p "Enter username to modify permissions: " perm_user
+            if [ -n "$perm_user" ] && id "$perm_user" &>/dev/null; then
+                echo ""
+                echo "Add user to groups:"
+                echo "  1) docker (run Docker commands)"
+                echo "  2) sudo (run with sudo)"
+                echo "  3) Exit"
+                echo ""
+                read -r -p "Select group (1-3): " group_choice
+                case "$group_choice" in
+                    1)
+                        if sudo usermod -aG docker "$perm_user" 2>/dev/null; then
+                            log_ok "User added to docker group"
+                        else
+                            log_error "Failed to add user to docker group"
+                        fi
+                        ;;
+                    2)
+                        if sudo usermod -aG sudo "$perm_user" 2>/dev/null; then
+                            log_ok "User added to sudo group"
+                        else
+                            log_error "Failed to add user to sudo group"
+                        fi
+                        ;;
+                    3)
+                        log_info "Cancelled"
+                        ;;
+                esac
+            else
+                log_error "User '$perm_user' not found"
+            fi
+            echo ""
+            read -r -p "Press Enter to continue..."
+            user_management_menu
+            ;;
+        6) show_main_menu ;;
+        *) log_error "Invalid option"; sleep 1; user_management_menu ;;
     esac
 }
 
