@@ -114,49 +114,75 @@ manage_ports() {
         return 0
     fi
     
-    # Handle conflicts
-    log_error "$conflicts port(s) in use. Attempting to resolve..."
-    echo ""
-    echo "Options:"
-    echo "  1) Stop all Docker containers and try again"
-    echo "  2) Kill processes using conflicting ports"
-    echo "  3) Exit (manual cleanup required)"
-    echo ""
+    return 1
+}
+
+# Automatic port conflict resolution
+auto_fix_ports() {
+    log_step "Checking for port conflicts..."
     
-    read -r -p "Choose option (1-3): " choice
+    local conflicts=0
+    local ports_in_use=()
+    local max_attempts=3
+    local attempt=1
     
-    case "$choice" in
-        1)
-            stop_docker_containers
-            sleep 2
-            # Retry check
-            manage_ports
-            ;;
-        2)
-            for port in "${ports_in_use[@]}"; do
-                if kill_port_process "$port"; then
-                    log_ok "Freed port $port"
-                else
-                    log_warn "Could not free port $port"
-                fi
-            done
-            sleep 2
-            # Retry check
-            manage_ports
-            ;;
-        3)
-            log_error "Port conflicts not resolved. Please manually cleanup:"
-            for port in "${ports_in_use[@]}"; do
-                echo "  Port $port: lsof -i :$port (to identify process)"
-                echo "  Port $port: sudo kill -9 <pid> (to kill process)"
-            done
-            return 1
-            ;;
-        *)
-            log_error "Invalid option"
-            manage_ports
-            ;;
-    esac
+    # Retry loop
+    while [ $attempt -le $max_attempts ]; do
+        conflicts=0
+        ports_in_use=()
+        
+        # Check all required ports
+        for port_info in "${REQUIRED_PORTS[@]}"; do
+            IFS=':' read -r port service <<< "$port_info"
+            
+            if check_port "$port"; then
+                log_warn "Port $port ($service) is already in use"
+                ports_in_use+=("$port")
+                ((conflicts++))
+            fi
+        done
+        
+        if [ $conflicts -eq 0 ]; then
+            log_ok "All required ports are available!"
+            return 0
+        fi
+        
+        # Attempt to resolve conflicts
+        log_warn "Attempt $attempt/$max_attempts to resolve $conflicts port conflict(s)..."
+        
+        # Stop Docker containers
+        log_step "Stopping Docker containers..."
+        docker-compose down -v 2>/dev/null || true
+        docker stop $(docker ps -q) 2>/dev/null || true
+        docker system prune -f 2>/dev/null || true
+        
+        # Kill processes using conflicting ports
+        for port in "${ports_in_use[@]}"; do
+            if kill_port_process "$port"; then
+                log_ok "Freed port $port"
+            fi
+        done
+        
+        sleep 2
+        ((attempt++))
+        
+        if [ $attempt -le $max_attempts ]; then
+            log_info "Retrying port check..."
+            echo ""
+        fi
+    done
+    
+    # All attempts exhausted
+    log_error "Could not resolve port conflicts after $max_attempts attempts"
+    echo ""
+    echo "Conflicting ports:"
+    for port_info in "${REQUIRED_PORTS[@]}"; do
+        IFS=':' read -r port service <<< "$port_info"
+        if check_port "$port"; then
+            echo "  - Port $port ($service)"
+        fi
+    done
+    return 1
 }
 
 # Show usage
@@ -167,31 +193,39 @@ Usage: bash manage-ports.sh [OPTION]
 Port Management and Conflict Resolution for Taxi System
 
 Options:
-  --check          Check for port conflicts (default)
-  --fix            Attempt to automatically fix conflicts
+  --auto           Automatically fix conflicts (default, same as --fix)
+  --fix            Automatically fix port conflicts (up to 3 attempts)
+  --check          Check for port conflicts only (non-interactive)
   --list           List required ports
   --help           Show this help message
 
 Examples:
-  bash manage-ports.sh --check
-  bash manage-ports.sh --fix
-  bash manage-ports.sh --list
+  bash manage-ports.sh                    # Auto-fix (default)
+  bash manage-ports.sh --auto             # Auto-fix with retries
+  bash manage-ports.sh --check            # Check only
+  bash manage-ports.sh --list             # List ports
+  bash manage-ports.sh --help             # Show help
+
+Auto-fix behavior:
+  1. Checks all 9 required ports
+  2. If conflicts found, stops Docker containers
+  3. Kills processes using conflicting ports
+  4. Retries up to 3 times
+  5. Returns success if all ports are free
 
 EOF
 }
 
 # Main execution
 main() {
-    local action="${1:-check}"
+    local action="${1:-fix}"
     
     case "$action" in
         --check)
             manage_ports
             ;;
-        --fix)
-            stop_docker_containers
-            sleep 2
-            manage_ports
+        --fix|--auto)
+            auto_fix_ports
             ;;
         --list)
             echo -e "${CYAN}Required Ports for Taxi System:${NC}"
