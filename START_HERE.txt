@@ -8,8 +8,15 @@
 
 📋 QUICK START (Copy & Paste):
 
+  Option 1 (Recommended - One-liner for VPS):
+  sudo bash vps-deploy.sh 5.249.164.40
+
+  Option 2 (From scripts directory):
   cd scripts
   sudo ./vps-complete-setup.sh 5.249.164.40
+
+  Option 3 (Interactive menu):
+  sudo bash main.sh
 
 That's it! One command deploys everything.
 
@@ -31,10 +38,16 @@ That's it! One command deploys everything.
 
 🔧 KEY SCRIPTS:
 
-  vps-complete-setup.sh    ← USE THIS! (All-in-one setup)
-  vps-setup.sh             ← Configure VPS IP
-  vps-deploy.sh            ← Deploy services
-  vps-manage.sh            ← Manage & monitor
+  ROOT LEVEL (Run from project root):
+  ├── vps-deploy.sh         ← USE THIS! (One-liner setup)
+  └── main.sh               ← Interactive menu
+
+  SCRIPTS DIRECTORY (scripts/):
+  ├── vps-complete-setup.sh ← All-in-one deployment
+  ├── vps-setup.sh          ← Configure VPS IP
+  ├── vps-deploy.sh         ← Deploy services
+  ├── vps-manage.sh         ← Manage & monitor
+  └── lib/                  ← Helper libraries
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
