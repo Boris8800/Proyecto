@@ -250,15 +250,19 @@ fresh_installation() {
   log_success "Old processes cleaned"
   
   printf "\n"
+  echo "[DEBUG] About to enter STEP 7" >&2
 
   # ============================================================================
   # STEP 7: STOP DOCKER CONTAINERS
   # ============================================================================
+  echo "[DEBUG] Printing STEP 7 header" >&2
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo -e "${BLUE}STEP 7:${NC} Stopping Docker containers..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
+  echo "[DEBUG] About to run docker-compose down" >&2
   timeout 15 docker-compose down 2>/dev/null || true
+  echo "[DEBUG] docker-compose completed" >&2
   sleep 2
   log_success "Docker containers stopped"
   
