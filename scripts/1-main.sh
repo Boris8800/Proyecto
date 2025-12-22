@@ -954,7 +954,7 @@ main_menu() {
         exit 0
         ;;
       *)
-        log_error "Invalid option. Please try again."
+        log_error "Invalid option: '$choice'. Please try again."
         sleep 1
         ;;
     esac
