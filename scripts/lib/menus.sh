@@ -5,6 +5,8 @@
 # Source dependencies
 # shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/setup.sh"
 
 # ===================== HELPER FUNCTIONS =====================
 # Interactive menu with arrow keys and timeout

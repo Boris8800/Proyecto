@@ -7,6 +7,12 @@
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 # shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/validation.sh"
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/docker.sh"
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/database.sh"
+# shellcheck source=/dev/null
+source "$(dirname "${BASH_SOURCE[0]}")/dashboard.sh"
 
 # ===================== SETUP FUNCTIONS =====================
 create_taxi_user() {
@@ -296,4 +302,42 @@ initialize_system() {
     setup_docker_compose
     
     log_ok "System initialization completed"
+}
+
+# Fresh installation orchestrator
+fresh_install() {
+    log_step "Starting fresh Taxi System installation..."
+    
+    # Validate system requirements
+    log_info "Step 1/6: Validating system requirements..."
+    check_system_requirements
+    check_ports
+    
+    # Install and configure Docker
+    log_info "Step 2/6: Installing Docker..."
+    install_docker
+    install_docker_compose
+    setup_docker_permissions
+    verify_docker_installation
+    
+    # Initialize system
+    log_info "Step 3/6: Initializing system..."
+    initialize_system
+    
+    # Initialize databases
+    log_info "Step 4/6: Initializing databases..."
+    initialize_postgresql
+    initialize_mongodb
+    setup_redis
+    
+    # Create database schema
+    log_info "Step 5/6: Creating database schema..."
+    create_database_schema
+    seed_initial_data
+    
+    # Deploy dashboards
+    log_info "Step 6/6: Deploying dashboards..."
+    create_all_dashboards
+    
+    log_ok "✅ Fresh installation completed successfully!"
 }
