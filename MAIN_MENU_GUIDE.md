@@ -241,31 +241,31 @@ All menu options in the main.sh script are now fully functional with proper resp
 ### First Time Setup:
 ```bash
 cd /workspaces/Proyecto
-bash scripts/main.sh
+bash scripts/1-main.sh
 # Select: 1) Fresh Installation
 ```
 
 ### Check System Health:
 ```bash
-bash scripts/main.sh
+bash scripts/1-main.sh
 # Select: 4) System Diagnostics
 ```
 
 ### Backup Before Major Changes:
 ```bash
-bash scripts/main.sh
+bash scripts/1-main.sh
 # Select: 9) Backup & Restore → 1) Full System Backup
 ```
 
 ### Fix Service Issues:
 ```bash
-bash scripts/main.sh
+bash scripts/1-main.sh
 # Select: 8) Error Recovery
 ```
 
 ### Update to Latest:
 ```bash
-bash scripts/main.sh
+bash scripts/1-main.sh
 # Select: 2) Update Existing Installation
 ```
 

@@ -83,7 +83,7 @@ Step 5: Checking Node.js installation
   Redis:       5.249.164.40:6379
 
 Next steps:
-  1. Start services: bash /tmp/Proyecto/scripts/main.sh
+  1. Start services: bash /tmp/Proyecto/scripts/1-main.sh
   2. Select 'Fresh Installation' from menu
   3. Wait for deployment to complete
 ```
@@ -94,7 +94,7 @@ Once the script completes:
 
 1. **Start the menu system:**
    ```bash
-   bash /tmp/Proyecto/scripts/main.sh
+   bash /tmp/Proyecto/scripts/1-main.sh
    ```
 
 2. **Select option 1: Fresh Installation**

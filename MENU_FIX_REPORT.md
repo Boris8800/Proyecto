@@ -7,10 +7,10 @@
 ## Issues Found & Resolved
 
 ### 1. ✅ Main Menu Not Using Interactive Navigation
-**Problem:** `scripts/main.sh` was using basic `read` input instead of the sophisticated `interactive_menu()` function, preventing arrow key navigation.
+**Problem:** `scripts/1-main.sh` was using basic `read` input instead of the sophisticated `interactive_menu()` function, preventing arrow key navigation.
 
 **Solution:** 
-- Modified `scripts/main.sh` to import the menu library (`lib/menus.sh`)
+- Modified `scripts/1-main.sh` to import the menu library (`lib/menus.sh`)
 - Updated `main_menu()` function to use `interactive_menu()` with fallback to basic input
 - Now supports:
   - ✓ Arrow keys (↑↓) for navigation
@@ -20,7 +20,7 @@
   - ✓ 10-second timeout with auto-selection
 
 **Files Modified:**
-- [scripts/main.sh](scripts/main.sh#L1) - Added menu library import and updated main_menu()
+- [scripts/1-main.sh](scripts/1-main.sh#L1) - Added menu library import and updated main_menu()
 
 ---
 
@@ -98,7 +98,7 @@ All dashboards have proper event listeners:
 ### Test 1: Menu Navigation
 ```bash
 cd /workspaces/Proyecto
-bash scripts/main.sh
+bash scripts/1-main.sh
 # Try arrow keys, w/s keys, numbers 1-11, and Enter
 ```
 ✅ **Result**: Menu responds to all input methods
@@ -124,7 +124,7 @@ npm start:customer # Port 3003
 ## Files Changed
 
 ### Modified
-- `/scripts/main.sh` - Added interactive menu support
+- `/scripts/1-main.sh` - Added interactive menu support
 
 ### Restored (from git)
 - `/web/admin/index.html` - Admin dashboard (20.9 KB)

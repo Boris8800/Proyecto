@@ -20,7 +20,7 @@ All 28 shell scripts in the project have been thoroughly validated for syntax, l
 - ✅ `scripts/vps-deploy.sh` - 0 errors  
 - ✅ `scripts/vps-manage.sh` - 0 errors (16 errors fixed)
 - ✅ `scripts/vps-setup.sh` - 0 errors
-- ✅ `scripts/main.sh` - 0 errors (1 error fixed)
+- ✅ `scripts/1-main.sh` - 0 errors (1 error fixed)
 
 ---
 
@@ -167,7 +167,7 @@ Flow: show_menu() → Handle user input → execute_option() →
 - **Status**: ✅ FIXED (17 instances in vps-manage.sh alone)
 
 ### SC2317 (Unreachable Code)
-- **Location**: scripts/main.sh
+- **Location**: scripts/1-main.sh
 - **Issue**: Code after `exit` in while loop
 - **Fix**: Converted while to if statement
 - **Status**: ✅ FIXED
