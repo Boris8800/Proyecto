@@ -83,7 +83,7 @@ fresh_installation() {
   read -r -p "Are you sure you want to proceed? (yes/no): " confirm
   if [[ ! "$confirm" =~ ^[Yy][Ee][Ss]$ ]]; then
     log_warn "Fresh installation cancelled"
-    pause_menu
+    printf "\n"
     return 0
   fi
 
@@ -244,7 +244,7 @@ fresh_installation() {
   
   printf "\n"
   log_success "✅ Fresh installation completed successfully!"
-  pause_menu
+  printf "\n"
 }
 
 # ============================================================================
