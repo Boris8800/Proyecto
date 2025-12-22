@@ -71,10 +71,10 @@ fresh_installation() {
 
   # Install npm packages
   log_info "Installing npm dependencies..."
-  cd web
+  cd web || exit
   npm install --silent 2>&1 | tail -1
   log_success "npm dependencies installed"
-  cd ..
+  cd .. || exit
 
   # Kill existing processes
   log_info "Cleaning up old processes..."
@@ -117,10 +117,10 @@ update_installation() {
 
   # Update npm packages
   log_info "Updating npm packages..."
-  cd web
+  cd web || exit
   npm update --silent 2>&1 | tail -1
   log_success "npm packages updated"
-  cd ..
+  cd .. || exit
 
   # Restart services
   log_info "Restarting services..."
@@ -130,11 +130,11 @@ update_installation() {
   # Restart Node servers
   pkill -f "server-" 2>/dev/null || true
   sleep 1
-  cd web
+  cd web || exit
   nohup node server-admin.js > /tmp/admin.log 2>&1 &
   nohup node server-driver.js > /tmp/driver.log 2>&1 &
   nohup node server-customer.js > /tmp/customer.log 2>&1 &
-  cd ..
+  cd .. || exit
   sleep 2
 
   log_success "✅ Update completed successfully!"
@@ -165,11 +165,11 @@ service_management() {
       1)
         log_info "Starting all services..."
         docker-compose up -d 2>&1 | tail -3
-        cd web
+        cd web || exit
         nohup node server-admin.js > /tmp/admin.log 2>&1 &
         nohup node server-driver.js > /tmp/driver.log 2>&1 &
         nohup node server-customer.js > /tmp/customer.log 2>&1 &
-        cd ..
+        cd .. || exit
         sleep 2
         log_success "All services started"
         pause_menu
@@ -186,11 +186,11 @@ service_management() {
         docker-compose restart 2>&1 | tail -3
         pkill -f "server-" 2>/dev/null || true
         sleep 1
-        cd web
+        cd web || exit
         nohup node server-admin.js > /tmp/admin.log 2>&1 &
         nohup node server-driver.js > /tmp/driver.log 2>&1 &
         nohup node server-customer.js > /tmp/customer.log 2>&1 &
-        cd ..
+        cd .. || exit
         sleep 2
         log_success "All services restarted"
         pause_menu
@@ -465,9 +465,9 @@ security_audit() {
 
   # Check for vulnerabilities
   printf "${YELLOW}🛡️  Dependency Vulnerabilities:${NC}"
-  cd web
+  cd web || exit
   npm audit 2>&1 | tail -3
-  cd ..
+  cd .. || exit
 
   log_success "Security audit completed"
   pause_menu
@@ -573,11 +573,11 @@ error_recovery() {
   log_info "3. Restarting services..."
   docker-compose restart 2>&1 | tail -3
   sleep 2
-  cd web
+  cd web || exit
   nohup node server-admin.js > /tmp/admin.log 2>&1 &
   nohup node server-driver.js > /tmp/driver.log 2>&1 &
   nohup node server-customer.js > /tmp/customer.log 2>&1 &
-  cd ..
+  cd .. || exit
   sleep 2
   log_success "Services restarted"
   printf "
@@ -728,9 +728,9 @@ system_cleanup() {
   log_success "Old log files removed"
 
   log_info "4. Clearing Node cache..."
-  cd web
+  cd web || exit
   rm -rf node_modules/.cache 2>/dev/null || true
-  cd ..
+  cd .. || exit
   log_success "Node cache cleared"
 
   log_info "5. Removing temporary files..."
