@@ -10,7 +10,6 @@ GREEN='\e[32m'
 YELLOW='\e[33m'
 BLUE='\e[34m'
 CYAN='\e[36m'
-BOLD='\e[1m'
 NC='\e[0m'
 
 # Global variables
@@ -345,14 +344,14 @@ database_management() {
         log_success "PostgreSQL backed up to $BACKUP_DIR/postgres_$TIMESTAMP.sql"
         
         # MongoDB backup
-        docker exec taxi-mongo mongodump --out $BACKUP_DIR/mongo_$TIMESTAMP
+        docker exec taxi-mongo mongodump --out "$BACKUP_DIR/mongo_$TIMESTAMP"
         log_success "MongoDB backed up to $BACKUP_DIR/mongo_$TIMESTAMP"
         
         pause_menu
         ;;
       2)
         log_info "Available backups:"
-        ls -1 $BACKUP_DIR/ 2>/dev/null | head -10 || log_warn "No backups found"
+        find "$BACKUP_DIR" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | head -10 || log_warn "No backups found"
         read -r -p "Enter backup name to restore: " backup
         if [ -z "$backup" ]; then
           log_error "No backup specified"
@@ -672,12 +671,12 @@ backup_restore() {
         ;;
       4)
         log_info "Available backups:"
-        ls -lh $BACKUP_DIR/ 2>/dev/null | tail -10 || log_warn "No backups found"
+        find "$BACKUP_DIR" -maxdepth 1 -type f -exec ls -lh {} \; 2>/dev/null | tail -10 || log_warn "No backups found"
         pause_menu
         ;;
       5)
         log_info "Available backups:"
-        ls -1 $BACKUP_DIR/ 2>/dev/null | head -20 || log_warn "No backups found"
+        find "$BACKUP_DIR" -maxdepth 1 -type f -printf '%f\n' 2>/dev/null | head -20 || log_warn "No backups found"
         read -r -p "Enter backup file to restore: " backup
         if [ -f "$BACKUP_DIR/$backup" ]; then
           read -r -p "⚠️  Restore from $backup? (yes/no): " confirm
