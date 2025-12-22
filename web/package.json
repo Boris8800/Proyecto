@@ -1,0 +1,29 @@
+{
+  "name": "swift-cab-dashboards",
+  "version": "1.0.0",
+  "description": "Swift Cab - Multi-role Dashboard System",
+  "main": "server-admin.js",
+  "scripts": {
+    "start": "node server-admin.js",
+    "admin": "node server-admin.js",
+    "driver": "node server-driver.js",
+    "customer": "node server-customer.js",
+    "dev": "node server-admin.js & node server-driver.js & node server-customer.js"
+  },
+  "keywords": [
+    "taxi",
+    "cab",
+    "dashboard"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

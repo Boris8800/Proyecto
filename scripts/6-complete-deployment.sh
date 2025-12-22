@@ -39,6 +39,15 @@ for port in 3001 3002 3003 8080; do
 done
 sleep 2
 
+# Step 1B: Fix web directory permissions
+echo -e "${YELLOW}[STEP 1B]${NC} Setting web directory permissions..."
+if [ -d "$PROJECT_ROOT/web" ]; then
+  chmod -R 755 "$PROJECT_ROOT/web" 2>/dev/null || true
+  echo -e "${GREEN}✓${NC} Web directory permissions set"
+else
+  echo -e "${RED}✗${NC} Web directory not found"
+fi
+
 # Step 2: Stop old Docker containers
 echo -e "${YELLOW}[STEP 2]${NC} Stopping old Docker containers..."
 sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" down 2>/dev/null || true
@@ -70,7 +79,13 @@ cd ..
 
 # Step 6: Start dashboard servers in background
 echo -e "${YELLOW}[STEP 6]${NC} Starting dashboard servers..."
-cd web
+cd "$PROJECT_ROOT/web"
+
+# Verify we're in the right directory
+if [ ! -f "server-admin.js" ]; then
+  echo -e "${RED}✗${NC} Cannot find server scripts in $PWD"
+  exit 1
+fi
 
 # Start admin server
 nohup node server-admin.js > "$LOG_DIR/admin.log" 2>&1 &
@@ -105,7 +120,7 @@ else
   cat "$LOG_DIR/customer.log"
 fi
 
-cd ..
+cd "$PROJECT_ROOT"
 
 # Step 7: Start Docker containers
 echo -e "${YELLOW}[STEP 7]${NC} Starting Docker services..."

@@ -231,6 +231,24 @@ fresh_installation() {
   printf "\n"
   
   # ============================================================================
+  # STEP 4B: FIX WEB DIRECTORY PERMISSIONS FOR TAXI USER
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 4B:${NC} Setting web directory permissions for taxi user..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  # Ensure web directories are readable by taxi user
+  if [ -d "$PROJECT_ROOT/web" ]; then
+    sudo chmod -R 755 "$PROJECT_ROOT/web" 2>/dev/null || true
+    sudo chown -R taxi:taxi "$PROJECT_ROOT/web" 2>/dev/null || true
+    log_success "Web directory permissions set for taxi user"
+  else
+    log_warn "Web directory not found"
+  fi
+  
+  printf "\n"
+  
+  # ============================================================================
   # STEP 5: INSTALL NPM PACKAGES FOR TAXI USER
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
