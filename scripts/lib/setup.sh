@@ -278,6 +278,16 @@ volumes:
 EOF
     
     log_ok "Docker Compose configuration created"
+    
+    # Start the Docker containers
+    log_info "Starting Docker containers..."
+    if docker compose -f "$compose_file" up -d 2>&1; then
+        log_ok "Docker containers started successfully"
+        sleep 5  # Give containers time to start
+    else
+        log_error "Failed to start Docker containers"
+        return 1
+    fi
 }
 
 initialize_system() {

@@ -115,41 +115,28 @@ setup_redis() {
     # Wait for Redis to be ready
     log_info "Waiting for Redis to be ready..."
     local attempts=0
-    while [ $attempts -lt 30 ]; do
-        # Try pinging with password if provided, otherwise without
-        if [ -n "$redis_password" ]; then
-            if docker exec "$redis_container" redis-cli -a "$redis_password" ping 2>/dev/null | grep -q "PONG"; then
-                log_ok "Redis is ready (authenticated)"
-                break
-            fi
-        fi
-        
-        if docker exec "$redis_container" redis-cli ping 2>/dev/null | grep -q "PONG"; then
-            log_ok "Redis is ready"
+    local max_attempts=60  # 2 minutes timeout
+    
+    while [ $attempts -lt $max_attempts ]; do
+        # Try pinging with password first (since requirepass is set in docker-compose)
+        if docker exec "$redis_container" redis-cli -a "$redis_password" ping 2>/dev/null | grep -q "PONG"; then
+            log_ok "Redis is ready (authenticated)"
             break
         fi
+        
         attempts=$((attempts + 1))
+        if [ $((attempts % 10)) -eq 0 ]; then
+            log_info "Still waiting for Redis... (attempt $attempts/$max_attempts)"
+        fi
         sleep 2
     done
     
-    if [ $attempts -eq 30 ]; then
+    if [ $attempts -eq $max_attempts ]; then
         log_error "Redis failed to start within timeout"
+        log_error "Container status: $(docker ps --filter name=$redis_container --format '{{.Status}}' 2>/dev/null || echo 'Container not found')"
+        log_error "Container logs:"
+        docker logs "$redis_container" 2>/dev/null || true
         return 1
-    fi
-    
-    # Configure Redis password (only if not already set via command line)
-    log_info "Ensuring Redis authentication is configured..."
-    if ! docker exec "$redis_container" redis-cli ping 2>/dev/null | grep -q "PONG"; then
-        # If ping fails without password, it's likely already protected
-        if docker exec "$redis_container" redis-cli -a "$redis_password" ping 2>/dev/null | grep -q "PONG"; then
-            log_ok "Redis authentication already active"
-        else
-            # Try to set it if it's not set and we can't ping
-            docker exec "$redis_container" redis-cli CONFIG SET requirepass "$redis_password" >/dev/null 2>&1 || true
-        fi
-    else
-        # If ping succeeds without password, set the password now
-        docker exec "$redis_container" redis-cli CONFIG SET requirepass "$redis_password" >/dev/null 2>&1
     fi
     
     log_ok "Redis configured"
