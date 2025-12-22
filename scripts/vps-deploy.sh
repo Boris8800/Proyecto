@@ -52,7 +52,10 @@ deploy() {
     cd "$CONFIG_DIR"
     
     print_status "Loading environment variables..."
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    # shellcheck source=/dev/null
+    source .env
+    set +a
     
     print_status "Pulling latest images..."
     docker-compose pull || true
@@ -85,7 +88,8 @@ check_container_health() {
 
 # Show deployment info
 show_info() {
-    local vps_ip=$(grep "^VPS_IP=" "$PROJECT_ROOT/config/.env" | cut -d= -f2)
+    local vps_ip
+    vps_ip=$(grep "^VPS_IP=" "$PROJECT_ROOT/config/.env" | cut -d= -f2)
     
     echo ""
     echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
