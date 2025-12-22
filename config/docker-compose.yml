@@ -135,14 +135,14 @@ services:
     container_name: taxi-status
     working_dir: /app
     volumes:
-      - ./web/status:/app
+      - ./web:/app
     ports:
       - "${VPS_IP:-0.0.0.0}:8080:8080"
     environment:
       NODE_ENV: production
       STATUS_PORT: 8080
       VPS_IP: ${VPS_IP:-127.0.0.1}
-    command: npx http-server -p 8080 -g
+    command: node status/server.js
     networks:
       - taxi_network
     depends_on:
