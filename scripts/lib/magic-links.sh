@@ -83,10 +83,12 @@ generate_magic_token() {
     fi
     
     # Generate secure random token
-    local token=$(openssl rand -hex $((MAGIC_LINKS_TOKEN_LENGTH / 2)))
+    local token
+    token=$(openssl rand -hex $((MAGIC_LINKS_TOKEN_LENGTH / 2)))
     
     # Calculate expiration time
-    local expires_at=$(date -d "+$days days" '+%Y-%m-%d %H:%M:%S')
+    local expires_at
+    expires_at=$(date -d "+$days days" '+%Y-%m-%d %H:%M:%S')
     
     # Sanitize user-provided inputs (escape single quotes for SQL)
     local safe_ip="${REMOTE_ADDR//\'/\'\'}"
@@ -120,7 +122,8 @@ validate_magic_token() {
     fi
     
     # Check token exists and is not expired
-    local result=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
+    local result
+    result=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
 SELECT email, role FROM magic_links
 WHERE token = '$token'
   AND used = 0
@@ -169,10 +172,12 @@ create_session_from_magic_link() {
     local session_days="${3:-7}"  # Session valid for 7 days by default
     
     # Generate session token
-    local session_token=$(openssl rand -hex $((MAGIC_LINKS_TOKEN_LENGTH / 2)))
+    local session_token
+    session_token=$(openssl rand -hex $((MAGIC_LINKS_TOKEN_LENGTH / 2)))
     
     # Calculate expiration
-    local expires_at=$(date -d "+$session_days days" '+%Y-%m-%d %H:%M:%S')
+    local expires_at
+    expires_at=$(date -d "+$session_days days" '+%Y-%m-%d %H:%M:%S')
     
     # Store session
     sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
@@ -200,7 +205,8 @@ validate_session_token() {
         return 1
     fi
     
-    local result=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
+    local result
+    result=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
 SELECT email, role FROM magic_links_sessions
 WHERE session_token = '$session_token'
   AND expires_at > datetime('now');
@@ -224,13 +230,15 @@ EOF
 cleanup_expired_tokens() {
     log_info "Cleaning up expired magic links..."
     
-    local deleted=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
+    local deleted
+    deleted=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
 DELETE FROM magic_links WHERE expires_at < datetime('now');
 SELECT changes();
 EOF
     )
     
-    local sessions_deleted=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
+    local sessions_deleted
+    sessions_deleted=$(sqlite3 "$MAGIC_LINKS_DB" << EOF 2>/dev/null
 DELETE FROM magic_links_sessions WHERE expires_at < datetime('now');
 SELECT changes();
 EOF

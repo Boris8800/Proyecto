@@ -306,7 +306,9 @@ backup_database() {
     local postgres_container="${1:-taxi-postgres}"
     local postgres_password="${POSTGRES_PASSWORD:-postgres_secure_password_123}"
     local backup_dir="${2:-.}"
-    local backup_file="${backup_dir}/taxi_db_backup_$(date +%Y%m%d_%H%M%S).sql"
+    local backup_timestamp
+    backup_timestamp="$(date +%Y%m%d_%H%M%S)"
+    local backup_file="${backup_dir}/taxi_db_backup_${backup_timestamp}.sql"
     
     docker exec -e PGPASSWORD="$postgres_password" "$postgres_container" \
         pg_dump -U taxi_admin taxi_db > "$backup_file" 2>/dev/null

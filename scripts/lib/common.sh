@@ -21,7 +21,9 @@ export SHMDIR="/dev/shm"
 export MINSPACE=100000  # 100MB in KB
 
 # ===================== LOGGING =====================
-export LOG_FILE="/tmp/taxi-install-$(date +%Y%m%d_%H%M%S).log"
+LOG_TIMESTAMP
+LOG_TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
+export LOG_FILE="/tmp/taxi-install-${LOG_TIMESTAMP}.log"
 export INSTALL_LOG="$TAXI_HOME/taxi_install.log"
 export ERROR_LOG="$TAXI_HOME/taxi_errors.log"
 
