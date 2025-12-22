@@ -90,14 +90,27 @@ fresh_installation() {
   # Check Node/npm
   if ! command -v npm &> /dev/null; then
     # Try to find npm in common locations
-    export PATH="/home/codespace/nvm/current/bin:$PATH"
+    export PATH="/home/codespace/nvm/current/bin:/usr/local/bin:/usr/bin:$PATH"
     if ! command -v npm &> /dev/null; then
-      log_warn "npm not found in PATH. Trying to locate Node.js..."
-      if command -v node &> /dev/null; then
-        log_warn "node found, npm may be missing"
+      log_warn "npm not found in PATH. Node.js/npm not installed."
+      printf "\n"
+      read -r -p "Would you like to install Node.js now? (y/n): " install_node
+      if [[ "$install_node" =~ ^[Yy]$ ]]; then
+        log_info "Installing Node.js using NVM..."
+        if command -v curl &> /dev/null; then
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install node
+          nvm use node
+          log_success "Node.js installed successfully"
+        else
+          log_error "curl not found. Cannot install NVM."
+          log_info "Please install Node.js manually from: https://nodejs.org/"
+          return 1
+        fi
       else
-        log_error "Node.js and npm not installed"
-        log_info "Install from: https://nodejs.org/ or using: curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
+        log_error "Node.js and npm are required for this installation"
         return 1
       fi
     fi
@@ -108,8 +121,13 @@ fresh_installation() {
   # Install npm packages
   log_info "Installing npm dependencies..."
   cd web || exit
-  timeout 60 npm install --silent 2>&1 | tail -1 || log_warn "npm install timed out or failed"
-  log_success "npm dependencies installed"
+  if timeout 60 npm install --silent 2>&1 | tail -1; then
+    log_success "npm dependencies installed"
+  else
+    log_warn "npm install timed out or had issues, attempting cleanup and retry..."
+    rm -rf node_modules package-lock.json
+    timeout 60 npm install --silent 2>&1 | tail -1 || log_warn "npm install still failing"
+  fi
   cd .. || exit
 
   # Kill existing processes
