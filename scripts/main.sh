@@ -73,81 +73,176 @@ fresh_installation() {
   echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "\n"
 
+  # Confirmation prompt
+  echo -e "${YELLOW}⚠️  WARNING:${NC} This will:"
+  echo -e "  • Delete existing 'taxi' user (if exists)"
+  echo -e "  • Remove all existing services"
+  echo -e "  • Reinstall Node.js and dependencies"
+  echo -e "  • Deploy fresh system"
+  printf "\n"
+  read -r -p "Are you sure you want to proceed? (yes/no): " confirm
+  if [[ ! "$confirm" =~ ^[Yy][Ee][Ss]$ ]]; then
+    log_warn "Fresh installation cancelled"
+    pause_menu
+    return 0
+  fi
+
+  printf "\n"
   log_info "Starting fresh installation..."
   
-  # Check dependencies
-  log_info "Checking dependencies..."
+  # ============================================================================
+  # STEP 1: CLEAN TAXI USER (if exists)
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 1:${NC} Cleaning existing taxi user..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  # Check Docker
-  if ! command -v docker &> /dev/null; then
+  if id "taxi" &>/dev/null; then
+    log_info "Found existing 'taxi' user, removing..."
+    sudo userdel -r -f taxi 2>/dev/null || true
+    sleep 1
+    log_success "Taxi user removed"
+  else
+    log_info "No existing 'taxi' user found"
+  fi
+  
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 2: INSTALL NODE.JS (if not present)
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 2:${NC} Checking Node.js installation..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  # Try to find npm in common locations
+  export PATH="/home/codespace/nvm/current/bin:/usr/local/bin:/usr/bin:$PATH"
+  
+  if ! command -v node &>/dev/null || ! command -v npm &>/dev/null; then
+    log_warn "Node.js/npm not found"
+    printf "\n"
+    
+    if command -v curl &>/dev/null; then
+      log_info "Installing Node.js via NVM..."
+      
+      # Download and install NVM
+      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash 2>&1 | tail -3
+      
+      export NVM_DIR="$HOME/.nvm"
+      # shellcheck source=/dev/null
+      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      
+      # Install Node.js
+      log_info "Installing Node.js LTS..."
+      nvm install --lts 2>&1 | tail -5
+      nvm use --lts 2>&1 | tail -3
+      
+      # Verify installation
+      NODE_VERSION=$(node --version)
+      NPM_VERSION=$(npm --version)
+      
+      log_success "Node.js installed: $NODE_VERSION"
+      log_success "npm installed: $NPM_VERSION"
+    else
+      log_error "curl not found. Cannot install Node.js"
+      log_info "Please install curl first: sudo apt-get install curl"
+      pause_menu
+      return 1
+    fi
+  else
+    NODE_VERSION=$(node --version)
+    NPM_VERSION=$(npm --version)
+    log_success "Node.js found: $NODE_VERSION"
+    log_success "npm found: $NPM_VERSION"
+  fi
+  
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 3: CHECK DOCKER
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 3:${NC} Checking Docker installation..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  if ! command -v docker &>/dev/null; then
     log_error "Docker not installed"
     read -r -p "Continue without Docker? (y/n): " skip_docker
     if [[ ! "$skip_docker" =~ ^[Yy]$ ]]; then
+      pause_menu
       return 1
     fi
+  else
+    log_success "Docker is installed"
   fi
   
-  # Check Node/npm
-  if ! command -v npm &> /dev/null; then
-    # Try to find npm in common locations
-    export PATH="/home/codespace/nvm/current/bin:/usr/local/bin:/usr/bin:$PATH"
-    if ! command -v npm &> /dev/null; then
-      log_warn "npm not found in PATH. Node.js/npm not installed."
-      printf "\n"
-      read -r -p "Would you like to install Node.js now? (y/n): " install_node
-      if [[ "$install_node" =~ ^[Yy]$ ]]; then
-        log_info "Installing Node.js using NVM..."
-        if command -v curl &> /dev/null; then
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-          export NVM_DIR="$HOME/.nvm"
-          # shellcheck source=/dev/null
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm install node
-          nvm use node
-          log_success "Node.js installed successfully"
-        else
-          log_error "curl not found. Cannot install NVM."
-          log_info "Please install Node.js manually from: https://nodejs.org/"
-          return 1
-        fi
-      else
-        log_error "Node.js and npm are required for this installation"
-        return 1
-      fi
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 4: INSTALL NPM PACKAGES
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 4:${NC} Installing npm dependencies..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  cd web || exit
+  if timeout 120 npm install --silent 2>&1 | tail -3; then
+    log_success "npm dependencies installed successfully"
+  else
+    log_warn "npm install had issues, attempting cleanup and retry..."
+    rm -rf node_modules package-lock.json 2>/dev/null
+    sleep 2
+    if timeout 120 npm install --silent 2>&1 | tail -3; then
+      log_success "npm dependencies installed (retry)"
+    else
+      log_warn "npm install still failing, continuing anyway..."
     fi
   fi
-  
-  log_success "All dependencies found"
-
-  # Install npm packages
-  log_info "Installing npm dependencies..."
-  cd web || exit
-  if timeout 60 npm install --silent 2>&1 | tail -1; then
-    log_success "npm dependencies installed"
-  else
-    log_warn "npm install timed out or had issues, attempting cleanup and retry..."
-    rm -rf node_modules package-lock.json
-    timeout 60 npm install --silent 2>&1 | tail -1 || log_warn "npm install still failing"
-  fi
   cd .. || exit
-
-  # Kill existing processes
-  log_info "Cleaning up old processes..."
+  
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 5: CLEAN UP OLD PROCESSES
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 5:${NC} Cleaning up old processes..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
   for port in 3001 3002 3003 8080; do
-    lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null || true
+    pid=$(lsof -ti:$port 2>/dev/null)
+    if [ ! -z "$pid" ]; then
+      kill -9 "$pid" 2>/dev/null || true
+      log_info "Killed process on port $port"
+    fi
   done
   log_success "Old processes cleaned"
-
-  # Stop Docker containers
-  log_info "Stopping Docker containers..."
+  
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 6: STOP DOCKER CONTAINERS
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 6:${NC} Stopping Docker containers..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
   timeout 10 docker-compose down 2>/dev/null || true
   sleep 2
   log_success "Docker containers stopped"
-
-  # Start fresh deployment
-  log_info "Starting fresh deployment..."
-  bash scripts/complete-deployment.sh $VPS_IP
   
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 7: RUN COMPLETE DEPLOYMENT
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 7:${NC} Starting complete deployment..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  bash scripts/complete-deployment.sh "$VPS_IP"
+  
+  printf "\n"
   log_success "✅ Fresh installation completed successfully!"
   pause_menu
 }
