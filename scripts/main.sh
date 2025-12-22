@@ -73,6 +73,14 @@ fresh_installation() {
   echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "\n"
 
+  # Ensure we're in the project directory
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+  cd "$PROJECT_ROOT" || {
+    log_error "Failed to change to project directory: $PROJECT_ROOT"
+    return 1
+  }
+
   # Confirmation prompt
   echo -e "${YELLOW}⚠️  WARNING:${NC} This will:"
   echo -e "  • Delete existing 'taxi' user (if exists)"
