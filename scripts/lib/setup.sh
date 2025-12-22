@@ -3,7 +3,9 @@
 # Part of the modularized Taxi System installer
 
 # Source dependencies
+# shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+# shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/validation.sh"
 
 # ===================== SETUP FUNCTIONS =====================

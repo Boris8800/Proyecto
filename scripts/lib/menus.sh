@@ -3,6 +3,7 @@
 # Part of the modularized Taxi System installer
 
 # Source dependencies
+# shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # ===================== HELPER FUNCTIONS =====================
