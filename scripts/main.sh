@@ -100,6 +100,7 @@ fresh_installation() {
         if command -v curl &> /dev/null; then
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
           export NVM_DIR="$HOME/.nvm"
+          # shellcheck source=/dev/null
           [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
           nvm install node
           nvm use node
