@@ -218,20 +218,27 @@ fresh_installation() {
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   for port in 3001 3002 3003 8080; do
-    # Use ss instead of lsof - faster and more reliable
-    pid=$(ss -tlnp 2>/dev/null | grep ":$port " | grep -oP '(?<=pid=)\d+' | head -1)
+    echo "[DEBUG] Checking port $port" >&2
+    echo "[DEBUG] About to run lsof" >&2
+    pid=$(lsof -ti:$port 2>/dev/null) || pid=""
+    echo "[DEBUG] lsof returned: $?" >&2
+    echo "[DEBUG] Got pid='$pid' for port $port" >&2
     if [ -n "$pid" ]; then
+      echo "[DEBUG] Killing pid $pid" >&2
       kill -9 "$pid" 2>/dev/null || true
       log_info "Killed process on port $port"
     fi
   done
+  echo "[DEBUG] Finished port loop" >&2
   log_success "Old processes cleaned"
   
   printf "\n"
+  echo "[DEBUG] About to enter STEP 6" >&2
   
   # ============================================================================
   # STEP 6: STOP DOCKER CONTAINERS
   # ============================================================================
+  echo "[DEBUG] Entering STEP 6" >&2
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo -e "${BLUE}STEP 6:${NC} Stopping Docker containers..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -249,9 +256,7 @@ fresh_installation() {
   echo -e "${BLUE}STEP 7:${NC} Starting complete deployment..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  # Ensure we're in PROJECT_ROOT and call the script with full path
-  cd "$PROJECT_ROOT" 2>/dev/null || true
-  bash "$PROJECT_ROOT/scripts/6-complete-deployment.sh" "$VPS_IP"
+  bash scripts/complete-deployment.sh "$VPS_IP"
   
   printf "\n"
   log_success "✅ Fresh installation completed successfully!"
@@ -905,8 +910,8 @@ main_menu() {
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "\n"
     
-    # Use interactive menu if available AND we're on a TTY, fallback to basic input for piped input
-    if [ -t 0 ] && declare -f interactive_menu >/dev/null 2>&1; then
+    # Use interactive menu if available, fallback to basic input
+    if declare -f interactive_menu >/dev/null 2>&1; then
         interactive_menu "Main Menu" 0 \
           "Fresh Installation (Recommended)" \
           "Update Existing Installation" \
@@ -921,7 +926,7 @@ main_menu() {
           "Exit"
         choice=$INTERACTIVE_MENU_SELECTION
     else
-        # Fallback to basic menu if not TTY or interactive_menu not available
+        # Fallback to basic menu if interactive_menu not available
         echo -e "  ${GREEN}1)${NC}  Fresh Installation (Recommended)"
         echo -e "  ${GREEN}2)${NC}  Update Existing Installation"
         echo -e "  ${GREEN}3)${NC}  Service Management"
@@ -954,7 +959,7 @@ main_menu() {
         exit 0
         ;;
       *)
-        log_error "Invalid option: '$choice'. Please try again."
+        log_error "Invalid option. Please try again."
         sleep 1
         ;;
     esac
