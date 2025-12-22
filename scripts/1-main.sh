@@ -73,7 +73,7 @@ fresh_installation() {
   echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "\n"
 
-  # Ensure we're in the project directory (as root for admin tasks)
+  # Project is in /root (where script was downloaded)
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
   cd "$PROJECT_ROOT" || {
@@ -85,7 +85,7 @@ fresh_installation() {
   echo -e "${YELLOW}⚠️  WARNING:${NC} This will:"
   echo -e "  • Delete existing 'taxi' user (if exists)"
   echo -e "  • Clean old files from /root"
-  echo -e "  • Create new 'taxi' user with home directory"
+  echo -e "  • Create new 'taxi' user"
   echo -e "  • Install all services as 'taxi' user"
   echo -e "  • Deploy complete taxi system"
   printf "\n"
@@ -103,7 +103,7 @@ fresh_installation() {
   # STEP 1: DELETE TAXI USER & CLEAN ROOT
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 1:${NC} Cleaning up existing taxi user and root files..."
+  echo -e "${BLUE}STEP 1:${NC} Cleaning up existing taxi user and old files..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   if id "taxi" &>/dev/null; then
@@ -116,7 +116,7 @@ fresh_installation() {
   fi
   
   log_info "Cleaning old files from /root..."
-  sudo rm -rf /root/Proyecto* /root/*.tar.gz /root/*.zip 2>/dev/null || true
+  sudo rm -rf /root/Proyecto_old /root/*.tar.gz /root/*.zip 2>/dev/null || true
   log_success "Root cleanup completed"
   
   printf "\n"
@@ -125,26 +125,19 @@ fresh_installation() {
   # STEP 2: CREATE TAXI USER
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 2:${NC} Creating 'taxi' user with home directory..."
+  echo -e "${BLUE}STEP 2:${NC} Creating 'taxi' user..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   log_info "Creating 'taxi' user..."
   sudo useradd -m -s /bin/bash -G sudo taxi 2>/dev/null || true
   log_success "Taxi user created"
   
-  log_info "Copying Proyecto to /home/taxi..."
-  sudo cp -r "$PROJECT_ROOT" /home/taxi/Proyecto || {
-    log_error "Failed to copy project to /home/taxi"
+  log_info "Setting permissions for taxi to access /root/Proyecto..."
+  sudo chown -R taxi:taxi "$PROJECT_ROOT" || {
+    log_error "Failed to set ownership of project"
     return 1
   }
-  
-  log_info "Setting ownership to taxi user..."
-  sudo chown -R taxi:taxi /home/taxi/Proyecto || {
-    log_error "Failed to set ownership"
-    return 1
-  }
-  
-  log_success "Taxi user setup completed"
+  log_success "Project ownership set to taxi user"
   
   printf "\n"
   
@@ -217,13 +210,13 @@ fresh_installation() {
   echo -e "${BLUE}STEP 5:${NC} Installing npm dependencies as taxi user..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  if sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && cd /home/taxi/Proyecto/web && timeout 120 npm install --silent 2>&1 | tail -3'; then
+  if sudo -u taxi bash -c "source ~/.nvm/nvm.sh && cd $PROJECT_ROOT/web && timeout 120 npm install --silent 2>&1 | tail -3"; then
     log_success "npm dependencies installed successfully"
   else
     log_warn "npm install had issues, attempting cleanup and retry..."
-    sudo -u taxi bash -c 'rm -rf /home/taxi/Proyecto/web/node_modules /home/taxi/Proyecto/web/package-lock.json'
+    sudo -u taxi bash -c "rm -rf $PROJECT_ROOT/web/node_modules $PROJECT_ROOT/web/package-lock.json"
     sleep 2
-    if sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && cd /home/taxi/Proyecto/web && timeout 120 npm install --silent 2>&1 | tail -3'; then
+    if sudo -u taxi bash -c "source ~/.nvm/nvm.sh && cd $PROJECT_ROOT/web && timeout 120 npm install --silent 2>&1 | tail -3"; then
       log_success "npm dependencies installed (retry)"
     else
       log_warn "npm install still failing, continuing anyway..."
@@ -270,15 +263,15 @@ fresh_installation() {
   echo -e "${BLUE}STEP 8:${NC} Running deployment as taxi user..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  sudo -u taxi bash -c "source ~/.nvm/nvm.sh && cd /home/taxi/Proyecto && bash scripts/6-complete-deployment.sh '$VPS_IP'"
+  sudo -u taxi bash -c "source ~/.nvm/nvm.sh && cd $PROJECT_ROOT && bash scripts/6-complete-deployment.sh '$VPS_IP'"
   
   printf "\n"
   log_success "✅ Fresh installation completed successfully!"
   echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${GREEN}Taxi User Setup:${NC}"
+  echo -e "${GREEN}Installation Summary:${NC}"
   echo -e "  User: ${YELLOW}taxi${NC}"
   echo -e "  Home: ${YELLOW}/home/taxi${NC}"
-  echo -e "  Project: ${YELLOW}/home/taxi/Proyecto${NC}"
+  echo -e "  Project: ${YELLOW}$PROJECT_ROOT${NC}"
   echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   printf "\n"
 }
