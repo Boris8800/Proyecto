@@ -57,7 +57,7 @@ services:
     container_name: taxi-api
     working_dir: /app
     volumes:
-      - ./web/api:/app
+      - /root/Proyecto/web/api:/app
     ports:
       - "${VPS_IP:-0.0.0.0}:3000:3000"
     environment:
@@ -78,8 +78,8 @@ services:
     container_name: taxi-status
     working_dir: /app
     volumes:
-      - ./web:/app
-      - ./web/node_modules:/app/node_modules
+      - /root/Proyecto/web:/app
+      - /root/Proyecto/web/node_modules:/app/node_modules
     ports:
       - "${VPS_IP:-0.0.0.0}:8080:8080"
     environment:
