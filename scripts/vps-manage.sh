@@ -29,7 +29,10 @@ load_env() {
         print_error "No .env file found. Run vps-setup.sh first"
         exit 1
     fi
-    export $(grep -v '^#' "$CONFIG_DIR/.env" | xargs)
+    set -a
+    # shellcheck source=/dev/null
+    source "$CONFIG_DIR/.env"
+    set +a
 }
 
 # Show menu
@@ -54,7 +57,7 @@ show_menu() {
     echo -e "${CYAN}13.${NC} Clean Up Disk Space"
     echo -e "${CYAN}14.${NC} Exit"
     echo ""
-    read -p "Select option: " choice
+    read -r -p "Select option: " choice
     
     case $choice in
         1) view_status ;;
@@ -107,7 +110,7 @@ view_status() {
     echo "Status Dashboard: http://$VPS_IP:8080"
     echo ""
     
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
@@ -119,7 +122,7 @@ view_logs() {
     
     docker ps --format "{{.Names}}" | nl
     echo ""
-    read -p "Enter container number: " container_num
+    read -r -p "Enter container number: " container_num
     
     container=$(docker ps --format "{{.Names}}" | sed -n "${container_num}p")
     if [ -z "$container" ]; then
@@ -154,7 +157,7 @@ restart_services() {
 # Stop all services
 stop_services() {
     print_warning "This will stop all services. Continue? (y/N)"
-    read -p "" confirm
+    read -r -p "" confirm
     
     if [[ $confirm == "y" || $confirm == "Y" ]]; then
         print_status "Stopping services..."
@@ -219,7 +222,7 @@ view_docker_status() {
     docker volume ls
     echo ""
     
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
@@ -257,7 +260,7 @@ backup_databases() {
     fi
     
     print_success "All backups saved to: $BACKUP_DIR"
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
@@ -294,7 +297,7 @@ health_check() {
     fi
     
     echo ""
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
@@ -320,7 +323,7 @@ security_audit() {
     ps aux --sort=-%mem | head -10
     echo ""
     
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
@@ -332,20 +335,20 @@ update_environment() {
     
     load_env
     
-    read -p "Enter new VPS IP (current: $VPS_IP): " new_ip
+    read -r -p "Enter new VPS IP (current: $VPS_IP): " new_ip
     if [ -n "$new_ip" ]; then
         sed -i "s/^VPS_IP=.*/VPS_IP=$new_ip/" "$CONFIG_DIR/.env"
         print_success "VPS IP updated"
     fi
     
-    read -p "Enter new API Port (current: 3000): " new_port
+    read -r -p "Enter new API Port (current: 3000): " new_port
     if [ -n "$new_port" ]; then
         sed -i "s/^API_PORT=.*/API_PORT=$new_port/" "$CONFIG_DIR/.env"
         print_success "API Port updated"
     fi
     
     print_info "Configuration updated. Restart services to apply changes."
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
@@ -377,7 +380,7 @@ view_service_urls() {
     echo "  • Redis:             $VPS_IP:6379"
     echo ""
     
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
@@ -388,7 +391,7 @@ cleanup_disk() {
     echo ""
     
     print_warning "This will remove dangling images and volumes. Continue? (y/N)"
-    read -p "" confirm
+    read -r -p "" confirm
     
     if [[ $confirm == "y" || $confirm == "Y" ]]; then
         print_status "Cleaning up Docker..."
@@ -398,7 +401,7 @@ cleanup_disk() {
         print_info "Cancelled"
     fi
     
-    read -p "Press Enter to continue..."
+    read -r -p "Press Enter to continue..."
     show_menu
 }
 
