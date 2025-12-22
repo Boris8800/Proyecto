@@ -1,0 +1,43 @@
+{
+  "email": {
+    "provider": "smtp",
+    "smtp": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "secure": false,
+      "auth": {
+        "user": "your-email@gmail.com",
+        "pass": "your-app-password"
+      },
+      "from": "noreply@swiftcab.com",
+      "replyTo": "support@swiftcab.com"
+    },
+    "sendgrid": {
+      "apiKey": "your-sendgrid-api-key",
+      "fromEmail": "noreply@swiftcab.com",
+      "fromName": "Swift Cab"
+    },
+    "mailgun": {
+      "apiKey": "your-mailgun-api-key",
+      "domain": "mg.swiftcab.com",
+      "fromEmail": "noreply@swiftcab.com"
+    }
+  },
+  "services": {
+    "maps": {
+      "provider": "google",
+      "apiKey": "your-google-maps-api-key",
+      "enabled": false
+    },
+    "payment": {
+      "provider": "stripe",
+      "apiKey": "your-stripe-api-key",
+      "enabled": false
+    },
+    "sms": {
+      "provider": "twilio",
+      "apiKey": "your-twilio-api-key",
+      "enabled": false
+    }
+  }
+}
