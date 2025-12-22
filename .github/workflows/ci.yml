@@ -28,7 +28,7 @@ jobs:
         shellcheck -x scripts/1-main.sh
         shellcheck -x scripts/vps-complete-setup.sh
         shellcheck -x scripts/3-vps-setup.sh
-        shellcheck -x scripts/vps-deploy.sh
+        shellcheck -x scripts/4-vps-deploy.sh
         shellcheck -x scripts/vps-manage.sh
     - name: ShellCheck - Library Files
       run: |
