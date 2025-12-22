@@ -224,10 +224,14 @@ fresh_installation() {
       log_info "Killed process on port $port"
     fi
   done
+  echo "[DEBUG BEFORE log_success]" >&2
   log_success "Old processes cleaned"
+  echo "[DEBUG AFTER log_success]" >&2
   
+  echo "[DEBUG BEFORE printf]" >&2
   printf "\n"
-  echo "[DEBUG] After printf following process cleanup" >&2
+  echo "[DEBUG AFTER printf]" >&2
+  echo "[DEBUG After printf following process cleanup]" >&2
 
   # ============================================================================
   # STEP 6: STOP DOCKER CONTAINERS
