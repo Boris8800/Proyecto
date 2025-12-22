@@ -203,17 +203,32 @@ if [ ! -f "$PROJECT_ROOT/config/docker-compose.yml" ]; then
   exit 1
 fi
 
+# Clean up old stopped containers first (to avoid name conflicts)
+echo -e "${YELLOW}[INFO]${NC} Cleaning old stopped containers..."
+sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" down --remove-orphans 2>/dev/null || true
+sleep 2
+
 # Try to start docker-compose
-if sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" up -d 2>&1 | tee /tmp/docker_up.log | grep -E "(Created|Starting|Started)"; then
-  echo -e "${GREEN}✓${NC} Docker services started"
+echo -e "${YELLOW}[INFO]${NC} Starting Docker containers..."
+if sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" up -d 2>&1 | tee /tmp/docker_up.log; then
+  echo -e "${GREEN}✓${NC} Docker compose command executed"
 else
-  # Check if there was an error
-  if grep -q "error\|ERROR\|failed" /tmp/docker_up.log 2>/dev/null; then
-    echo -e "${RED}✗${NC} Docker compose error:"
-    cat /tmp/docker_up.log | grep -E "error|ERROR|failed" | head -5
-  else
-    echo -e "${YELLOW}[INFO]${NC} Docker services being initialized..."
-  fi
+  echo -e "${RED}✗${NC} Docker compose error:"
+  cat /tmp/docker_up.log | tail -10
+  exit 1
+fi
+
+# Wait for containers to actually start
+sleep 5
+
+# Verify containers are running (not just created)
+echo -e "${YELLOW}[INFO]${NC} Verifying containers are running..."
+RUNNING_COUNT=$(sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" ps -q | wc -l)
+if [ "$RUNNING_COUNT" -gt 0 ]; then
+  echo -e "${GREEN}✓${NC} $RUNNING_COUNT containers are running"
+else
+  echo -e "${RED}✗${NC} No containers running! Check docker logs"
+  sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" ps
 fi
 
 # Wait for Docker containers to be fully running
