@@ -347,34 +347,34 @@ fresh_install() {
     
     # Step 2: Validate system requirements
     log_info "Step 2/7: Validating system requirements..."
-    check_system_requirements
-    check_ports
+    check_system_requirements || { log_error "System requirements check failed"; return 1; }
+    check_ports || { log_error "Port check failed"; return 1; }
     
     # Step 3: Install and configure Docker
     log_info "Step 3/7: Installing Docker..."
-    install_docker
-    install_docker_compose
-    setup_docker_permissions
-    verify_docker_installation
+    install_docker || { log_error "Docker installation failed"; return 1; }
+    install_docker_compose || { log_error "Docker Compose installation failed"; return 1; }
+    setup_docker_permissions || { log_error "Docker permissions setup failed"; return 1; }
+    verify_docker_installation || { log_error "Docker verification failed"; return 1; }
     
     # Step 4: Initialize system
     log_info "Step 4/7: Initializing system..."
-    initialize_system
+    initialize_system || { log_error "System initialization failed"; return 1; }
     
     # Step 5: Initialize databases
     log_info "Step 5/7: Initializing databases..."
-    initialize_postgresql
-    initialize_mongodb
-    setup_redis
+    initialize_postgresql || { log_error "PostgreSQL initialization failed"; return 1; }
+    initialize_mongodb || { log_error "MongoDB initialization failed"; return 1; }
+    setup_redis || { log_error "Redis setup failed"; return 1; }
     
     # Step 6: Create database schema
     log_info "Step 6/7: Creating database schema..."
-    create_database_schema
-    seed_initial_data
+    create_database_schema || { log_error "Database schema creation failed"; return 1; }
+    seed_initial_data || { log_error "Database seeding failed"; return 1; }
     
     # Step 7: Deploy dashboards
     log_info "Step 7/7: Deploying dashboards..."
-    create_all_dashboards
+    create_all_dashboards || { log_error "Dashboard deployment failed"; return 1; }
     
     log_ok "✅ Fresh installation completed successfully!"
 }

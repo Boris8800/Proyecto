@@ -138,27 +138,33 @@ verify_docker_installation() {
     if ! systemctl is-active --quiet docker; then
         log_warn "Docker service is not running. Starting it..."
         systemctl start docker >/dev/null 2>&1
+        sleep 2  # Give Docker time to start
     fi
     
-    # Test docker command
-    if docker ps >/dev/null 2>&1; then
-        log_ok "Docker is running and accessible"
-        
-        # Display versions
-        local docker_version
-        docker_version=$(docker --version | awk '{print $3}' | tr -d ',')
-        log_info "Docker version: $docker_version"
-        
-        if command -v docker-compose &> /dev/null; then
-            local compose_version
-            compose_version=$(docker-compose --version | awk '{print $3}')
-            log_info "Docker Compose version: $compose_version"
+    # Test docker command with sudo if needed
+    local docker_cmd="docker"
+    if ! docker ps >/dev/null 2>&1; then
+        log_warn "Docker not accessible without sudo, trying with sudo..."
+        docker_cmd="sudo docker"
+        if ! sudo docker ps >/dev/null 2>&1; then
+            log_error "Cannot access Docker even with sudo. Check permissions and service status."
+            return 1
         fi
-        return 0
-    else
-        log_error "Cannot access Docker. Check permissions."
-        return 1
     fi
+    
+    log_ok "Docker is running and accessible"
+    
+    # Display versions
+    local docker_version
+    docker_version=$($docker_cmd --version | awk '{print $3}' | tr -d ',')
+    log_info "Docker version: $docker_version"
+    
+    if command -v docker-compose &> /dev/null; then
+        local compose_version
+        compose_version=$(docker-compose --version | awk '{print $3}')
+        log_info "Docker Compose version: $compose_version"
+    fi
+    return 0
 }
 
 validate_docker_compose() {
