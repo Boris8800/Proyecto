@@ -1,13 +1,37 @@
-# Web Dashboards - Taxi System
+# 🚕 Taxi System Web Dashboards
 
-Professional web interfaces for the Taxi Management System.
+Modern, fully-functional web interfaces for the Taxi System with three distinct applications for Admin, Driver, and Customer.
 
-## 📁 Directory Structure
+## 📊 Dashboards Overview
 
-```
-web/
-├── admin/           # Administrator Dashboard
-│   ├── index.html   # Main admin interface
+### 1. Admin Dashboard (Port 3001)
+**Purpose:** System management and operational monitoring
+
+**Modern Features:**
+- Purple gradient background (667eea → 764ba2)
+- 6 KPI metric cards with smooth hover effects
+- Real-time system status section
+- Responsive grid layout (auto-fit: 300px)
+- Professional card design with shadows and animations
+- Mobile-optimized layout
+- Color-coded status indicators
+
+### 2. Driver Portal (Port 3002)
+**Purpose:** Driver earnings, performance, and ride management
+
+**Modern Features:**
+- Pink/red gradient background (f093fb → f5576c)
+- 6 performance metric cards
+- Detailed performance analytics section
+- Smooth card animations with 3D effects
+
+### 3. Customer App (Port 3003)
+**Purpose:** Ride booking and service discovery
+
+**Modern Features:**
+- Blue gradient background (4facfe → 00f2fe)
+- Hero section with "Request a Ride" CTA
+- 6 feature highlight cards
 │   ├── css/
 │   │   └── style.css
 │   ├── js/

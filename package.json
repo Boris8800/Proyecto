@@ -1,0 +1,32 @@
+{
+  "name": "taxi-web-dashboards",
+  "version": "1.0.0",
+  "description": "Web servers for Taxi System dashboards",
+  "main": "web/server-admin.js",
+  "scripts": {
+    "start": "node web/server-admin.js",
+    "server-admin": "node web/server-admin.js",
+    "server-driver": "node web/server-driver.js",
+    "server-customer": "node web/server-customer.js",
+    "all": "concurrently \"npm run server-admin\" \"npm run server-driver\" \"npm run server-customer\"",
+    "dev": "nodemon web/server-admin.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "concurrently": "^8.2.0"
+  },
+  "keywords": [
+    "taxi",
+    "dashboard",
+    "admin",
+    "driver",
+    "customer"
+  ],
+  "author": "",
+  "license": "MIT"
+}

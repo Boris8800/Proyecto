@@ -3,370 +3,782 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Dashboard - Taxi System</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Taxi Booking - Swift Cab</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4facfe;
+            --secondary: #00f2fe;
+            --success: #05c46b;
+            --warning: #f0a500;
+            --danger: #d63031;
+            --dark: #2d3436;
+            --light: #f5f6fa;
+            --border: #dfe6e9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        /* Navigation Bar */
+        nav {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-logo i {
+            color: var(--primary);
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        .btn-auth {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-auth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(79, 172, 254, 0.4);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: white;
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .hero h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: #636e72;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .booking-form {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.4);
+        }
+
+        /* Features Section */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            color: white;
+            font-size: 32px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: var(--dark);
+        }
+
+        .feature-card p {
+            color: #636e72;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Benefits Section */
+        .benefits {
+            background: white;
+            border-radius: 16px;
+            padding: 50px 40px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .benefits h2 {
+            font-size: 32px;
+            margin-bottom: 30px;
+            text-align: center;
+            color: var(--dark);
+        }
+
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .benefit-item {
+            display: flex;
+            gap: 15px;
+        }
+
+        .benefit-icon {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .benefit-text h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .benefit-text p {
+            font-size: 13px;
+            color: #636e72;
+        }
+
+        /* Rides Section */
+        .rides-section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        .rides-section h2 {
+            font-size: 24px;
+            margin-bottom: 25px;
+            color: var(--dark);
+        }
+
+        .rides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .ride-card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid;
+            border-left-color: var(--primary);
+            transition: all 0.3s;
+        }
+
+        .ride-card:hover {
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .ride-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .ride-id {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .ride-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .ride-status.completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .ride-status.cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .ride-details {
+            font-size: 14px;
+            color: #636e72;
+            margin-bottom: 12px;
+        }
+
+        .ride-details p {
+            margin-bottom: 8px;
+        }
+
+        .ride-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .ride-driver {
+            font-size: 13px;
+        }
+
+        .ride-driver strong {
+            color: var(--dark);
+        }
+
+        .ride-amount {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-box {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #636e72;
+            margin-top: 8px;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--dark);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        footer p {
+            margin-bottom: 10px;
+        }
+
+        .footer-links {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero {
+                padding: 40px 20px;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+
+            .hero p {
+                font-size: 16px;
+            }
+
+            .nav-right {
+                gap: 10px;
+            }
+
+            .nav-link {
+                font-size: 14px;
+            }
+
+            .booking-form {
+                padding: 20px;
+            }
+
+            .benefits {
+                padding: 30px 20px;
+            }
+
+            .rides-section {
+                padding: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
     <script src="../js/magic-links-client.js"></script>
     <script>
-        // Initialize magic links auth
         const auth = new MagicLinksAuth({
             redirectPath: '/customer/',
             loginPath: '/auth/'
         });
         auth.init();
     </script>
-    <!-- Magic Link Login Screen -->
-    <div class="magic-link-container" id="loginScreen">
-        <div class="magic-link-card">
-            <div class="magic-link-header">
-                <i class="fas fa-taxi"></i>
-                <h1>QuickRide</h1>
-                <p>Sign in with magic link</p>
-            </div>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-logo">
+            <i class="fas fa-taxi"></i>
+            SwiftCab
+        </div>
+        <div class="nav-right">
+            <a href="#" class="nav-link">How It Works</a>
+            <a href="#" class="nav-link">Safety</a>
+            <a href="#" class="nav-link">Support</a>
+            <button class="btn-auth" id="loginBtn">Sign In</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Hero Section -->
+        <section class="hero">
+            <h1>Your Reliable Taxi Service</h1>
+            <p>Book a safe, affordable ride in seconds. Available 24/7 in your city.</p>
             
-            <form id="magicLinkForm" class="magic-form">
+            <!-- Booking Form -->
+            <form class="booking-form" id="bookingForm">
                 <div class="form-group">
-                    <label for="customerEmail">
-                        <i class="fas fa-envelope"></i> Email Address
-                    </label>
-                    <input 
-                        type="email" 
-                        id="customerEmail" 
-                        placeholder="your.email@example.com"
-                        required
-                        autocomplete="email"
-                    >
+                    <label for="pickup">Pickup Location</label>
+                    <input type="text" id="pickup" placeholder="Enter pickup address" required>
                 </div>
-                
-                <button type="submit" class="btn-magic-link">
-                    <i class="fas fa-paper-plane"></i>
-                    Send Magic Link
-                </button>
-                
-                <div class="magic-link-benefits">
-                    <p><i class="fas fa-lock"></i> No password required</p>
-                    <p><i class="fas fa-bolt"></i> Instant access</p>
-                    <p><i class="fas fa-shield-alt"></i> More secure</p>
+                <div class="form-group">
+                    <label for="dropoff">Drop-off Location</label>
+                    <input type="text" id="dropoff" placeholder="Enter destination" required>
                 </div>
+                <div class="form-group">
+                    <label for="rideType">Ride Type</label>
+                    <select id="rideType" required>
+                        <option value="">Select ride type</option>
+                        <option value="economy">Economy - $0.99/min</option>
+                        <option value="comfort">Comfort - $1.29/min</option>
+                        <option value="premium">Premium - $1.99/min</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary">Request Ride</button>
             </form>
-            
-            <div id="emailSent" class="email-sent-message" style="display: none;">
-                <i class="fas fa-check-circle"></i>
-                <h3>Check your email!</h3>
-                <p>We've sent a magic link to <strong id="sentEmailAddress"></strong></p>
-                <p class="email-hint">Click the link in the email to sign in instantly. No password needed!</p>
-                <button class="btn-resend" id="resendLink">
-                    <i class="fas fa-redo"></i> Resend Link
-                </button>
+        </section>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number">50K+</div>
+                <div class="stat-label">Happy Customers</div>
             </div>
-            
-            <div class="magic-link-footer">
-                <p><i class="fas fa-info-circle"></i> New here? Magic links work for signup too!</p>
+            <div class="stat-box">
+                <div class="stat-number">24/7</div>
+                <div class="stat-label">Available Service</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">4.9★</div>
+                <div class="stat-label">Average Rating</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Safe & Verified</div>
             </div>
         </div>
-    </div>
 
-    <div class="dashboard" id="mainDashboard" style="display: none;">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo">
-                <i class="fas fa-taxi"></i>
-                <h2>QuickRide</h2>
+        <!-- Features Section -->
+        <section class="features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3>Easy Booking</h3>
+                <p>Book a ride in just 30 seconds using our simple and intuitive app.</p>
             </div>
-            
-            <nav class="nav-menu">
-                <a href="#" class="nav-item active">
-                    <i class="fas fa-home"></i>
-                    <span>Book a Ride</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-route"></i>
-                    <span>Active Ride</span>
-                    <span class="badge online">Live</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-history"></i>
-                    <span>Ride History</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-credit-card"></i>
-                    <span>Payment Methods</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-tags"></i>
-                    <span>Promotions</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-user"></i>
-                    <span>Profile</span>
-                </a>
-            </nav>
-
-            <div class="sidebar-footer">
-                <a href="#" class="nav-item">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-map-location-dot"></i>
+                </div>
+                <h3>Real-time Tracking</h3>
+                <p>Track your driver in real-time and know exactly when they'll arrive.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Safe & Secure</h3>
+                <p>All drivers verified. Share trip details with trusted contacts.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <h3>Best Prices</h3>
+                <p>Transparent pricing. No surge pricing during peak hours.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
                     <i class="fas fa-headset"></i>
-                    <span>Support</span>
-                </a>
-                <a href="#" class="nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Logout</span>
-                </a>
+                </div>
+                <h3>24/7 Support</h3>
+                <p>Our support team is always here to help you with any issues.</p>
             </div>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Header -->
-            <div class="header">
-                <div class="header-left">
-                    <h1>Hello, Maria! 👋</h1>
-                    <p class="subtitle">Where would you like to go today?</p>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-credit-card"></i>
                 </div>
-                <div class="header-right">
-                    <button class="notification-btn">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge">2</span>
-                    </button>
-                    
-                    <div class="user-profile">
-                        <img src="https://ui-avatars.com/api/?name=Maria+Santos&background=4facfe&color=fff" alt="Customer">
-                        <span>Maria S.</span>
-                    </div>
-                </div>
+                <h3>Multiple Payments</h3>
+                <p>Pay with cash, card, or digital wallet. Your choice.</p>
             </div>
+        </section>
 
-            <!-- Booking Section -->
-            <div class="booking-section">
-                <div class="booking-card">
-                    <h2><i class="fas fa-map-marker-alt"></i> Book Your Ride</h2>
-                    
-                    <form class="booking-form">
-                        <div class="location-inputs">
-                            <div class="input-group">
-                                <div class="input-icon pickup">
-                                    <i class="fas fa-circle"></i>
-                                </div>
-                                <input type="text" placeholder="Pickup location" value="Current Location" class="form-input">
-                                <button type="button" class="location-btn">
-                                    <i class="fas fa-crosshairs"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="location-divider"></div>
-                            
-                            <div class="input-group">
-                                <div class="input-icon destination">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                </div>
-                                <input type="text" placeholder="Where to?" class="form-input">
-                            </div>
-                        </div>
-
-                        <div class="ride-options">
-                            <h3>Choose Ride Type</h3>
-                            <div class="ride-types">
-                                <div class="ride-type active" data-type="standard">
-                                    <i class="fas fa-car"></i>
-                                    <div class="ride-type-info">
-                                        <div class="ride-type-name">Standard</div>
-                                        <div class="ride-type-time">3 min away</div>
-                                    </div>
-                                    <div class="ride-type-price">$12.50</div>
-                                </div>
-                                
-                                <div class="ride-type" data-type="premium">
-                                    <i class="fas fa-car-side"></i>
-                                    <div class="ride-type-info">
-                                        <div class="ride-type-name">Premium</div>
-                                        <div class="ride-type-time">5 min away</div>
-                                    </div>
-                                    <div class="ride-type-price">$18.00</div>
-                                </div>
-                                
-                                <div class="ride-type" data-type="xl">
-                                    <i class="fas fa-shuttle-van"></i>
-                                    <div class="ride-type-info">
-                                        <div class="ride-type-name">XL (6 seats)</div>
-                                        <div class="ride-type-time">8 min away</div>
-                                    </div>
-                                    <div class="ride-type-price">$22.00</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="trip-details">
-                            <div class="detail-row">
-                                <span><i class="fas fa-route"></i> Distance</span>
-                                <span>8.5 km</span>
-                            </div>
-                            <div class="detail-row">
-                                <span><i class="fas fa-clock"></i> Est. Time</span>
-                                <span>15 min</span>
-                            </div>
-                            <div class="detail-row">
-                                <span><i class="fas fa-credit-card"></i> Payment</span>
-                                <span>Visa •••• 4242</span>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-book-ride">
-                            <i class="fas fa-check-circle"></i> Book Ride - $12.50
-                        </button>
-                    </form>
-                </div>
-
-                <!-- Promo Code -->
-                <div class="promo-card">
-                    <div class="promo-icon">
-                        <i class="fas fa-gift"></i>
+        <!-- Benefits -->
+        <section class="benefits">
+            <h2>Why Choose SwiftCab?</h2>
+            <div class="benefits-grid">
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
                     </div>
-                    <div class="promo-info">
-                        <h4>Have a promo code?</h4>
-                        <p>Get discounts on your ride</p>
-                    </div>
-                    <button class="btn-promo">Apply</button>
-                </div>
-            </div>
-
-            <!-- Recent Activity -->
-            <div class="activity-section">
-                <div class="card">
-                    <div class="card-header">
-                        <h3>Recent Rides</h3>
-                        <button class="btn-small">View All</button>
-                    </div>
-                    <div class="rides-list">
-                        <div class="ride-item">
-                            <div class="ride-icon">
-                                <i class="fas fa-car"></i>
-                            </div>
-                            <div class="ride-details">
-                                <div class="ride-route">
-                                    <strong>Home → Office</strong>
-                                </div>
-                                <div class="ride-meta">
-                                    <span class="ride-date">Dec 15, 2023 • 8:30 AM</span>
-                                    <span class="ride-driver">Driver: Carlos R.</span>
-                                </div>
-                            </div>
-                            <div class="ride-right">
-                                <div class="ride-price">$15.50</div>
-                                <div class="ride-rating">
-                                    <i class="fas fa-star"></i> 5.0
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="ride-item">
-                            <div class="ride-icon">
-                                <i class="fas fa-car-side"></i>
-                            </div>
-                            <div class="ride-details">
-                                <div class="ride-route">
-                                    <strong>Airport → Home</strong>
-                                </div>
-                                <div class="ride-meta">
-                                    <span class="ride-date">Dec 14, 2023 • 6:15 PM</span>
-                                    <span class="ride-driver">Driver: Ana L.</span>
-                                </div>
-                            </div>
-                            <div class="ride-right">
-                                <div class="ride-price">$28.00</div>
-                                <div class="ride-rating">
-                                    <i class="fas fa-star"></i> 4.8
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="ride-item">
-                            <div class="ride-icon">
-                                <i class="fas fa-car"></i>
-                            </div>
-                            <div class="ride-details">
-                                <div class="ride-route">
-                                    <strong>Downtown → Shopping Mall</strong>
-                                </div>
-                                <div class="ride-meta">
-                                    <span class="ride-date">Dec 13, 2023 • 2:45 PM</span>
-                                    <span class="ride-driver">Driver: Pedro G.</span>
-                                </div>
-                            </div>
-                            <div class="ride-right">
-                                <div class="ride-price">$12.50</div>
-                                <div class="ride-rating">
-                                    <i class="fas fa-star"></i> 5.0
-                                </div>
-                            </div>
-                        </div>
+                    <div class="benefit-text">
+                        <h4>Professional Drivers</h4>
+                        <p>All drivers are background-checked and professionally trained.</p>
                     </div>
                 </div>
-
-                <!-- Stats & Favorites -->
-                <div class="sidebar-cards">
-                    <!-- Travel Stats -->
-                    <div class="card stats-card">
-                        <h3><i class="fas fa-chart-line"></i> Your Stats</h3>
-                        <div class="stats-list">
-                            <div class="stat-item">
-                                <span class="stat-label">Total Rides</span>
-                                <span class="stat-value">47</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Distance</span>
-                                <span class="stat-value">342 km</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Spent</span>
-                                <span class="stat-value">$684</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-label">Saved</span>
-                                <span class="stat-value">$48</span>
-                            </div>
-                        </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
                     </div>
-
-                    <!-- Favorite Locations -->
-                    <div class="card favorites-card">
-                        <h3><i class="fas fa-star"></i> Favorites</h3>
-                        <div class="favorites-list">
-                            <div class="favorite-item">
-                                <div class="fav-icon home">
-                                    <i class="fas fa-home"></i>
-                                </div>
-                                <div class="fav-details">
-                                    <div class="fav-name">Home</div>
-                                    <div class="fav-address">123 Main St, Apt 4B</div>
-                                </div>
-                            </div>
-                            
-                            <div class="favorite-item">
-                                <div class="fav-icon work">
-                                    <i class="fas fa-briefcase"></i>
-                                </div>
-                                <div class="fav-details">
-                                    <div class="fav-name">Work</div>
-                                    <div class="fav-address">456 Business Blvd</div>
-                                </div>
-                            </div>
-                            
-                            <button class="btn-add-favorite">
-                                <i class="fas fa-plus"></i> Add Favorite
-                            </button>
-                        </div>
+                    <div class="benefit-text">
+                        <h4>Clean Vehicles</h4>
+                        <p>Every vehicle is regularly sanitized and maintained.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h4>Affordable Rates</h4>
+                        <p>Competitive pricing with no hidden charges.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h4>Quick Pickup</h4>
+                        <p>Average pickup time is just 3-5 minutes.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h4>Insurance Covered</h4>
+                        <p>Every ride is covered by comprehensive insurance.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h4>Rewards Program</h4>
+                        <p>Earn points on every ride and get exclusive discounts.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h4>Multiple Ride Options</h4>
+                        <p>Choose from Economy, Comfort, or Premium rides.</p>
+                    </div>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="benefit-text">
+                        <h4>Reliable Service</h4>
+                        <p>99.9% uptime guarantee for continuous availability.</p>
                     </div>
                 </div>
             </div>
-        </main>
+        </section>
+
+        <!-- My Rides Section -->
+        <section class="rides-section" id="ridesSection" style="display: none;">
+            <h2>My Recent Rides</h2>
+            <div class="rides-grid">
+                <div class="ride-card">
+                    <div class="ride-header">
+                        <span class="ride-id">#RD001</span>
+                        <span class="ride-status completed">Completed</span>
+                    </div>
+                    <div class="ride-details">
+                        <p><strong>Pickup:</strong> Downtown Station</p>
+                        <p><strong>Dropoff:</strong> City Center Mall</p>
+                        <p><strong>Date:</strong> Dec 15, 2024 at 2:30 PM</p>
+                        <p><strong>Duration:</strong> 22 minutes</p>
+                    </div>
+                    <div class="ride-footer">
+                        <div class="ride-driver">
+                            <strong>Mike Smith</strong><br>
+                            Toyota Prius
+                        </div>
+                        <div class="ride-amount">$28.50</div>
+                    </div>
+                </div>
+
+                <div class="ride-card">
+                    <div class="ride-header">
+                        <span class="ride-id">#RD002</span>
+                        <span class="ride-status completed">Completed</span>
+                    </div>
+                    <div class="ride-details">
+                        <p><strong>Pickup:</strong> Airport Terminal 1</p>
+                        <p><strong>Dropoff:</strong> Hotel Central</p>
+                        <p><strong>Date:</strong> Dec 14, 2024 at 8:15 AM</p>
+                        <p><strong>Duration:</strong> 35 minutes</p>
+                    </div>
+                    <div class="ride-footer">
+                        <div class="ride-driver">
+                            <strong>Sarah Johnson</strong><br>
+                            Honda Accord
+                        </div>
+                        <div class="ride-amount">$42.75</div>
+                    </div>
+                </div>
+
+                <div class="ride-card">
+                    <div class="ride-header">
+                        <span class="ride-id">#RD003</span>
+                        <span class="ride-status completed">Completed</span>
+                    </div>
+                    <div class="ride-details">
+                        <p><strong>Pickup:</strong> Office Building A</p>
+                        <p><strong>Dropoff:</strong> Railway Station</p>
+                        <p><strong>Date:</strong> Dec 13, 2024 at 5:45 PM</p>
+                        <p><strong>Duration:</strong> 18 minutes</p>
+                    </div>
+                    <div class="ride-footer">
+                        <div class="ride-driver">
+                            <strong>Tom Brown</strong><br>
+                            Hyundai Elantra
+                        </div>
+                        <div class="ride-amount">$22.00</div>
+                    </div>
+                </div>
+            </div>
+        </section>
     </div>
 
-    <script src="js/main.js"></script>
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 SwiftCab - Your Trusted Taxi Service. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Contact Us</a>
+            <a href="#">Safety</a>
+            <a href="#">Community Guidelines</a>
+        </div>
+    </footer>
+
     <script>
-        // Setup magic links auth
-        auth.displayUserInfo('userEmail');
-        auth.setupLogoutButton('logoutBtn');
+        // Handle booking form
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const pickup = document.getElementById('pickup').value;
+            const dropoff = document.getElementById('dropoff').value;
+            const rideType = document.getElementById('rideType').value;
+            
+            if (pickup && dropoff && rideType) {
+                alert(`Ride Requested!\nPickup: ${pickup}\nDropoff: ${dropoff}\nType: ${rideType}`);
+                this.reset();
+            }
+        });
+
+        // Handle login button
+        document.getElementById('loginBtn').addEventListener('click', function() {
+            window.location.href = '/auth/';
+        });
+
+        // Show/hide rides section based on auth state
+        function checkAuthStatus() {
+            const hasAuth = localStorage.getItem('auth_token');
+            const ridesSection = document.getElementById('ridesSection');
+            if (hasAuth) {
+                ridesSection.style.display = 'block';
+            }
+        }
+
+        checkAuthStatus();
     </script>
 </body>
 </html>
