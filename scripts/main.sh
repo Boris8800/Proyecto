@@ -262,13 +262,13 @@ system_diagnostics() {
 
   # Docker status
   echo -e "${YELLOW}🐳 Docker Status:${NC}"
-  docker-compose ps
+  timeout 3 docker-compose ps 2>/dev/null || echo "  Docker not available or containers not running"
   printf "\n"
 
   # Node servers status
   echo -e "${YELLOW}🚀 Node Servers Status:${NC}"
   for port in 3001 3002 3003; do
-    if curl -s http://localhost:$port > /dev/null 2>&1; then
+    if timeout 2 curl -s http://localhost:$port > /dev/null 2>&1; then
       echo -e "  Port $port: ${GREEN}✓ Responding${NC}"
     else
       echo -e "  Port $port: ${RED}✗ No response${NC}"
@@ -288,19 +288,19 @@ system_diagnostics() {
 
   # Database connectivity
   echo -e "${YELLOW}🗄️  Database Connectivity:${NC}"
-  if docker exec taxi-postgres pg_isready -U postgres &>/dev/null; then
+  if timeout 2 docker exec taxi-postgres pg_isready -U postgres &>/dev/null; then
     echo -e "  PostgreSQL: ${GREEN}✓ Connected${NC}"
   else
     echo -e "  PostgreSQL: ${RED}✗ Not connected${NC}"
   fi
 
-  if docker exec taxi-mongo mongosh --eval "db.adminCommand('ping')" &>/dev/null; then
+  if timeout 2 docker exec taxi-mongo mongosh --eval "db.adminCommand('ping')" &>/dev/null; then
     echo -e "  MongoDB: ${GREEN}✓ Connected${NC}"
   else
     echo -e "  MongoDB: ${RED}✗ Not connected${NC}"
   fi
 
-  if docker exec taxi-redis redis-cli ping &>/dev/null; then
+  if timeout 2 docker exec taxi-redis redis-cli ping &>/dev/null; then
     echo -e "  Redis: ${GREEN}✓ Connected${NC}"
   else
     echo -e "  Redis: ${RED}✗ Not connected${NC}"
