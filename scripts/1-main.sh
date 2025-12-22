@@ -955,7 +955,10 @@ main_menu() {
     fi
 
     case $choice in
-      1) fresh_installation ;;
+      1) 
+        fresh_installation
+        exit 0
+        ;;
       2) update_installation ;;
       3) service_management ;;
       4) system_diagnostics ;;
