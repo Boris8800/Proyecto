@@ -58,6 +58,7 @@ services:
     working_dir: /app
     volumes:
       - /root/Proyecto/web/api:/app
+      - /root/Proyecto/web/node_modules:/app/node_modules
     ports:
       - "${VPS_IP:-0.0.0.0}:3000:3000"
     environment:
@@ -65,7 +66,7 @@ services:
       PORT: 3000
       VPS_IP: ${VPS_IP:-127.0.0.1}
       API_BASE_URL: http://${VPS_IP:-127.0.0.1}:3000
-    command: node magic-links-server.js
+    command: sh -c "npm install --prefer-offline && node magic-links-server.js"
     networks:
       - taxi_network
     depends_on:
