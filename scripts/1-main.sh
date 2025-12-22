@@ -232,9 +232,6 @@ fresh_installation() {
       log_success "Docker started via systemctl"
     elif sudo service docker start 2>/dev/null; then
       log_success "Docker started via service command"
-    elif sudo /usr/bin/dockerd --host=unix:///var/run/docker.sock &>/dev/null &; then
-      sleep 2
-      log_success "Docker daemon started"
     else
       log_warn "Could not start Docker daemon - it may already be running"
     fi
