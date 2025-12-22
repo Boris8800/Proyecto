@@ -174,8 +174,14 @@ show_main_menu() {
         main_choice=$INTERACTIVE_MENU_SELECTION
         
         case "$main_choice" in
-            1) fresh_installation_menu ;;
-            2) update_menu ;;
+            1) 
+                fresh_installation_menu
+                break  # Exit menu after fresh installation
+                ;;
+            2) 
+                update_menu
+                break  # Exit menu after update
+                ;;
             3) service_management_menu ;;
             4) diagnostics_menu ;;
             5) database_menu ;;
@@ -214,7 +220,10 @@ fresh_installation_menu() {
         # Call the actual fresh install function
         fresh_install
         echo ""
-        read -r -p "Press Enter to return to main menu..."
+        read -r -p "Press Enter to continue..."
+        echo ""
+        echo -e "${GREEN}✓ Installation complete. Exiting...${NC}"
+        sleep 2
     else
         log_info "Installation cancelled"
         sleep 1
@@ -236,9 +245,14 @@ update_menu() {
             log_info "Updating all services..."
             update_installation
             echo ""
-            read -r -p "Press Enter to return to main menu..."
+            read -r -p "Press Enter to continue..."
+            echo ""
+            echo -e "${GREEN}✓ Update complete. Exiting...${NC}"
+            sleep 2
             ;;
-        *) : ;;
+        *) 
+            return 0
+            ;;
     esac
 }
 

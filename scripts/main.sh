@@ -56,7 +56,7 @@ parse_arguments() {
     # If no arguments provided, show interactive menu
     if [[ $# -eq 0 ]]; then
         show_main_menu
-        return 0
+        exit 0
     fi
     
     while [[ $# -gt 0 ]]; do
