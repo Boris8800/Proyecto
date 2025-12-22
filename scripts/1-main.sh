@@ -218,12 +218,16 @@ fresh_installation() {
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   for port in 3001 3002 3003 8080; do
+    echo "[DEBUG] Checking port $port" >&2
     pid=$(lsof -ti:$port 2>/dev/null)
+    echo "[DEBUG] Got pid='$pid' for port $port" >&2
     if [ -n "$pid" ]; then
+      echo "[DEBUG] Killing pid $pid" >&2
       kill -9 "$pid" 2>/dev/null || true
       log_info "Killed process on port $port"
     fi
   done
+  echo "[DEBUG] Finished port loop" >&2
   log_success "Old processes cleaned"
   
   printf "\n"
