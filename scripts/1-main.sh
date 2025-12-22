@@ -905,8 +905,8 @@ main_menu() {
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "\n"
     
-    # Use interactive menu if available, fallback to basic input
-    if declare -f interactive_menu >/dev/null 2>&1; then
+    # Use interactive menu if available AND we're on a TTY, fallback to basic input for piped input
+    if [ -t 0 ] && declare -f interactive_menu >/dev/null 2>&1; then
         interactive_menu "Main Menu" 0 \
           "Fresh Installation (Recommended)" \
           "Update Existing Installation" \
@@ -921,7 +921,7 @@ main_menu() {
           "Exit"
         choice=$INTERACTIVE_MENU_SELECTION
     else
-        # Fallback to basic menu if interactive_menu not available
+        # Fallback to basic menu if not TTY or interactive_menu not available
         echo -e "  ${GREEN}1)${NC}  Fresh Installation (Recommended)"
         echo -e "  ${GREEN}2)${NC}  Update Existing Installation"
         echo -e "  ${GREEN}3)${NC}  Service Management"
