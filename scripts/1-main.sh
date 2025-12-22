@@ -99,6 +99,9 @@ fresh_installation() {
   printf "\n"
   log_info "Starting fresh installation with 'taxi' user..."
   
+  # Close stdin to prevent unexpected reads
+  exec 0</dev/null
+  
   # ============================================================================
   # STEP 1: DELETE TAXI USER & CLEAN ROOT
   # ============================================================================
@@ -240,13 +243,20 @@ fresh_installation() {
   echo -e "${BLUE}STEP 6:${NC} Cleaning up old processes..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
+  echo "[DEBUG] Starting process cleanup loop" >&2
   for port in 3001 3002 3003 8080; do
-    pid=$(lsof -ti:$port 2>/dev/null)
+    echo "[DEBUG] Checking port $port" >&2
+    pid=$(lsof -ti:$port 2>/dev/null) || pid=""
+    echo "[DEBUG] Got pid='$pid' for port $port" >&2
     if [ -n "$pid" ] && [ "$pid" != $$ ]; then
+      echo "[DEBUG] Attempting to kill pid $pid on port $port" >&2
       kill -9 "$pid" 2>/dev/null || true
+      sleep 0.5
+      echo "[DEBUG] Kill command completed for port $port" >&2
       log_info "Killed process on port $port"
     fi
   done
+  echo "[DEBUG] Process cleanup loop completed" >&2
   log_success "Old processes cleaned"
   
   printf "\n"
