@@ -122,18 +122,44 @@ fi
 
 cd "$PROJECT_ROOT"
 
-# Step 7: Start Docker containers
-echo -e "${YELLOW}[STEP 7]${NC} Starting Docker services..."
-sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" up -d 2>&1 | grep -E "(Created|Starting|Started)" || true
-sleep 3
-echo -e "${GREEN}✓${NC} Docker services started"
+# Step 7: Ensure Docker is running
+echo -e "${YELLOW}[STEP 7]${NC} Ensuring Docker daemon is running..."
+if ! sudo docker ps &>/dev/null 2>&1; then
+  echo -e "${YELLOW}[INFO]${NC} Starting Docker daemon..."
+  if sudo systemctl start docker 2>/dev/null || sudo service docker start 2>/dev/null; then
+    sleep 3
+    echo -e "${GREEN}✓${NC} Docker daemon started"
+  else
+    echo -e "${YELLOW}[WARN]${NC} Could not start Docker - continuing anyway"
+  fi
+  
+  # Wait for Docker to be fully ready
+  for i in {1..30}; do
+    if sudo docker ps &>/dev/null 2>&1; then
+      echo -e "${GREEN}✓${NC} Docker is ready"
+      break
+    fi
+    sleep 1
+  done
+else
+  echo -e "${GREEN}✓${NC} Docker daemon is running"
+fi
 
-# Step 8: Wait for services
-echo -e "${YELLOW}[STEP 8]${NC} Waiting for services to be ready..."
+# Step 8: Start Docker containers
+echo -e "${YELLOW}[STEP 8]${NC} Starting Docker services..."
+if sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" up -d 2>&1 | grep -E "(Created|Starting|Started|WARNING)" | head -10; then
+  echo -e "${GREEN}✓${NC} Docker services started"
+else
+  echo -e "${YELLOW}[INFO]${NC} Docker services being initialized..."
+fi
+sleep 3
+
+# Step 9: Wait for services
+echo -e "${YELLOW}[STEP 9]${NC} Waiting for services to be ready..."
 sleep 5
 
-# Step 9: Verify all services
-echo -e "${YELLOW}[STEP 9]${NC} Verifying services..."
+# Step 10: Verify all services
+echo -e "${YELLOW}[STEP 10]${NC} Verifying services..."
 echo ""
 
 FAILED=0
@@ -148,12 +174,20 @@ for port in 3001 3002 3003; do
   fi
 done
 
+# Check Status Dashboard
+echo -n "  Status Dashboard (port 8080)... "
+if curl -s http://localhost:8080 > /dev/null 2>&1; then
+  echo -e "${GREEN}✓${NC}"
+else
+  echo -e "${YELLOW}⚠${NC} (may start in a moment)"
+fi
+
 # Check Docker containers
 echo ""
 echo -e "${BLUE}Docker Containers:${NC}"
 sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" ps
 
-# Step 10: Display access information
+# Step 11: Display access information
 echo ""
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║                  ✅ DEPLOYMENT COMPLETE                         ║${NC}"

@@ -225,19 +225,33 @@ fresh_installation() {
     log_success "Docker is installed"
     
     # Start Docker daemon if it's not running
-    log_info "Ensuring Docker daemon is running..."
-    if sudo service docker start 2>/dev/null || sudo systemctl start docker 2>/dev/null; then
+    log_info "Starting Docker daemon..."
+    
+    # Try different methods to start Docker
+    if sudo systemctl start docker 2>/dev/null; then
+      log_success "Docker started via systemctl"
+    elif sudo service docker start 2>/dev/null; then
+      log_success "Docker started via service command"
+    elif sudo /usr/bin/dockerd --host=unix:///var/run/docker.sock &>/dev/null &; then
       sleep 2
       log_success "Docker daemon started"
     else
-      log_warn "Could not start Docker daemon - it may already be running or require sudo"
+      log_warn "Could not start Docker daemon - it may already be running"
     fi
     
-    # Verify Docker is accessible
-    if sudo docker ps &>/dev/null; then
+    sleep 3
+    
+    # Verify Docker is actually running
+    if sudo docker ps &>/dev/null 2>&1; then
       log_success "Docker is accessible and running"
     else
-      log_warn "Docker exists but may not be fully operational"
+      log_warn "Docker daemon not responding yet, waiting..."
+      sleep 5
+      if sudo docker ps &>/dev/null 2>&1; then
+        log_success "Docker is now accessible"
+      else
+        log_error "Docker is not responding. Status Dashboard (port 8080) may not work"
+      fi
     fi
   fi
   
