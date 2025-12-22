@@ -195,10 +195,10 @@ fresh_installation() {
   printf "\n"
   
   # ============================================================================
-  # STEP 4: CHECK DOCKER
+  # STEP 4: CHECK DOCKER & START DAEMON
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 4:${NC} Checking Docker installation..."
+  echo -e "${BLUE}STEP 4:${NC} Checking Docker installation and starting daemon..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   if ! command -v docker &>/dev/null; then
@@ -210,6 +210,22 @@ fresh_installation() {
     fi
   else
     log_success "Docker is installed"
+    
+    # Start Docker daemon if it's not running
+    log_info "Ensuring Docker daemon is running..."
+    if sudo service docker start 2>/dev/null || sudo systemctl start docker 2>/dev/null; then
+      sleep 2
+      log_success "Docker daemon started"
+    else
+      log_warn "Could not start Docker daemon - it may already be running or require sudo"
+    fi
+    
+    # Verify Docker is accessible
+    if sudo docker ps &>/dev/null; then
+      log_success "Docker is accessible and running"
+    else
+      log_warn "Docker exists but may not be fully operational"
+    fi
   fi
   
   printf "\n"
@@ -252,6 +268,22 @@ fresh_installation() {
     fi
   done
   log_success "Old processes cleaned"
+  
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 7: STOP DOCKER CONTAINERS
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 7:${NC} Stopping Docker containers..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  if command -v docker-compose &>/dev/null; then
+    sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" down 2>/dev/null || true
+    log_success "Docker containers stopped"
+  else
+    log_info "Docker-compose not found, skipping container shutdown"
+  fi
   
   printf "\n"
   

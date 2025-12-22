@@ -41,7 +41,7 @@ sleep 2
 
 # Step 2: Stop old Docker containers
 echo -e "${YELLOW}[STEP 2]${NC} Stopping old Docker containers..."
-docker-compose -f docker-compose.yml down 2>/dev/null || true
+sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" down 2>/dev/null || true
 sleep 2
 echo -e "${GREEN}✓${NC} Docker containers stopped"
 
@@ -109,7 +109,7 @@ cd ..
 
 # Step 7: Start Docker containers
 echo -e "${YELLOW}[STEP 7]${NC} Starting Docker services..."
-docker-compose up -d 2>&1 | grep -E "(Created|Starting|Started)" || true
+sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" up -d 2>&1 | grep -E "(Created|Starting|Started)" || true
 sleep 3
 echo -e "${GREEN}✓${NC} Docker services started"
 
@@ -136,7 +136,7 @@ done
 # Check Docker containers
 echo ""
 echo -e "${BLUE}Docker Containers:${NC}"
-docker-compose ps
+sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" ps
 
 # Step 10: Display access information
 echo ""
