@@ -227,10 +227,12 @@ fresh_installation() {
   log_success "Old processes cleaned"
   
   printf "\n"
+  echo "[DEBUG] About to enter STEP 6" >&2
   
   # ============================================================================
   # STEP 6: STOP DOCKER CONTAINERS
   # ============================================================================
+  echo "[DEBUG] Entering STEP 6" >&2
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo -e "${BLUE}STEP 6:${NC} Stopping Docker containers..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
