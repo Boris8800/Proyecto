@@ -206,7 +206,7 @@ fresh_installation() {
       log_warn "npm install still failing, continuing anyway..."
     fi
   fi
-  cd .. || exit
+  cd .. || log_warn "Warning: could not return to project root"
   
   printf "\n"
   
