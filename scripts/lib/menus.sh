@@ -19,7 +19,8 @@ interactive_menu() {
     local num_options=${#options[@]}
     local current=$default_idx
     local timeout=10
-    local start_time=$(date +%s)
+    local start_time
+    start_time=$(date +%s)
     INTERACTIVE_MENU_SELECTION=0
     
     # Check if tput is available and working
@@ -34,11 +35,12 @@ interactive_menu() {
     fi
     
     while true; do
-        local now=$(date +%s)
+        local now
+        now=$(date +%s)
         local elapsed=$((now - start_time))
         local remaining=$((timeout - elapsed))
         
-        if [ $remaining -le 0 ]; then
+        if [ "$remaining" -le 0 ]; then
             if [ $has_tput -eq 1 ]; then
                 tput cnorm 2>/dev/null || true
             fi
@@ -53,14 +55,14 @@ interactive_menu() {
         
         # Print Options with indices
         for i in "${!options[@]}"; do
-            local display_idx=$((i + 1))
-            if [ $i -eq $current ]; then
-                if [ $i -eq $default_idx ]; then
+            local"$i" -eq "$current" ]; then
+                if [ "$i" -eq "$default_idx" ]; then
                     echo -e "  ${CYAN}${display_idx}) ${options[$i]} ${YELLOW}(Recommended)${NC}"
                 else
                     echo -e "  ${CYAN}${display_idx}) ${options[$i]}${NC}"
                 fi
             else
+                if [ "$i" -eq "$default_idx"
                 if [ $i -eq $default_idx ]; then
                     echo -e "    ${display_idx}) ${options[$i]} ${YELLOW}(Recommended)${NC}"
                 else
@@ -80,14 +82,14 @@ interactive_menu() {
         # Read input with 1s timeout
         # We don't use || true here because we need to capture the exit code
         set +e
-        read -s -n 1 -t 1 key
+        read -r -s -n 1 -t 1 key
         read_status=$?
         set -e
         
         case "$key" in
             $'\x1b') # Escape sequence
                 set +e
-                read -s -n 2 -t 0.1 next_key
+                read -r -s -n 2 -t 0.1 next_key
                 set -e
                 case "$next_key" in
                     "[A"|"OA") # Up arrow (Standard / PuTTY)
