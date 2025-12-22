@@ -389,10 +389,10 @@ fresh_installation() {
   
   # Check Node.js processes
   echo -e "${YELLOW}Node.js Processes:${NC}"
-  NODE_PROCESSES=$(ps aux | grep -E "node|server" | grep -v grep | wc -l)
+  NODE_PROCESSES=$(pgrep -f "server-admin|server-driver|server-customer" | wc -l)
   if [ "$NODE_PROCESSES" -gt 0 ]; then
     echo -e "  ${GREEN}✓${NC} ${NODE_PROCESSES} Node.js processes running"
-    ps aux | grep -E "server-admin|server-driver|server-customer" | grep -v grep | sed 's/^/    /'
+    pgrep -f "server-admin|server-driver|server-customer" -a | sed 's/^/    /'
   else
     echo -e "  ${RED}✗${NC} No Node.js processes found"
   fi

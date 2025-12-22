@@ -104,7 +104,7 @@ security_audit() {
     
     # Check 2: Database ports exposure
     local exposed_ports
-    exposed_ports=$(netstat -tuln 2>/dev/null | grep -E ":(5432|27017|6379).*0.0.0.0" | wc -l)
+    exposed_ports=$(netstat -tuln 2>/dev/null | grep -c -E ":(5432|27017|6379).*0.0.0.0")
     if [ "$exposed_ports" -gt 0 ]; then
         echo -e "${YELLOW}⚠️  WARNING: Database ports exposed to internet${NC}"
         echo -e "${YELLOW}   Consider using firewall to restrict access${NC}"
