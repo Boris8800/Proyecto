@@ -1,0 +1,82 @@
+{
+  "apps": [
+    {
+      "name": "admin-dashboard",
+      "script": "web/server-admin.js",
+      "instances": "max",
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "production",
+        "ADMIN_PORT": 3001
+      },
+      "error_file": "logs/admin-error.log",
+      "out_file": "logs/admin-out.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+      "max_memory_restart": "500M",
+      "watch": false,
+      "ignore_watch": [
+        "node_modules",
+        "logs",
+        "*.log"
+      ],
+      "merge_logs": true,
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "listen_timeout": 3000,
+      "kill_timeout": 5000
+    },
+    {
+      "name": "driver-portal",
+      "script": "web/server-driver.js",
+      "instances": "max",
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "production",
+        "DRIVER_PORT": 3002
+      },
+      "error_file": "logs/driver-error.log",
+      "out_file": "logs/driver-out.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+      "max_memory_restart": "500M",
+      "watch": false,
+      "ignore_watch": [
+        "node_modules",
+        "logs",
+        "*.log"
+      ],
+      "merge_logs": true,
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "listen_timeout": 3000,
+      "kill_timeout": 5000
+    },
+    {
+      "name": "customer-app",
+      "script": "web/server-customer.js",
+      "instances": "max",
+      "exec_mode": "cluster",
+      "env": {
+        "NODE_ENV": "production",
+        "CUSTOMER_PORT": 3003
+      },
+      "error_file": "logs/customer-error.log",
+      "out_file": "logs/customer-out.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
+      "max_memory_restart": "500M",
+      "watch": false,
+      "ignore_watch": [
+        "node_modules",
+        "logs",
+        "*.log"
+      ],
+      "merge_logs": true,
+      "autorestart": true,
+      "max_restarts": 10,
+      "min_uptime": "10s",
+      "listen_timeout": 3000,
+      "kill_timeout": 5000
+    }
+  ]
+}
