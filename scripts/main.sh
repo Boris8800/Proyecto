@@ -81,7 +81,7 @@ fresh_installation() {
   echo -e "  • Deploy fresh system"
   printf "\n"
   read -r -p "Are you sure you want to proceed? (yes/no): " confirm
-  if [[ ! "$confirm" =~ ^[Yy][Ee][Ss]$ ]]; then
+  if [[ ! "$confirm" =~ ^[Yy]([Ee][Ss])?$ ]]; then
     log_warn "Fresh installation cancelled"
     printf "\n"
     return 0
