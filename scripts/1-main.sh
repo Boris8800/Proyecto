@@ -133,6 +133,10 @@ fresh_installation() {
   log_success "Taxi user created"
   
   log_info "Setting permissions for taxi to access /root/Proyecto..."
+  sudo chmod 755 /root || {
+    log_error "Failed to set permissions on /root"
+    return 1
+  }
   sudo chown -R taxi:taxi "$PROJECT_ROOT" || {
     log_error "Failed to set ownership of project"
     return 1
