@@ -23,26 +23,34 @@ BACKUP_DIR="backups"
 LOG_DIR="logs"
 
 # Create necessary directories
-mkdir -p $BACKUP_DIR $LOG_DIR
+mkdir -p "$BACKUP_DIR" "$LOG_DIR" 2>/dev/null || true
+
+# Ensure log file exists
+LOG_FILE="$LOG_DIR/system.log"
+touch "$LOG_FILE" 2>/dev/null || true
 
 # ============================================================================
 # UTILITY FUNCTIONS
 # ============================================================================
 
 log_info() {
-  printf "${BLUE}[INFO]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  mkdir -p "$LOG_DIR" 2>/dev/null
+  printf "${BLUE}[INFO]${NC} %s\n" "$1" | tee -a "$LOG_FILE" 2>/dev/null
 }
 
 log_success() {
-  printf "${GREEN}[OK]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  mkdir -p "$LOG_DIR" 2>/dev/null
+  printf "${GREEN}[OK]${NC} %s\n" "$1" | tee -a "$LOG_FILE" 2>/dev/null
 }
 
 log_error() {
-  printf "${RED}[ERROR]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  mkdir -p "$LOG_DIR" 2>/dev/null
+  printf "${RED}[ERROR]${NC} %s\n" "$1" | tee -a "$LOG_FILE" 2>/dev/null
 }
 
 log_warn() {
-  printf "${YELLOW}[WARN]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  mkdir -p "$LOG_DIR" 2>/dev/null
+  printf "${YELLOW}[WARN]${NC} %s\n" "$1" | tee -a "$LOG_FILE" 2>/dev/null
 }
 
 pause_menu() {
@@ -69,8 +77,32 @@ fresh_installation() {
   
   # Check dependencies
   log_info "Checking dependencies..."
-  command -v docker &> /dev/null || { log_error "Docker not installed"; return 1; }
-  command -v npm &> /dev/null || { log_error "npm not installed"; return 1; }
+  
+  # Check Docker
+  if ! command -v docker &> /dev/null; then
+    log_error "Docker not installed"
+    read -r -p "Continue without Docker? (y/n): " skip_docker
+    if [[ ! "$skip_docker" =~ ^[Yy]$ ]]; then
+      return 1
+    fi
+  fi
+  
+  # Check Node/npm
+  if ! command -v npm &> /dev/null; then
+    # Try to find npm in common locations
+    export PATH="/home/codespace/nvm/current/bin:$PATH"
+    if ! command -v npm &> /dev/null; then
+      log_warn "npm not found in PATH. Trying to locate Node.js..."
+      if command -v node &> /dev/null; then
+        log_warn "node found, npm may be missing"
+      else
+        log_error "Node.js and npm not installed"
+        log_info "Install from: https://nodejs.org/ or using: curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash"
+        return 1
+      fi
+    fi
+  fi
+  
   log_success "All dependencies found"
 
   # Install npm packages

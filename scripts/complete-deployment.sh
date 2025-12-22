@@ -33,10 +33,12 @@ docker-compose -f docker-compose.yml down 2>/dev/null || true
 sleep 2
 echo -e "${GREEN}✓${NC} Docker containers stopped"
 
-# Step 3: Clean up old dashboards
-echo -e "${YELLOW}[STEP 3]${NC} Cleaning up old dashboards..."
-rm -rf web/admin/*.html web/driver/*.html web/customer/*.html 2>/dev/null || true
-echo -e "${GREEN}✓${NC} Old dashboards removed"
+# Step 3: Clean up old dashboards (but keep modern ones)
+echo -e "${YELLOW}[STEP 3]${NC} Cleaning up old/legacy files..."
+# Remove only old test/legacy files, not the modern dashboards
+rm -f web/customer/booking.html web/customer/payment.html web/customer/test.html 2>/dev/null || true
+rm -f web/admin/legacy.html web/driver/legacy.html 2>/dev/null || true
+echo -e "${GREEN}✓${NC} Old files cleaned"
 
 # Step 4: Verify new dashboard files exist
 echo -e "${YELLOW}[STEP 4]${NC} Verifying modern dashboards..."
