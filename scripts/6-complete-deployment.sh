@@ -37,11 +37,16 @@ else
   echo -e "${RED}✗${NC} Web directory not found"
 fi
 
-# Step 2: Stop old Docker containers
-echo -e "${YELLOW}[STEP 2]${NC} Stopping old Docker containers..."
-sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" down 2>/dev/null || true
-sleep 2
-echo -e "${GREEN}✓${NC} Docker containers stopped"
+# Step 2: Reset Docker containers (stop old, prepare for fresh start)
+echo -e "${YELLOW}[STEP 2]${NC} Resetting Docker containers..."
+# Only stop if containers exist, don't error if they don't
+if sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" ps 2>/dev/null | grep -q "taxi-"; then
+  sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" down 2>/dev/null || true
+  sleep 2
+  echo -e "${GREEN}✓${NC} Old Docker containers removed"
+else
+  echo -e "${GREEN}✓${NC} No old Docker containers found"
+fi
 
 # Step 3: Clean up old dashboards (but keep modern ones)
 echo -e "${YELLOW}[STEP 3]${NC} Cleaning up old/legacy files..."
