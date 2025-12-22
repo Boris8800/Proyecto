@@ -219,7 +219,8 @@ fresh_installation() {
   
   for port in 3001 3002 3003 8080; do
     echo "[DEBUG] Checking port $port" >&2
-    pid=$(lsof -ti:$port 2>/dev/null)
+    # Use ss instead of lsof - faster and more reliable
+    pid=$(ss -tlnp 2>/dev/null | grep ":$port " | grep -oP '(?<=pid=)\d+' | head -1)
     echo "[DEBUG] Got pid='$pid' for port $port" >&2
     if [ -n "$pid" ]; then
       echo "[DEBUG] Killing pid $pid" >&2
