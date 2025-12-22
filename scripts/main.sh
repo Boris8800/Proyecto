@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Source the menu library for interactive menus
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "${SCRIPT_DIR}/lib/menus.sh" 2>/dev/null || true
+
 # Force color output
 export FORCE_COLOR=1
 export TERM=xterm-256color
@@ -71,7 +76,7 @@ fresh_installation() {
   # Install npm packages
   log_info "Installing npm dependencies..."
   cd web || exit
-  npm install --silent 2>&1 | tail -1
+  timeout 60 npm install --silent 2>&1 | tail -1 || log_warn "npm install timed out or failed"
   log_success "npm dependencies installed"
   cd .. || exit
 
@@ -84,7 +89,7 @@ fresh_installation() {
 
   # Stop Docker containers
   log_info "Stopping Docker containers..."
-  docker-compose down 2>/dev/null || true
+  timeout 10 docker-compose down 2>/dev/null || true
   sleep 2
   log_success "Docker containers stopped"
 
@@ -111,19 +116,19 @@ update_installation() {
 
   # Pull latest from GitHub
   log_info "Pulling latest changes from GitHub..."
-  git pull origin main 2>&1 | tail -5
+  timeout 30 git pull origin main 2>&1 | tail -5 || log_warn "git pull timed out"
   log_success "Latest changes pulled"
 
   # Update npm packages
   log_info "Updating npm packages..."
   cd web || exit
-  npm update --silent 2>&1 | tail -1
+  timeout 60 npm update --silent 2>&1 | tail -1 || log_warn "npm update timed out"
   log_success "npm packages updated"
   cd .. || exit
 
   # Restart services
   log_info "Restarting services..."
-  docker-compose restart 2>&1 | tail -1
+  timeout 10 docker-compose restart 2>&1 | tail -1 || log_warn "docker-compose restart timed out"
   sleep 2
   
   # Restart Node servers
@@ -321,16 +326,14 @@ database_management() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║                  DATABASE MANAGEMENT                           ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
-    printf "
-"
+    printf "\n"
     echo "  1) Backup Databases"
     echo "  2) Restore from Backup"
     echo "  3) Reset PostgreSQL"
     echo "  4) Reset MongoDB"
     echo "  5) View Database Status"
     echo "  6) Back to Main Menu"
-    printf "
-"
+    printf "\n"
     read -r -p "Select option (1-6): " choice
 
     case $choice in
@@ -340,11 +343,11 @@ database_management() {
         mkdir -p $BACKUP_DIR
         
         # PostgreSQL backup
-        docker exec taxi-postgres pg_dump -U postgres taxi_db > "$BACKUP_DIR/postgres_$TIMESTAMP.sql"
+        timeout 10 docker exec taxi-postgres pg_dump -U postgres taxi_db > "$BACKUP_DIR/postgres_$TIMESTAMP.sql" || log_warn "PostgreSQL backup timed out"
         log_success "PostgreSQL backed up to $BACKUP_DIR/postgres_$TIMESTAMP.sql"
         
         # MongoDB backup
-        docker exec taxi-mongo mongodump --out "$BACKUP_DIR/mongo_$TIMESTAMP"
+        timeout 10 docker exec taxi-mongo mongodump --out "$BACKUP_DIR/mongo_$TIMESTAMP" || log_warn "MongoDB backup timed out"
         log_success "MongoDB backed up to $BACKUP_DIR/mongo_$TIMESTAMP"
         
         pause_menu
@@ -358,7 +361,7 @@ database_management() {
         else
           log_info "Restoring from $backup..."
           if [ -f "$BACKUP_DIR/$backup" ]; then
-            docker exec -i taxi-postgres psql -U postgres < "$BACKUP_DIR/$backup"
+            timeout 10 docker exec -i taxi-postgres psql -U postgres < "$BACKUP_DIR/$backup" || log_warn "Restore timed out"
             log_success "Restore completed"
           else
             log_error "Backup file not found"
@@ -370,8 +373,8 @@ database_management() {
         read -r -p "⚠️  Reset PostgreSQL? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
           log_warn "Resetting PostgreSQL..."
-          docker exec taxi-postgres dropdb -U postgres taxi_db 2>/dev/null || true
-          docker exec taxi-postgres createdb -U postgres taxi_db
+          timeout 5 docker exec taxi-postgres dropdb -U postgres taxi_db 2>/dev/null || true
+          timeout 5 docker exec taxi-postgres createdb -U postgres taxi_db || log_warn "Reset timed out"
           log_success "PostgreSQL reset completed"
         fi
         pause_menu
@@ -380,26 +383,23 @@ database_management() {
         read -r -p "⚠️  Reset MongoDB? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
           log_warn "Resetting MongoDB..."
-          docker exec taxi-mongo mongosh --eval "db.dropDatabase()" taxi_db
+          timeout 5 docker exec taxi-mongo mongosh --eval "db.dropDatabase()" taxi_db || log_warn "Reset timed out"
           log_success "MongoDB reset completed"
         fi
         pause_menu
         ;;
       5)
-        printf "
-"
+    printf "\n"
         echo -e "${YELLOW}PostgreSQL:${NC}"
-        docker exec taxi-postgres psql -U postgres -c "SELECT datname FROM pg_database WHERE datname = 'taxi_db';" 2>/dev/null || echo "Not ready"
+        timeout 3 docker exec taxi-postgres psql -U postgres -c "SELECT datname FROM pg_database WHERE datname = 'taxi_db';" 2>/dev/null || echo "Not ready"
         
-        printf "
-"
+    printf "\n"
         echo -e "${YELLOW}MongoDB:${NC}"
-        docker exec taxi-mongo mongosh --eval "show databases" 2>/dev/null || echo "Not ready"
+        timeout 3 docker exec taxi-mongo mongosh --eval "show databases" 2>/dev/null || echo "Not ready"
         
-        printf "
-"
+    printf "\n"
         echo -e "${YELLOW}Redis:${NC}"
-        docker exec taxi-redis redis-cli dbsize 2>/dev/null || echo "Not ready"
+        timeout 3 docker exec taxi-redis redis-cli dbsize 2>/dev/null || echo "Not ready"
         pause_menu
         ;;
       6)
@@ -422,12 +422,10 @@ security_audit() {
   echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
   echo -e "${CYAN}║                    SECURITY AUDIT                              ║${NC}"
   echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
-  printf "
-"
+    printf "\n"
 
   log_info "Running security audit..."
-  printf "
-"
+    printf "\n"
 
   # Check for .env file
   echo -e "${YELLOW}📋 Configuration Files:${NC}"
@@ -436,8 +434,7 @@ security_audit() {
   else
     echo -e "  config/.env: ${RED}✗ Missing${NC}"
   fi
-  printf "
-"
+    printf "\n"
 
   # Check for exposed ports
   echo -e "${YELLOW}🔒 Port Security:${NC}"
@@ -446,8 +443,7 @@ security_audit() {
       echo -e "  Port $port: ${YELLOW}⚠ Exposed${NC}"
     fi
   done
-  printf "
-"
+    printf "\n"
 
   # Check file permissions
   echo -e "${YELLOW}🔐 File Permissions:${NC}"
@@ -459,13 +455,12 @@ security_audit() {
       echo -e "  config/.env permissions: ${YELLOW}⚠ Check ($perms)${NC}"
     fi
   fi
-  printf "
-"
+    printf "\n"
 
   # Check for vulnerabilities
   echo -e "${YELLOW}🛡️  Dependency Vulnerabilities:${NC}"
   cd web || exit
-  npm audit 2>&1 | tail -3
+  timeout 30 npm audit 2>&1 | tail -3 || echo "  npm audit timed out"
   cd .. || exit
 
   log_success "Security audit completed"
@@ -482,29 +477,27 @@ user_management() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║                    USER MANAGEMENT                             ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
-    printf "
-"
+    printf "\n"
     echo "  1) List All Users"
     echo "  2) Create New User"
     echo "  3) Reset User Password"
     echo "  4) Delete User"
     echo "  5) View User Roles"
     echo "  6) Back to Main Menu"
-    printf "
-"
+    printf "\n"
     read -r -p "Select option (1-6): " choice
 
     case $choice in
       1)
         log_info "Listing all users..."
-        docker exec taxi-postgres psql -U postgres taxi_db -c "SELECT id, email, role, created_at FROM users LIMIT 10;" 2>/dev/null || log_error "Database not ready"
+        timeout 5 docker exec taxi-postgres psql -U postgres taxi_db -c "SELECT id, email, role, created_at FROM users LIMIT 10;" 2>/dev/null || log_error "Database not ready"
         pause_menu
         ;;
       2)
         read -r -p "Enter email: " email
         read -r -p "Enter role (admin/driver/customer): " role
         log_info "Creating user: $email ($role)..."
-        if docker exec taxi-postgres psql -U postgres taxi_db -c "INSERT INTO users (email, role, created_at) VALUES ('$email', '$role', NOW());" 2>/dev/null; then
+        if timeout 5 docker exec taxi-postgres psql -U postgres taxi_db -c "INSERT INTO users (email, role, created_at) VALUES ('$email', '$role', NOW());" 2>/dev/null; then
           log_success "User created"
         else
           log_error "Failed to create user"
@@ -521,7 +514,7 @@ user_management() {
         read -r -p "Enter user email to delete: " email
         read -r -p "⚠️  Confirm delete? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
-          if docker exec taxi-postgres psql -U postgres taxi_db -c "DELETE FROM users WHERE email='$email';" 2>/dev/null; then
+          if timeout 5 docker exec taxi-postgres psql -U postgres taxi_db -c "DELETE FROM users WHERE email='$email';" 2>/dev/null; then
             log_success "User deleted"
           else
             log_error "Failed to delete user"
@@ -531,7 +524,7 @@ user_management() {
         ;;
       5)
         log_info "User roles in system..."
-        docker exec taxi-postgres psql -U postgres taxi_db -c "SELECT role, COUNT(*) FROM users GROUP BY role;" 2>/dev/null || log_error "Database not ready"
+        timeout 5 docker exec taxi-postgres psql -U postgres taxi_db -c "SELECT role, COUNT(*) FROM users GROUP BY role;" 2>/dev/null || log_error "Database not ready"
         pause_menu
         ;;
       6)
@@ -554,18 +547,15 @@ error_recovery() {
   echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
   echo -e "${CYAN}║                   ERROR RECOVERY                               ║${NC}"
   echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
-  printf "
-"
+    printf "\n"
 
   log_warn "Attempting error recovery..."
-  printf "
-"
+    printf "\n"
 
   # Check system status
   log_info "1. Checking system status..."
-  docker-compose ps
-  printf "
-"
+  timeout 3 docker-compose ps 2>/dev/null || echo "  Docker not responding"
+    printf "\n"
 
   # Fix port conflicts
   log_info "2. Clearing port conflicts..."
@@ -573,12 +563,11 @@ error_recovery() {
     lsof -ti:$port 2>/dev/null | xargs kill -9 2>/dev/null || true
   done
   log_success "Ports cleared"
-  printf "
-"
+    printf "\n"
 
   # Restart services
   log_info "3. Restarting services..."
-  docker-compose restart 2>&1 | tail -3
+  timeout 10 docker-compose restart 2>&1 | tail -3 || log_warn "Docker restart timed out"
   sleep 2
   cd web || exit
   nohup node server-admin.js > /tmp/admin.log 2>&1 &
@@ -587,13 +576,12 @@ error_recovery() {
   cd .. || exit
   sleep 2
   log_success "Services restarted"
-  printf "
-"
+    printf "\n"
 
   # Verify recovery
   log_info "4. Verifying recovery..."
   for port in 3001 3002 3003; do
-    if curl -s http://localhost:$port > /dev/null 2>&1; then
+    if timeout 2 curl -s http://localhost:$port > /dev/null 2>&1; then
       log_success "Port $port: ✓ Recovered"
     else
       log_error "Port $port: ✗ Still not responding"
@@ -614,16 +602,14 @@ backup_restore() {
     echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
     echo -e "${CYAN}║                    BACKUP & RESTORE                            ║${NC}"
     echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
-    printf "
-"
+    printf "\n"
     echo "  1) Full System Backup"
     echo "  2) Database Only Backup"
     echo "  3) Code Only Backup"
     echo "  4) List Backups"
     echo "  5) Restore from Backup"
     echo "  6) Back to Main Menu"
-    printf "
-"
+    printf "\n"
     read -r -p "Select option (1-6): " choice
 
     case $choice in
@@ -710,12 +696,10 @@ system_cleanup() {
   echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
   echo -e "${CYAN}║                    SYSTEM CLEANUP                              ║${NC}"
   echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
-  printf "
-"
+    printf "\n"
 
   log_warn "⚠️  System cleanup will remove temporary files and unused containers"
-  printf "
-"
+    printf "\n"
 
   read -r -p "Continue with cleanup? (yes/no): " confirm
   if [ "$confirm" != "yes" ]; then
@@ -763,21 +747,38 @@ main_menu() {
     echo -e "${BLUE}║           🚕 TAXI SYSTEM INSTALLATION & MANAGEMENT 🚕          ║${NC}"
     echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "\n"
-    echo -e "  ${GREEN}1)${NC}  Fresh Installation (Recommended)"
-    echo -e "  ${GREEN}2)${NC}  Update Existing Installation"
-    echo -e "  ${GREEN}3)${NC}  Service Management"
-    echo -e "  ${GREEN}4)${NC}  System Diagnostics"
-    echo -e "  ${GREEN}5)${NC}  Database Management"
-    echo -e "  ${GREEN}6)${NC}  Security Audit"
-    echo -e "  ${GREEN}7)${NC}  User Management"
-    echo -e "  ${GREEN}8)${NC}  Error Recovery"
-    echo -e "  ${GREEN}9)${NC}  Backup & Restore"
-    echo -e "  ${GREEN}10)${NC} System Cleanup"
-    echo -e "  ${GREEN}11)${NC} Exit"
-    printf "\n"
-    echo -e "${YELLOW}Tip: If arrows don't work, use numbers or 'w'/'s' keys${NC}"
-    printf "\n"
-    read -r -p "Select option (1-11): " choice
+    
+    # Use interactive menu if available, fallback to basic input
+    if declare -f interactive_menu >/dev/null 2>&1; then
+        interactive_menu "Main Menu" 0 \
+          "Fresh Installation (Recommended)" \
+          "Update Existing Installation" \
+          "Service Management" \
+          "System Diagnostics" \
+          "Database Management" \
+          "Security Audit" \
+          "User Management" \
+          "Error Recovery" \
+          "Backup & Restore" \
+          "System Cleanup" \
+          "Exit"
+        choice=$INTERACTIVE_MENU_SELECTION
+    else
+        # Fallback to basic menu if interactive_menu not available
+        echo -e "  ${GREEN}1)${NC}  Fresh Installation (Recommended)"
+        echo -e "  ${GREEN}2)${NC}  Update Existing Installation"
+        echo -e "  ${GREEN}3)${NC}  Service Management"
+        echo -e "  ${GREEN}4)${NC}  System Diagnostics"
+        echo -e "  ${GREEN}5)${NC}  Database Management"
+        echo -e "  ${GREEN}6)${NC}  Security Audit"
+        echo -e "  ${GREEN}7)${NC}  User Management"
+        echo -e "  ${GREEN}8)${NC}  Error Recovery"
+        echo -e "  ${GREEN}9)${NC}  Backup & Restore"
+        echo -e "  ${GREEN}10)${NC} System Cleanup"
+        echo -e "  ${GREEN}11)${NC} Exit"
+        printf "\n"
+        read -r -p "Select option (1-11): " choice
+    fi
 
     case $choice in
       1) fresh_installation ;;
@@ -791,6 +792,7 @@ main_menu() {
       9) backup_restore ;;
       10) system_cleanup ;;
       11) 
+        printf "\n"
         echo -e "${GREEN}Goodbye!${NC}"
         exit 0
         ;;
