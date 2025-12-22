@@ -101,6 +101,7 @@ spinner() {
     local pid=$1
     local message=$2
     local delay=0.1
+    # shellcheck disable=SC1003
     local spinstr='|/-\'
     
     echo -ne "${BLUE}${message}${NC} "
@@ -134,10 +135,10 @@ show_progress() {
     local width=40
     local percentage=$((current * 100 / total))
     local filled=$((width * current / total))
-    printf "\r${CYAN}[${NC}"
+    printf '\r%s[%s' "$CYAN" "$NC"
     printf "%${filled}s" | tr ' ' '='
     printf "%$((width-filled))s" | tr ' ' '-'
-    printf "${CYAN}]${NC} ${percentage}%% - ${message}"
+    printf '%s]%s %d%% - %s' "$CYAN" "$NC" "$percentage" "$message"
 }
 
 # ===================== UTILITY FUNCTIONS =====================
