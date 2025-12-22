@@ -211,7 +211,7 @@ fresh_installation() {
   
   for port in 3001 3002 3003 8080; do
     pid=$(lsof -ti:$port 2>/dev/null)
-    if [ ! -z "$pid" ]; then
+    if [ -n "$pid" ]; then
       kill -9 "$pid" 2>/dev/null || true
       log_info "Killed process on port $port"
     fi
