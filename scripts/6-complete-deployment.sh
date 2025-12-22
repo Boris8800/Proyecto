@@ -72,10 +72,41 @@ fi
 
 # Step 5: Install npm dependencies
 echo -e "${YELLOW}[STEP 5]${NC} Installing npm dependencies..."
-cd web
-npm install --silent 2>/dev/null
-echo -e "${GREEN}✓${NC} Dependencies installed"
-cd ..
+cd "$PROJECT_ROOT/web"
+
+# Check if Node.js is available
+if ! command -v node &>/dev/null; then
+  echo -e "${RED}✗${NC} Node.js not found!"
+  exit 1
+fi
+
+echo "  node version: $(node --version)"
+echo "  npm version: $(npm --version)"
+
+# Remove old node_modules if corrupted
+if [ -d "node_modules" ] && [ ! -f "package-lock.json" ]; then
+  echo -e "${YELLOW}[WARN]${NC} Removing potentially corrupted node_modules..."
+  rm -rf node_modules
+fi
+
+# Install dependencies with better error handling
+if npm install 2>&1 | tee /tmp/npm_install.log; then
+  echo -e "${GREEN}✓${NC} Dependencies installed successfully"
+  # Verify express was installed
+  if [ -d "node_modules/express" ]; then
+    echo -e "${GREEN}✓${NC} Express verified"
+  else
+    echo -e "${RED}✗${NC} Express not installed!"
+    cat /tmp/npm_install.log
+    exit 1
+  fi
+else
+  echo -e "${RED}✗${NC} npm install failed!"
+  cat /tmp/npm_install.log
+  exit 1
+fi
+
+cd "$PROJECT_ROOT"
 
 # Step 6: Start dashboard servers in background
 echo -e "${YELLOW}[STEP 6]${NC} Starting dashboard servers..."
@@ -84,40 +115,53 @@ cd "$PROJECT_ROOT/web"
 # Verify we're in the right directory
 if [ ! -f "server-admin.js" ]; then
   echo -e "${RED}✗${NC} Cannot find server scripts in $PWD"
+  ls -la
+  exit 1
+fi
+
+# Verify node_modules exists
+if [ ! -d "node_modules" ] || [ ! -d "node_modules/express" ]; then
+  echo -e "${RED}✗${NC} node_modules/express not found! npm install may have failed"
   exit 1
 fi
 
 # Start admin server
 nohup node server-admin.js > "$LOG_DIR/admin.log" 2>&1 &
 ADMIN_PID=$!
-sleep 1
+sleep 2
 if kill -0 $ADMIN_PID 2>/dev/null; then
   echo -e "${GREEN}✓${NC} Admin server started (PID: $ADMIN_PID, Port 3001)"
 else
   echo -e "${RED}✗${NC} Failed to start admin server"
-  cat "$LOG_DIR/admin.log"
+  echo -e "${RED}Error output:${NC}"
+  cat "$LOG_DIR/admin.log" | head -20
+  exit 1
 fi
 
 # Start driver server
 nohup node server-driver.js > "$LOG_DIR/driver.log" 2>&1 &
 DRIVER_PID=$!
-sleep 1
+sleep 2
 if kill -0 $DRIVER_PID 2>/dev/null; then
   echo -e "${GREEN}✓${NC} Driver server started (PID: $DRIVER_PID, Port 3002)"
 else
   echo -e "${RED}✗${NC} Failed to start driver server"
-  cat "$LOG_DIR/driver.log"
+  echo -e "${RED}Error output:${NC}"
+  cat "$LOG_DIR/driver.log" | head -20
+  exit 1
 fi
 
 # Start customer server
 nohup node server-customer.js > "$LOG_DIR/customer.log" 2>&1 &
 CUSTOMER_PID=$!
-sleep 1
+sleep 2
 if kill -0 $CUSTOMER_PID 2>/dev/null; then
   echo -e "${GREEN}✓${NC} Customer server started (PID: $CUSTOMER_PID, Port 3003)"
 else
   echo -e "${RED}✗${NC} Failed to start customer server"
-  cat "$LOG_DIR/customer.log"
+  echo -e "${RED}Error output:${NC}"
+  cat "$LOG_DIR/customer.log" | head -20
+  exit 1
 fi
 
 cd "$PROJECT_ROOT"
