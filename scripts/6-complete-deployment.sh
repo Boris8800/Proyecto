@@ -106,6 +106,17 @@ cd "$PROJECT_ROOT"
 echo -e "${YELLOW}[STEP 6]${NC} Starting dashboard servers..."
 cd "$PROJECT_ROOT/web"
 
+# Kill any existing http-server or node processes on dashboard ports
+echo -e "${YELLOW}[INFO]${NC} Cleaning up old processes..."
+pkill -f "http-server" 2>/dev/null || true
+for port in 3001 3002 3003; do
+  pid=$(lsof -ti:$port 2>/dev/null)
+  if [ -n "$pid" ]; then
+    kill -9 "$pid" 2>/dev/null || true
+  fi
+done
+sleep 1
+
 # Verify we're in the right directory
 if [ ! -f "server-admin.js" ]; then
   echo -e "${RED}✗${NC} Cannot find server scripts in $PWD"
