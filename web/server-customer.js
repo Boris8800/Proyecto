@@ -3,10 +3,40 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.CUSTOMER_PORT || 3003;
 const BASE_DIR = __dirname;
+
+// Rate Limiting Middleware
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for static files and health checks
+    return req.path === '/api/health' || /\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/i.test(req.path);
+  }
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // Limit each IP to 30 requests per minute
+  message: 'Too many API requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const bookingLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 5, // Limit each IP to 5 booking attempts per minute
+  message: 'Too many booking requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
 
 // Security Headers Middleware
 app.use((req, res, next) => {
@@ -59,6 +89,12 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Apply rate limiting
+app.use(generalLimiter);
+app.use('/api/', apiLimiter);
+app.use('/api/booking', bookingLimiter);
+
 app.use(express.static(path.join(BASE_DIR, 'customer')));
 
 // Health check
