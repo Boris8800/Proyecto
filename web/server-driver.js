@@ -8,8 +8,47 @@ const app = express();
 const PORT = process.env.DRIVER_PORT || 3002;
 const BASE_DIR = __dirname;
 
+// Security Headers Middleware
+app.use((req, res, next) => {
+  // X-Content-Type-Options: Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // X-Frame-Options: Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  
+  // X-XSS-Protection: Enable XSS filter
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Content-Security-Policy
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+    "img-src 'self' data: https:; " +
+    "font-src 'self' https:; " +
+    "connect-src 'self'; " +
+    "frame-ancestors 'self'"
+  );
+  
+  // Strict-Transport-Security (production only)
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  
+  // Referrer-Policy
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Permissions-Policy
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  next();
+});
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3002',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(BASE_DIR, 'driver')));
 

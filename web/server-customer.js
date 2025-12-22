@@ -8,8 +8,56 @@ const app = express();
 const PORT = process.env.CUSTOMER_PORT || 3003;
 const BASE_DIR = __dirname;
 
+// Security Headers Middleware
+app.use((req, res, next) => {
+  // X-Content-Type-Options: Prevent MIME type sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  
+  // X-Frame-Options: Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+  
+  // X-XSS-Protection: Enable XSS filter in browsers
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  
+  // Content-Security-Policy: Prevent script injection and other attacks
+  res.setHeader('Content-Security-Policy', 
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+    "img-src 'self' data: https:; " +
+    "font-src 'self' https:; " +
+    "connect-src 'self' https://api.example.com; " +
+    "frame-ancestors 'none'"
+  );
+  
+  // Strict-Transport-Security: Enforce HTTPS (only when deployed with HTTPS)
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  
+  // Referrer-Policy: Control referrer information
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  
+  // Permissions-Policy: Control browser features
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  
+  next();
+});
+
+// Cookie configuration middleware
+app.use((req, res, next) => {
+  // Add secure cookie defaults
+  res.cookie('HttpOnly', true);
+  res.cookie('Secure', process.env.NODE_ENV === 'production');
+  res.cookie('SameSite', 'Strict');
+  next();
+});
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3003',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(BASE_DIR, 'customer')));
 

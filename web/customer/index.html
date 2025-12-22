@@ -3,782 +3,379 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taxi Booking - Swift Cab</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #4facfe;
-            --secondary: #00f2fe;
-            --success: #05c46b;
-            --warning: #f0a500;
-            --danger: #d63031;
-            --dark: #2d3436;
-            --light: #f5f6fa;
-            --border: #dfe6e9;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: var(--dark);
-            min-height: 100vh;
-        }
-
-        /* Navigation Bar */
-        nav {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .nav-logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: bold;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-logo i {
-            color: var(--primary);
-        }
-
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--dark);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-link:hover {
-            color: var(--primary);
-        }
-
-        .btn-auth {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .btn-auth:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(79, 172, 254, 0.4);
-        }
-
-        /* Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        /* Hero Section */
-        .hero {
-            background: white;
-            border-radius: 16px;
-            padding: 60px 40px;
-            text-align: center;
-            margin-bottom: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        }
-
-        .hero h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero p {
-            font-size: 18px;
-            color: #636e72;
-            margin-bottom: 30px;
-            line-height: 1.6;
-        }
-
-        .booking-form {
-            background: var(--light);
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 500px;
-            margin: 0 auto;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
-        }
-
-        .btn-primary {
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(79, 172, 254, 0.4);
-        }
-
-        /* Features Section */
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-bottom: 50px;
-        }
-
-        .feature-card {
-            background: white;
-            border-radius: 16px;
-            padding: 40px 30px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            transition: all 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
-        }
-
-        .feature-icon {
-            width: 70px;
-            height: 70px;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-radius: 50%;
-            color: white;
-            font-size: 32px;
-        }
-
-        .feature-card h3 {
-            font-size: 18px;
-            margin-bottom: 12px;
-            color: var(--dark);
-        }
-
-        .feature-card p {
-            color: #636e72;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        /* Benefits Section */
-        .benefits {
-            background: white;
-            border-radius: 16px;
-            padding: 50px 40px;
-            margin-bottom: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        }
-
-        .benefits h2 {
-            font-size: 32px;
-            margin-bottom: 30px;
-            text-align: center;
-            color: var(--dark);
-        }
-
-        .benefits-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-        }
-
-        .benefit-item {
-            display: flex;
-            gap: 15px;
-        }
-
-        .benefit-icon {
-            flex-shrink: 0;
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 20px;
-        }
-
-        .benefit-text h4 {
-            font-size: 16px;
-            margin-bottom: 5px;
-            color: var(--dark);
-        }
-
-        .benefit-text p {
-            font-size: 13px;
-            color: #636e72;
-        }
-
-        /* Rides Section */
-        .rides-section {
-            background: white;
-            border-radius: 16px;
-            padding: 40px;
-            margin-bottom: 40px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        }
-
-        .rides-section h2 {
-            font-size: 24px;
-            margin-bottom: 25px;
-            color: var(--dark);
-        }
-
-        .rides-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-
-        .ride-card {
-            background: var(--light);
-            border-radius: 12px;
-            padding: 20px;
-            border-left: 4px solid;
-            border-left-color: var(--primary);
-            transition: all 0.3s;
-        }
-
-        .ride-card:hover {
-            background: white;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .ride-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .ride-id {
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .ride-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .ride-status.completed {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .ride-status.cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .ride-details {
-            font-size: 14px;
-            color: #636e72;
-            margin-bottom: 12px;
-        }
-
-        .ride-details p {
-            margin-bottom: 8px;
-        }
-
-        .ride-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 12px;
-            border-top: 1px solid var(--border);
-        }
-
-        .ride-driver {
-            font-size: 13px;
-        }
-
-        .ride-driver strong {
-            color: var(--dark);
-        }
-
-        .ride-amount {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--primary);
-        }
-
-        /* Stats */
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .stat-box {
-            background: white;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-        }
-
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: #636e72;
-            margin-top: 8px;
-        }
-
-        /* Footer */
-        footer {
-            background: var(--dark);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        footer p {
-            margin-bottom: 10px;
-        }
-
-        .footer-links {
-            margin-top: 20px;
-            display: flex;
-            gap: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            color: var(--secondary);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .hero {
-                padding: 40px 20px;
-            }
-
-            .hero h1 {
-                font-size: 32px;
-            }
-
-            .hero p {
-                font-size: 16px;
-            }
-
-            .nav-right {
-                gap: 10px;
-            }
-
-            .nav-link {
-                font-size: 14px;
-            }
-
-            .booking-form {
-                padding: 20px;
-            }
-
-            .benefits {
-                padding: 30px 20px;
-            }
-
-            .rides-section {
-                padding: 20px;
-            }
-        }
-    </style>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="Swift Cab - Professional Taxi Booking Service">
+    <meta name="theme-color" content="#4facfe">
+    
+    <!-- Security Headers via Meta Tags -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self'; frame-ancestors 'none'">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
+    <title>Swift Cab - Book Your Ride</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%234facfe' width='100' height='100'/><text x='50' y='70' font-size='60' fill='white' text-anchor='middle' font-weight='bold'>S</text></svg>">
+    
+    <!-- Production Stylesheet -->
+    <link rel="stylesheet" href="css/production.css">
+    
+    <!-- Leaflet for Map -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
 </head>
 <body>
-    <script src="../js/magic-links-client.js"></script>
-    <script>
-        const auth = new MagicLinksAuth({
-            redirectPath: '/customer/',
-            loginPath: '/auth/'
-        });
-        auth.init();
-    </script>
-
-    <!-- Navigation -->
-    <nav>
-        <div class="nav-logo">
-            <i class="fas fa-taxi"></i>
-            SwiftCab
-        </div>
-        <div class="nav-right">
-            <a href="#" class="nav-link">How It Works</a>
-            <a href="#" class="nav-link">Safety</a>
-            <a href="#" class="nav-link">Support</a>
-            <button class="btn-auth" id="loginBtn">Sign In</button>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fa fa-car"></i> Swift Cab
+            </div>
+            <div class="nav-menu">
+                <a href="#help" class="nav-link">Help</a>
+                <button class="btn-primary" onclick="showModal('aboutModal')">About</button>
+            </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <div class="container">
-        <!-- Hero Section -->
-        <section class="hero">
-            <h1>Your Reliable Taxi Service</h1>
-            <p>Book a safe, affordable ride in seconds. Available 24/7 in your city.</p>
-            
-            <!-- Booking Form -->
-            <form class="booking-form" id="bookingForm">
-                <div class="form-group">
-                    <label for="pickup">Pickup Location</label>
-                    <input type="text" id="pickup" placeholder="Enter pickup address" required>
-                </div>
-                <div class="form-group">
-                    <label for="dropoff">Drop-off Location</label>
-                    <input type="text" id="dropoff" placeholder="Enter destination" required>
-                </div>
-                <div class="form-group">
-                    <label for="rideType">Ride Type</label>
-                    <select id="rideType" required>
-                        <option value="">Select ride type</option>
-                        <option value="economy">Economy - $0.99/min</option>
-                        <option value="comfort">Comfort - $1.29/min</option>
-                        <option value="premium">Premium - $1.99/min</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-primary">Request Ride</button>
-            </form>
-        </section>
+    <!-- Main Booking Container -->
+    <div class="booking-container">
+        <div class="booking-wrapper">
+            <!-- Left Panel: Booking Form -->
+            <div class="booking-panel">
+                <h1>Book Your Ride</h1>
+                <form class="booking-form" id="bookingForm" novalidate>
+                    <!-- Pickup Location -->
+                    <div class="form-group">
+                        <label for="pickupLocation">
+                            <i class="fa fa-map-marker" style="color: var(--success); margin-right: 8px;"></i>
+                            Pickup Location
+                        </label>
+                        <div class="location-input-group">
+                            <input
+                                type="text"
+                                id="pickupLocation"
+                                class="location-input"
+                                placeholder="Enter pickup address or click on map"
+                                required
+                                autocomplete="off"
+                                aria-label="Pickup location"
+                            >
+                            <button type="button" class="btn-icon" id="useCurrentLocation" title="Use current location">
+                                <i class="fa fa-compass"></i>
+                            </button>
+                        </div>
+                        <div class="location-suggestions" id="pickupSuggestions"></div>
+                    </div>
 
-        <!-- Stats -->
-        <div class="stats">
-            <div class="stat-box">
-                <div class="stat-number">50K+</div>
-                <div class="stat-label">Happy Customers</div>
+                    <!-- Dropoff Location -->
+                    <div class="form-group">
+                        <label for="dropoffLocation">
+                            <i class="fa fa-map-marker" style="color: var(--danger); margin-right: 8px;"></i>
+                            Dropoff Location
+                        </label>
+                        <div class="location-input-group">
+                            <input
+                                type="text"
+                                id="dropoffLocation"
+                                class="location-input"
+                                placeholder="Enter destination address or click on map"
+                                required
+                                autocomplete="off"
+                                aria-label="Dropoff location"
+                            >
+                        </div>
+                        <div class="location-suggestions" id="dropoffSuggestions"></div>
+                    </div>
+
+                    <!-- Date & Time Row -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bookingDate">Date</label>
+                            <input
+                                type="date"
+                                id="bookingDate"
+                                required
+                                aria-label="Booking date"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="bookingTime">Time</label>
+                            <input
+                                type="time"
+                                id="bookingTime"
+                                required
+                                aria-label="Booking time"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Passenger Count -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="passengerCount">Passengers</label>
+                            <select id="passengerCount" aria-label="Number of passengers">
+                                <option value="1">1 Passenger</option>
+                                <option value="2">2 Passengers</option>
+                                <option value="3">3 Passengers</option>
+                                <option value="4">4 Passengers</option>
+                                <option value="5">5 Passengers</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="vehicleType">Vehicle Type</label>
+                            <select id="vehicleType" aria-label="Vehicle type">
+                                <option value="economy">Economy</option>
+                                <option value="comfort">Comfort</option>
+                                <option value="premium">Premium</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Special Requests -->
+                    <div class="form-group">
+                        <label for="specialRequests">Special Requests</label>
+                        <textarea
+                            id="specialRequests"
+                            placeholder="Any special requirements? (optional)"
+                            rows="3"
+                            aria-label="Special requests"
+                        ></textarea>
+                    </div>
+
+                    <!-- Passenger Details -->
+                    <div class="form-group">
+                        <label for="passengerName">Full Name</label>
+                        <input
+                            type="text"
+                            id="passengerName"
+                            placeholder="Your full name"
+                            required
+                            aria-label="Passenger name"
+                        >
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="passengerEmail">Email</label>
+                            <input
+                                type="email"
+                                id="passengerEmail"
+                                placeholder="your@email.com"
+                                required
+                                aria-label="Passenger email"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="passengerPhone">Phone</label>
+                            <input
+                                type="tel"
+                                id="passengerPhone"
+                                placeholder="+1 (555) 123-4567"
+                                required
+                                pattern="[0-9+\-\s()]{10,}"
+                                aria-label="Passenger phone"
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Pricing Section -->
+                    <div class="price-section">
+                        <div class="price-row">
+                            <span>Base Fare</span>
+                            <span id="baseFare">$0.00</span>
+                        </div>
+                        <div class="price-row">
+                            <span>Distance</span>
+                            <span id="distancePrice">$0.00</span>
+                        </div>
+                        <div class="price-row">
+                            <span>Surge Pricing</span>
+                            <span id="surgePricing">$0.00</span>
+                        </div>
+                        <div class="price-row total">
+                            <span>Total Estimated Fare</span>
+                            <span id="totalPrice">$0.00</span>
+                        </div>
+                        <small class="price-notice">✓ Prices are estimates and may vary based on traffic conditions</small>
+                    </div>
+
+                    <!-- Terms and Conditions -->
+                    <div class="terms-acceptance">
+                        <input
+                            type="checkbox"
+                            id="termsAccepted"
+                            required
+                            aria-label="Accept terms and conditions"
+                        >
+                        <label for="termsAccepted" style="margin: 0;">
+                            I agree to the <a href="#" onclick="showModal('termsModal'); return false;">Terms & Conditions</a>
+                            and <a href="#" onclick="showModal('privacyModal'); return false;">Privacy Policy</a>
+                        </label>
+                    </div>
+
+                    <!-- Book Ride Button -->
+                    <button type="submit" class="btn-book-ride" id="bookRideBtn">
+                        <i class="fa fa-check-circle"></i> Book Ride Now
+                    </button>
+                </form>
             </div>
-            <div class="stat-box">
-                <div class="stat-number">24/7</div>
-                <div class="stat-label">Available Service</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">4.9★</div>
-                <div class="stat-label">Average Rating</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">100%</div>
-                <div class="stat-label">Safe & Verified</div>
+
+            <!-- Right Panel: Map -->
+            <div class="map-panel">
+                <div id="map" class="map-container"></div>
+                <div class="map-controls">
+                    <button class="map-control-btn" type="button" title="Zoom in" id="zoomInBtn">
+                        <i class="fa fa-plus"></i>
+                    </button>
+                    <button class="map-control-btn" type="button" title="Zoom out" id="zoomOutBtn">
+                        <i class="fa fa-minus"></i>
+                    </button>
+                    <button class="map-control-btn" type="button" title="Center map" id="centerMapBtn">
+                        <i class="fa fa-crosshairs"></i>
+                    </button>
+                </div>
             </div>
         </div>
-
-        <!-- Features Section -->
-        <section class="features">
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-mobile-alt"></i>
-                </div>
-                <h3>Easy Booking</h3>
-                <p>Book a ride in just 30 seconds using our simple and intuitive app.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-map-location-dot"></i>
-                </div>
-                <h3>Real-time Tracking</h3>
-                <p>Track your driver in real-time and know exactly when they'll arrive.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-shield-alt"></i>
-                </div>
-                <h3>Safe & Secure</h3>
-                <p>All drivers verified. Share trip details with trusted contacts.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-dollar-sign"></i>
-                </div>
-                <h3>Best Prices</h3>
-                <p>Transparent pricing. No surge pricing during peak hours.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-headset"></i>
-                </div>
-                <h3>24/7 Support</h3>
-                <p>Our support team is always here to help you with any issues.</p>
-            </div>
-            <div class="feature-card">
-                <div class="feature-icon">
-                    <i class="fas fa-credit-card"></i>
-                </div>
-                <h3>Multiple Payments</h3>
-                <p>Pay with cash, card, or digital wallet. Your choice.</p>
-            </div>
-        </section>
-
-        <!-- Benefits -->
-        <section class="benefits">
-            <h2>Why Choose SwiftCab?</h2>
-            <div class="benefits-grid">
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Professional Drivers</h4>
-                        <p>All drivers are background-checked and professionally trained.</p>
-                    </div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Clean Vehicles</h4>
-                        <p>Every vehicle is regularly sanitized and maintained.</p>
-                    </div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Affordable Rates</h4>
-                        <p>Competitive pricing with no hidden charges.</p>
-                    </div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Quick Pickup</h4>
-                        <p>Average pickup time is just 3-5 minutes.</p>
-                    </div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Insurance Covered</h4>
-                        <p>Every ride is covered by comprehensive insurance.</p>
-                    </div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Rewards Program</h4>
-                        <p>Earn points on every ride and get exclusive discounts.</p>
-                    </div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Multiple Ride Options</h4>
-                        <p>Choose from Economy, Comfort, or Premium rides.</p>
-                    </div>
-                </div>
-                <div class="benefit-item">
-                    <div class="benefit-icon">
-                        <i class="fas fa-check"></i>
-                    </div>
-                    <div class="benefit-text">
-                        <h4>Reliable Service</h4>
-                        <p>99.9% uptime guarantee for continuous availability.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- My Rides Section -->
-        <section class="rides-section" id="ridesSection" style="display: none;">
-            <h2>My Recent Rides</h2>
-            <div class="rides-grid">
-                <div class="ride-card">
-                    <div class="ride-header">
-                        <span class="ride-id">#RD001</span>
-                        <span class="ride-status completed">Completed</span>
-                    </div>
-                    <div class="ride-details">
-                        <p><strong>Pickup:</strong> Downtown Station</p>
-                        <p><strong>Dropoff:</strong> City Center Mall</p>
-                        <p><strong>Date:</strong> Dec 15, 2024 at 2:30 PM</p>
-                        <p><strong>Duration:</strong> 22 minutes</p>
-                    </div>
-                    <div class="ride-footer">
-                        <div class="ride-driver">
-                            <strong>Mike Smith</strong><br>
-                            Toyota Prius
-                        </div>
-                        <div class="ride-amount">$28.50</div>
-                    </div>
-                </div>
-
-                <div class="ride-card">
-                    <div class="ride-header">
-                        <span class="ride-id">#RD002</span>
-                        <span class="ride-status completed">Completed</span>
-                    </div>
-                    <div class="ride-details">
-                        <p><strong>Pickup:</strong> Airport Terminal 1</p>
-                        <p><strong>Dropoff:</strong> Hotel Central</p>
-                        <p><strong>Date:</strong> Dec 14, 2024 at 8:15 AM</p>
-                        <p><strong>Duration:</strong> 35 minutes</p>
-                    </div>
-                    <div class="ride-footer">
-                        <div class="ride-driver">
-                            <strong>Sarah Johnson</strong><br>
-                            Honda Accord
-                        </div>
-                        <div class="ride-amount">$42.75</div>
-                    </div>
-                </div>
-
-                <div class="ride-card">
-                    <div class="ride-header">
-                        <span class="ride-id">#RD003</span>
-                        <span class="ride-status completed">Completed</span>
-                    </div>
-                    <div class="ride-details">
-                        <p><strong>Pickup:</strong> Office Building A</p>
-                        <p><strong>Dropoff:</strong> Railway Station</p>
-                        <p><strong>Date:</strong> Dec 13, 2024 at 5:45 PM</p>
-                        <p><strong>Duration:</strong> 18 minutes</p>
-                    </div>
-                    <div class="ride-footer">
-                        <div class="ride-driver">
-                            <strong>Tom Brown</strong><br>
-                            Hyundai Elantra
-                        </div>
-                        <div class="ride-amount">$22.00</div>
-                    </div>
-                </div>
-            </div>
-        </section>
     </div>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2024 SwiftCab - Your Trusted Taxi Service. All rights reserved.</p>
-        <div class="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Contact Us</a>
-            <a href="#">Safety</a>
-            <a href="#">Community Guidelines</a>
+    <!-- Cookie Consent Banner -->
+    <div class="cookie-banner" id="cookieBanner">
+        <div class="cookie-content">
+            <p>
+                We use cookies to improve your experience. By using our service, you agree to our
+                <a href="#" onclick="showModal('cookiePolicyModal'); return false;">Cookie Policy</a>.
+            </p>
+            <div class="cookie-buttons">
+                <button id="acceptCookies">Accept All</button>
+                <button id="rejectCookies">Reject</button>
+                <button id="manageCookies">Manage Cookies</button>
+            </div>
         </div>
-    </footer>
+    </div>
 
-    <script>
-        // Handle booking form
-        document.getElementById('bookingForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const pickup = document.getElementById('pickup').value;
-            const dropoff = document.getElementById('dropoff').value;
-            const rideType = document.getElementById('rideType').value;
-            
-            if (pickup && dropoff && rideType) {
-                alert(`Ride Requested!\nPickup: ${pickup}\nDropoff: ${dropoff}\nType: ${rideType}`);
-                this.reset();
-            }
-        });
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+        <p>Processing your booking...</p>
+    </div>
 
-        // Handle login button
-        document.getElementById('loginBtn').addEventListener('click', function() {
-            window.location.href = '/auth/';
-        });
+    <!-- Modals -->
 
-        // Show/hide rides section based on auth state
-        function checkAuthStatus() {
-            const hasAuth = localStorage.getItem('auth_token');
-            const ridesSection = document.getElementById('ridesSection');
-            if (hasAuth) {
-                ridesSection.style.display = 'block';
-            }
-        }
+    <!-- Terms & Conditions Modal -->
+    <div id="termsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('termsModal')">&times;</span>
+            <h2>Terms & Conditions</h2>
+            <div class="modal-body">
+                <h3>1. Use of Service</h3>
+                <p>Our taxi service is provided for lawful transportation purposes only. Users must be 18 years or older.</p>
 
-        checkAuthStatus();
-    </script>
+                <h3>2. Booking Confirmation</h3>
+                <p>Once you book a ride, you will receive a confirmation with driver details and estimated arrival time.</p>
+
+                <h3>3. Cancellation Policy</h3>
+                <p>Free cancellation is allowed up to 5 minutes after booking. Cancellations after 5 minutes may incur a fee.</p>
+
+                <h3>4. Payment</h3>
+                <p>Payment is processed securely and encrypted. We accept major credit cards and digital payment methods.</p>
+
+                <h3>5. Liability</h3>
+                <p>Swift Cab is not responsible for lost items left in vehicles. Passengers use the service at their own risk.</p>
+
+                <h3>6. Conduct Policy</h3>
+                <p>Drivers and passengers must treat each other with respect. Abusive behavior may result in account suspension.</p>
+
+                <h3>7. Modifications</h3>
+                <p>We reserve the right to modify these terms at any time. Continued use of the service constitutes acceptance.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('privacyModal')">&times;</span>
+            <h2>Privacy Policy</h2>
+            <div class="modal-body">
+                <h3>1. Information We Collect</h3>
+                <p>We collect personal information including name, email, phone number, and location data to provide our services.</p>
+
+                <h3>2. How We Use Your Information</h3>
+                <p>Your information is used to process bookings, communicate with you, improve our services, and comply with legal requirements.</p>
+
+                <h3>3. Data Security</h3>
+                <p>We use industry-standard encryption and security measures to protect your personal information.</p>
+
+                <h3>4. Third-Party Sharing</h3>
+                <p>We do not sell or share your personal information with third parties without your consent, except to drivers providing your ride.</p>
+
+                <h3>5. Cookies</h3>
+                <p>We use cookies to remember your preferences and improve your browsing experience. You can manage cookies in your browser settings.</p>
+
+                <h3>6. Your Rights</h3>
+                <p>You have the right to access, correct, or delete your personal data. Contact us at privacy@swiftcab.com.</p>
+
+                <h3>7. Contact Us</h3>
+                <p>For privacy inquiries, email us at privacy@swiftcab.com or call +1-800-SWIFT-CAB.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie Policy Modal -->
+    <div id="cookiePolicyModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('cookiePolicyModal')">&times;</span>
+            <h2>Cookie Policy</h2>
+            <div class="modal-body">
+                <h3>Necessary Cookies</h3>
+                <p>These cookies are essential for the website to function properly. They manage user sessions and security.</p>
+
+                <h3>Performance Cookies</h3>
+                <p>Help us understand how users interact with our website to improve performance and user experience.</p>
+
+                <h3>Marketing Cookies</h3>
+                <p>Used to track user behavior across websites to show relevant advertisements.</p>
+
+                <h3>Managing Cookies</h3>
+                <p>You can manage cookie preferences in your browser settings or use our cookie management tool.</p>
+
+                <h3>Third-Party Cookies</h3>
+                <p>We use Google Analytics and other third-party services that set their own cookies for analytics purposes.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('aboutModal')">&times;</span>
+            <h2>About Swift Cab</h2>
+            <div class="modal-body">
+                <p>Swift Cab is a modern, professional taxi booking service dedicated to providing safe, reliable, and affordable transportation.</p>
+                
+                <h3>Our Mission</h3>
+                <p>To revolutionize urban transportation by connecting passengers with professional drivers through an intuitive, secure platform.</p>
+
+                <h3>Our Values</h3>
+                <ul>
+                    <li><strong>Safety:</strong> Background-checked drivers and real-time tracking</li>
+                    <li><strong>Reliability:</strong> On-time service and professional drivers</li>
+                    <li><strong>Transparency:</strong> Clear pricing with no hidden fees</li>
+                    <li><strong>Innovation:</strong> Modern technology for seamless bookings</li>
+                </ul>
+
+                <h3>Contact</h3>
+                <p>Customer Support: support@swiftcab.com | +1-800-SWIFT-CAB</p>
+                <p>Business Hours: 24/7 Service Available</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>
