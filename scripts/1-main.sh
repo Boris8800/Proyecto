@@ -137,7 +137,11 @@ fresh_installation() {
     log_error "Failed to set ownership of project"
     return 1
   }
-  log_success "Project ownership set to taxi user"
+  sudo chmod -R 755 "$PROJECT_ROOT" || {
+    log_error "Failed to set permissions on project"
+    return 1
+  }
+  log_success "Project ownership and permissions set to taxi user"
   
   printf "\n"
   
