@@ -1,0 +1,33 @@
+{
+  "name": "taxi-api",
+  "version": "1.0.0",
+  "description": "Taxi System Magic Links Authentication API",
+  "main": "magic-links-server.js",
+  "scripts": {
+    "start": "node magic-links-server.js",
+    "dev": "nodemon magic-links-server.js"
+  },
+  "keywords": [
+    "taxi",
+    "api",
+    "magic-links",
+    "authentication"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.0.3",
+    "nodemailer": "^6.9.1",
+    "jsonwebtoken": "^9.0.0",
+    "uuid": "^9.0.0",
+    "postgres": "^3.3.5",
+    "mongoose": "^7.5.0",
+    "redis": "^4.6.10"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
