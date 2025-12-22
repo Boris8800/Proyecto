@@ -245,36 +245,13 @@ fresh_installation() {
   
   echo "[DEBUG] Starting process cleanup loop" >&2
   for port in 3001 3002 3003 8080; do
-    echo "[DEBUG] Checking port $port" >&2
     pid=$(lsof -ti:$port 2>/dev/null) || pid=""
-    echo "[DEBUG] Got pid='$pid' for port $port" >&2
     if [ -n "$pid" ] && [ "$pid" != $$ ]; then
-      echo "[DEBUG] Attempting to kill pid $pid on port $port" >&2
       kill -9 "$pid" 2>/dev/null || true
-      sleep 0.5
-      echo "[DEBUG] Kill command completed for port $port" >&2
       log_info "Killed process on port $port"
     fi
   done
-  echo "[DEBUG] Process cleanup loop completed" >&2
   log_success "Old processes cleaned"
-  
-  printf "\n"
-  echo "[DEBUG] About to enter STEP 7" >&2
-
-  # ============================================================================
-  # STEP 7: STOP DOCKER CONTAINERS
-  # ============================================================================
-  echo "[DEBUG] Printing STEP 7 header" >&2
-  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 7:${NC} Stopping Docker containers..."
-  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  
-  echo "[DEBUG] About to run docker-compose down" >&2
-  timeout 15 docker-compose down 2>/dev/null || true
-  echo "[DEBUG] docker-compose completed" >&2
-  sleep 2
-  log_success "Docker containers stopped"
   
   printf "\n"
   

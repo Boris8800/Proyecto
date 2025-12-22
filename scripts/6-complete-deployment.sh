@@ -15,6 +15,10 @@ cd "$PROJECT_ROOT" || {
   exit 1
 }
 
+# Create logs directory if it doesn't exist
+mkdir -p "$PROJECT_ROOT/logs" 2>/dev/null
+LOG_DIR="$PROJECT_ROOT/logs"
+
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║        SWIFT CAB - COMPLETE DEPLOYMENT & FIX                   ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
@@ -69,36 +73,36 @@ echo -e "${YELLOW}[STEP 6]${NC} Starting dashboard servers..."
 cd web
 
 # Start admin server
-nohup node server-admin.js > /tmp/admin.log 2>&1 &
+nohup node server-admin.js > "$LOG_DIR/admin.log" 2>&1 &
 ADMIN_PID=$!
 sleep 1
 if kill -0 $ADMIN_PID 2>/dev/null; then
   echo -e "${GREEN}✓${NC} Admin server started (PID: $ADMIN_PID, Port 3001)"
 else
   echo -e "${RED}✗${NC} Failed to start admin server"
-  cat /tmp/admin.log
+  cat "$LOG_DIR/admin.log"
 fi
 
 # Start driver server
-nohup node server-driver.js > /tmp/driver.log 2>&1 &
+nohup node server-driver.js > "$LOG_DIR/driver.log" 2>&1 &
 DRIVER_PID=$!
 sleep 1
 if kill -0 $DRIVER_PID 2>/dev/null; then
   echo -e "${GREEN}✓${NC} Driver server started (PID: $DRIVER_PID, Port 3002)"
 else
   echo -e "${RED}✗${NC} Failed to start driver server"
-  cat /tmp/driver.log
+  cat "$LOG_DIR/driver.log"
 fi
 
 # Start customer server
-nohup node server-customer.js > /tmp/customer.log 2>&1 &
+nohup node server-customer.js > "$LOG_DIR/customer.log" 2>&1 &
 CUSTOMER_PID=$!
 sleep 1
 if kill -0 $CUSTOMER_PID 2>/dev/null; then
   echo -e "${GREEN}✓${NC} Customer server started (PID: $CUSTOMER_PID, Port 3003)"
 else
   echo -e "${RED}✗${NC} Failed to start customer server"
-  cat /tmp/customer.log
+  cat "$LOG_DIR/customer.log"
 fi
 
 cd ..
@@ -155,7 +159,7 @@ echo -e "  Driver:  $DRIVER_PID"
 echo -e "  Customer: $CUSTOMER_PID"
 echo ""
 echo -e "${GREEN}🛠️  MANAGEMENT COMMANDS:${NC}"
-echo -e "  View logs:     tail -f /tmp/{admin,driver,customer}.log"
+echo -e "  View logs:     tail -f $LOG_DIR/{admin,driver,customer}.log"
 echo -e "  Stop servers:  pkill -f 'server-admin.js'; pkill -f 'server-driver.js'; pkill -f 'server-customer.js'"
 echo -e "  Docker logs:   docker-compose logs -f"
 echo ""
