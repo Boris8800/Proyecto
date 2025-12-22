@@ -17,8 +17,8 @@ source "$SCRIPT_DIR/lib/menus.sh"
 
 # Main entry point
 main() {
-    display_banner
-    main_menu
+    print_banner
+    show_main_menu
 }
 
 # Execute main function
