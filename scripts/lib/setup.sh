@@ -314,6 +314,37 @@ initialize_system() {
     log_ok "System initialization completed"
 }
 
+# Fresh installation orchestrator with cleanup
+clean_install() {
+    log_step "Preparing for clean installation..."
+    
+    # Remove existing taxi user if present
+    log_info "Removing existing taxi user if present..."
+    if id "taxi" &>/dev/null; then
+        userdel -r -f taxi 2>/dev/null || log_warn "Could not remove taxi user (may be in use)"
+        log_ok "Taxi user removed"
+    else
+        log_info "No existing taxi user found"
+    fi
+    
+    # Clean old downloads and files from root
+    log_info "Cleaning old files from /root..."
+    rm -rf /root/Proyecto 2>/dev/null || true
+    rm -rf /root/taxi-* 2>/dev/null || true
+    rm -rf /root/*.log 2>/dev/null || true
+    rm -rf /root/*.bak 2>/dev/null || true
+    log_ok "Old files cleaned"
+    
+    # Stop and remove old Docker containers if any
+    log_info "Cleaning up old Docker containers..."
+    docker stop taxi-postgres taxi-mongo taxi-redis taxi-nginx 2>/dev/null || true
+    docker rm taxi-postgres taxi-mongo taxi-redis taxi-nginx 2>/dev/null || true
+    log_ok "Old containers removed"
+    
+    log_ok "Clean installation preparation completed"
+    sleep 2
+}
+
 # Fresh installation orchestrator
 fresh_install() {
     log_step "Starting fresh Taxi System installation..."
