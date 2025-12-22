@@ -28,19 +28,8 @@ VPS_IP="${1:-5.249.164.40}"
 echo -e "${YELLOW}[INFO]${NC} VPS IP: $VPS_IP"
 echo ""
 
-# Step 1: Kill old processes
-echo -e "${YELLOW}[STEP 1]${NC} Killing old processes on ports 3001-3003..."
-for port in 3001 3002 3003 8080; do
-  pid=$(lsof -ti:$port 2>/dev/null)
-  if [ -n "$pid" ]; then
-    kill -9 $pid 2>/dev/null
-    echo -e "${GREEN}✓${NC} Killed process on port $port"
-  fi
-done
-sleep 2
-
-# Step 1B: Fix web directory permissions
-echo -e "${YELLOW}[STEP 1B]${NC} Setting web directory permissions..."
+# Step 1: Fix web directory permissions (processes already killed in fresh installation)
+echo -e "${YELLOW}[STEP 1]${NC} Setting web directory permissions..."
 if [ -d "$PROJECT_ROOT/web" ]; then
   chmod -R 755 "$PROJECT_ROOT/web" 2>/dev/null || true
   echo -e "${GREEN}✓${NC} Web directory permissions set"
