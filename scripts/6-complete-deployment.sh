@@ -195,13 +195,33 @@ else
 fi
 
 # Step 8: Start Docker containers
-echo -e "${YELLOW}[STEP 8]${NC} Starting Docker services..."
-if sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" up -d 2>&1 | grep -E "(Created|Starting|Started|WARNING)" | head -10; then
+echo -e "${YELLOW}[STEP 8]${NC} Starting Docker services (Status Dashboard on port 8080)..."
+
+# Verify docker-compose file exists
+if [ ! -f "$PROJECT_ROOT/config/docker-compose.yml" ]; then
+  echo -e "${RED}✗${NC} docker-compose.yml not found!"
+  exit 1
+fi
+
+# Try to start docker-compose
+if sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" up -d 2>&1 | tee /tmp/docker_up.log | grep -E "(Created|Starting|Started)"; then
   echo -e "${GREEN}✓${NC} Docker services started"
 else
-  echo -e "${YELLOW}[INFO]${NC} Docker services being initialized..."
+  # Check if there was an error
+  if grep -q "error\|ERROR\|failed" /tmp/docker_up.log 2>/dev/null; then
+    echo -e "${RED}✗${NC} Docker compose error:"
+    cat /tmp/docker_up.log | grep -E "error|ERROR|failed" | head -5
+  else
+    echo -e "${YELLOW}[INFO]${NC} Docker services being initialized..."
+  fi
 fi
+
+# Wait for Docker containers to be fully running
 sleep 3
+
+# Verify docker-compose containers
+echo -e "${YELLOW}[INFO]${NC} Checking Docker container status..."
+sudo docker-compose -f "$PROJECT_ROOT/config/docker-compose.yml" ps
 
 # Step 9: Wait for services
 echo -e "${YELLOW}[STEP 9]${NC} Waiting for services to be ready..."
