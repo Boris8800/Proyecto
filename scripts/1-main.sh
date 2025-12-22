@@ -161,19 +161,32 @@ fresh_installation() {
   
   # Check if Node.js is available for taxi user
   if ! sudo -u taxi bash -c 'command -v node &>/dev/null' || ! sudo -u taxi bash -c 'command -v npm &>/dev/null'; then
-    log_warn "Node.js/npm not found for taxi user"
-    log_info "Installing Node.js via nvm..."
+    log_info "Node.js not found, installing via nvm..."
     
     if command -v curl &>/dev/null; then
-      # Install NVM for taxi user
-      sudo -u taxi bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash' 2>&1 | grep -v "^$" | tail -3
+      # Install NVM for taxi user (silent)
+      echo -n "  Installing nvm... "
+      if sudo -u taxi bash -c 'curl -s -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash' &>/dev/null; then
+        echo -e "${GREEN}✓${NC}"
+      else
+        echo -e "${RED}✗${NC}"
+        log_error "Failed to install nvm"
+        return 1
+      fi
       sleep 2
       
-      # Install Node.js
-      sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && nvm install 24 2>&1 | tail -5'
+      # Install Node.js (show progress)
+      echo -n "  Installing Node.js v24... "
+      if sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && nvm install 24' &>/dev/null; then
+        echo -e "${GREEN}✓${NC}"
+      else
+        echo -e "${RED}✗${NC}"
+        log_error "Failed to install Node.js"
+        return 1
+      fi
       sleep 2
       
-      # Verify
+      # Verify installations
       NODE_VERSION=$(sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && node --version')
       NPM_VERSION=$(sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && npm --version')
       
@@ -186,8 +199,8 @@ fresh_installation() {
       return 1
     fi
   else
-    NODE_VERSION=$(sudo -u taxi bash -c 'node --version')
-    NPM_VERSION=$(sudo -u taxi bash -c 'npm --version')
+    NODE_VERSION=$(sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && node --version')
+    NPM_VERSION=$(sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && npm --version')
     log_success "Node.js available: $NODE_VERSION"
     log_success "npm available: $NPM_VERSION"
   fi
