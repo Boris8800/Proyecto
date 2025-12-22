@@ -133,7 +133,7 @@ setup_redis() {
     
     if [ $attempts -eq $max_attempts ]; then
         log_error "Redis failed to start within timeout"
-        log_error "Container status: $(docker ps --filter name=$redis_container --format '{{.Status}}' 2>/dev/null || echo 'Container not found')"
+        log_error "Container status: $(docker ps --filter name="$redis_container" --format '{{.Status}}' 2>/dev/null || echo 'Container not found')"
         log_error "Container logs:"
         docker logs "$redis_container" 2>/dev/null || true
         return 1
