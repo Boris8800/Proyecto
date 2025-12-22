@@ -26,24 +26,24 @@ mkdir -p $BACKUP_DIR $LOG_DIR
 # ============================================================================
 
 log_info() {
-  printf "${BLUE}[INFO]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  echo -e "${BLUE}[INFO]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 log_success() {
-  printf "${GREEN}[OK]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  echo -e "${GREEN}[OK]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 log_error() {
-  printf "${RED}[ERROR]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  echo -e "${RED}[ERROR]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 log_warn() {
-  printf "${YELLOW}[WARN]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  echo -e "${YELLOW}[WARN]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 pause_menu() {
   printf "\n"
-  read -p "Press Enter to continue..."
+  read -r -p "Press Enter to continue..."
 }
 
 clear_screen() {
@@ -56,9 +56,9 @@ clear_screen() {
 
 fresh_installation() {
   clear_screen
-  printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}\n"
-  printf "${CYAN}║              FRESH INSTALLATION & CONFIGURATION                ║${NC}\n"
-  printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}\n"
+  echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║              FRESH INSTALLATION & CONFIGURATION                ║${NC}"
+  echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "\n"
 
   log_info "Starting fresh installation..."
@@ -103,9 +103,9 @@ fresh_installation() {
 
 update_installation() {
   clear_screen
-  printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}\n"
-  printf "${CYAN}║              UPDATE EXISTING INSTALLATION                      ║${NC}\n"
-  printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}\n"
+  echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║              UPDATE EXISTING INSTALLATION                      ║${NC}"
+  echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "\n"
 
   log_info "Starting update process..."
@@ -148,9 +148,9 @@ update_installation() {
 service_management() {
   while true; do
     clear_screen
-    printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}\n"
-    printf "${CYAN}║                 SERVICE MANAGEMENT                             ║${NC}\n"
-    printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}\n"
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                 SERVICE MANAGEMENT                             ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "\n"
     printf "  1) Start All Services\n"
     printf "  2) Stop All Services\n"
@@ -159,7 +159,7 @@ service_management() {
     printf "  5) View Service Logs\n"
     printf "  6) Back to Main Menu\n"
     printf "\n"
-    read -p "Select option (1-6): " choice
+    read -r -p "Select option (1-6): " choice
 
     case $choice in
       1)
@@ -197,22 +197,22 @@ service_management() {
         ;;
       4)
         printf "\n"
-        printf "${YELLOW}Docker Services:${NC}\n"
+        echo -e "${YELLOW}Docker Services:${NC}"
         docker-compose ps
         printf "\n"
-        printf "${YELLOW}Node Servers:${NC}\n"
+        echo -e "${YELLOW}Node Servers:${NC}"
         for port in 3001 3002 3003; do
           if curl -s http://localhost:$port > /dev/null 2>&1; then
-            printf "  Port $port: ${GREEN}✓ Running${NC}\n"
+            echo -e "  Port $port: ${GREEN}✓ Running${NC}"
           else
-            printf "  Port $port: ${RED}✗ Stopped${NC}\n"
+            echo -e "  Port $port: ${RED}✗ Stopped${NC}"
           fi
         done
         pause_menu
         ;;
       5)
         printf "\n"
-        read -p "View logs for (admin/driver/customer/docker): " service
+        read -r -p "View logs for (admin/driver/customer/docker): " service
         case $service in
           admin)
             log_info "Showing admin server logs (last 20 lines)..."
@@ -253,58 +253,58 @@ service_management() {
 
 system_diagnostics() {
   clear_screen
-  printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}\n"
-  printf "${CYAN}║                   SYSTEM DIAGNOSTICS                           ║${NC}\n"
-  printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}\n"
+  echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║                   SYSTEM DIAGNOSTICS                           ║${NC}"
+  echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "\n"
 
   log_info "Running system diagnostics..."
   printf "\n"
 
   # Docker status
-  printf "${YELLOW}🐳 Docker Status:${NC}\n"
+  echo -e "${YELLOW}🐳 Docker Status:${NC}"
   docker-compose ps
   printf "\n"
 
   # Node servers status
-  printf "${YELLOW}🚀 Node Servers Status:${NC}\n"
+  echo -e "${YELLOW}🚀 Node Servers Status:${NC}"
   for port in 3001 3002 3003; do
     if curl -s http://localhost:$port > /dev/null 2>&1; then
-      printf "  Port $port: ${GREEN}✓ Responding${NC}\n"
+      echo -e "  Port $port: ${GREEN}✓ Responding${NC}"
     else
-      printf "  Port $port: ${RED}✗ No response${NC}\n"
+      echo -e "  Port $port: ${RED}✗ No response${NC}"
     fi
   done
   printf "\n"
 
   # Disk usage
-  printf "${YELLOW}💾 Disk Usage:${NC}\n"
+  echo -e "${YELLOW}💾 Disk Usage:${NC}"
   df -h | grep -E "^/|Used|Size"
   printf "\n"
 
   # Memory usage
-  printf "${YELLOW}🧠 Memory Usage:${NC}\n"
+  echo -e "${YELLOW}🧠 Memory Usage:${NC}"
   free -h | head -2
   printf "\n"
 
   # Database connectivity
-  printf "${YELLOW}🗄️  Database Connectivity:${NC}\n"
+  echo -e "${YELLOW}🗄️  Database Connectivity:${NC}"
   if docker exec taxi-postgres pg_isready -U postgres &>/dev/null; then
-    printf "  PostgreSQL: ${GREEN}✓ Connected${NC}\n"
+    echo -e "  PostgreSQL: ${GREEN}✓ Connected${NC}"
   else
-    printf "  PostgreSQL: ${RED}✗ Not connected${NC}\n"
+    echo -e "  PostgreSQL: ${RED}✗ Not connected${NC}"
   fi
 
   if docker exec taxi-mongo mongosh --eval "db.adminCommand('ping')" &>/dev/null; then
-    printf "  MongoDB: ${GREEN}✓ Connected${NC}\n"
+    echo -e "  MongoDB: ${GREEN}✓ Connected${NC}"
   else
-    printf "  MongoDB: ${RED}✗ Not connected${NC}\n"
+    echo -e "  MongoDB: ${RED}✗ Not connected${NC}"
   fi
 
   if docker exec taxi-redis redis-cli ping &>/dev/null; then
-    printf "  Redis: ${GREEN}✓ Connected${NC}\n"
+    echo -e "  Redis: ${GREEN}✓ Connected${NC}"
   else
-    printf "  Redis: ${RED}✗ Not connected${NC}\n"
+    echo -e "  Redis: ${RED}✗ Not connected${NC}"
   fi
   printf "\n"
 
@@ -319,9 +319,9 @@ system_diagnostics() {
 database_management() {
   while true; do
     clear_screen
-    printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    printf "${CYAN}║                  DATABASE MANAGEMENT                           ║${NC}"
-    printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                  DATABASE MANAGEMENT                           ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "
 "
     echo "  1) Backup Databases"
@@ -332,7 +332,7 @@ database_management() {
     echo "  6) Back to Main Menu"
     printf "
 "
-    read -p "Select option (1-6): " choice
+    read -r -p "Select option (1-6): " choice
 
     case $choice in
       1)
@@ -353,7 +353,7 @@ database_management() {
       2)
         log_info "Available backups:"
         ls -1 $BACKUP_DIR/ 2>/dev/null | head -10 || log_warn "No backups found"
-        read -p "Enter backup name to restore: " backup
+        read -r -p "Enter backup name to restore: " backup
         if [ -z "$backup" ]; then
           log_error "No backup specified"
         else
@@ -368,7 +368,7 @@ database_management() {
         pause_menu
         ;;
       3)
-        read -p "⚠️  Reset PostgreSQL? (yes/no): " confirm
+        read -r -p "⚠️  Reset PostgreSQL? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
           log_warn "Resetting PostgreSQL..."
           docker exec taxi-postgres dropdb -U postgres taxi_db 2>/dev/null || true
@@ -378,7 +378,7 @@ database_management() {
         pause_menu
         ;;
       4)
-        read -p "⚠️  Reset MongoDB? (yes/no): " confirm
+        read -r -p "⚠️  Reset MongoDB? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
           log_warn "Resetting MongoDB..."
           docker exec taxi-mongo mongosh --eval "db.dropDatabase()" taxi_db
@@ -389,17 +389,17 @@ database_management() {
       5)
         printf "
 "
-        printf "${YELLOW}PostgreSQL:${NC}"
+        echo -e "${YELLOW}PostgreSQL:${NC}"
         docker exec taxi-postgres psql -U postgres -c "SELECT datname FROM pg_database WHERE datname = 'taxi_db';" 2>/dev/null || echo "Not ready"
         
         printf "
 "
-        printf "${YELLOW}MongoDB:${NC}"
+        echo -e "${YELLOW}MongoDB:${NC}"
         docker exec taxi-mongo mongosh --eval "show databases" 2>/dev/null || echo "Not ready"
         
         printf "
 "
-        printf "${YELLOW}Redis:${NC}"
+        echo -e "${YELLOW}Redis:${NC}"
         docker exec taxi-redis redis-cli dbsize 2>/dev/null || echo "Not ready"
         pause_menu
         ;;
@@ -420,9 +420,9 @@ database_management() {
 
 security_audit() {
   clear_screen
-  printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-  printf "${CYAN}║                    SECURITY AUDIT                              ║${NC}"
-  printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+  echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║                    SECURITY AUDIT                              ║${NC}"
+  echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "
 "
 
@@ -431,40 +431,40 @@ security_audit() {
 "
 
   # Check for .env file
-  printf "${YELLOW}📋 Configuration Files:${NC}"
+  echo -e "${YELLOW}📋 Configuration Files:${NC}"
   if [ -f "config/.env" ]; then
-    printf "  config/.env: ${GREEN}✓ Present${NC}"
+    echo -e "  config/.env: ${GREEN}✓ Present${NC}"
   else
-    printf "  config/.env: ${RED}✗ Missing${NC}"
+    echo -e "  config/.env: ${RED}✗ Missing${NC}"
   fi
   printf "
 "
 
   # Check for exposed ports
-  printf "${YELLOW}🔒 Port Security:${NC}"
+  echo -e "${YELLOW}🔒 Port Security:${NC}"
   for port in 3001 3002 3003 5432 27017 6379; do
     if netstat -tuln 2>/dev/null | grep -q ":$port"; then
-      printf "  Port $port: ${YELLOW}⚠ Exposed${NC}"
+      echo -e "  Port $port: ${YELLOW}⚠ Exposed${NC}"
     fi
   done
   printf "
 "
 
   # Check file permissions
-  printf "${YELLOW}🔐 File Permissions:${NC}"
+  echo -e "${YELLOW}🔐 File Permissions:${NC}"
   if [ -f "config/.env" ]; then
     perms=$(stat -c %a config/.env 2>/dev/null || stat -f %OLp config/.env 2>/dev/null)
     if [ "$perms" = "600" ] || [ "$perms" = "640" ]; then
-      printf "  config/.env permissions: ${GREEN}✓ Secure ($perms)${NC}"
+      echo -e "  config/.env permissions: ${GREEN}✓ Secure ($perms)${NC}"
     else
-      printf "  config/.env permissions: ${YELLOW}⚠ Check ($perms)${NC}"
+      echo -e "  config/.env permissions: ${YELLOW}⚠ Check ($perms)${NC}"
     fi
   fi
   printf "
 "
 
   # Check for vulnerabilities
-  printf "${YELLOW}🛡️  Dependency Vulnerabilities:${NC}"
+  echo -e "${YELLOW}🛡️  Dependency Vulnerabilities:${NC}"
   cd web || exit
   npm audit 2>&1 | tail -3
   cd .. || exit
@@ -480,9 +480,9 @@ security_audit() {
 user_management() {
   while true; do
     clear_screen
-    printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    printf "${CYAN}║                    USER MANAGEMENT                             ║${NC}"
-    printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                    USER MANAGEMENT                             ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "
 "
     echo "  1) List All Users"
@@ -493,7 +493,7 @@ user_management() {
     echo "  6) Back to Main Menu"
     printf "
 "
-    read -p "Select option (1-6): " choice
+    read -r -p "Select option (1-6): " choice
 
     case $choice in
       1)
@@ -502,23 +502,31 @@ user_management() {
         pause_menu
         ;;
       2)
-        read -p "Enter email: " email
-        read -p "Enter role (admin/driver/customer): " role
+        read -r -p "Enter email: " email
+        read -r -p "Enter role (admin/driver/customer): " role
         log_info "Creating user: $email ($role)..."
-        docker exec taxi-postgres psql -U postgres taxi_db -c "INSERT INTO users (email, role, created_at) VALUES ('$email', '$role', NOW());" 2>/dev/null && log_success "User created" || log_error "Failed to create user"
+        if docker exec taxi-postgres psql -U postgres taxi_db -c "INSERT INTO users (email, role, created_at) VALUES ('$email', '$role', NOW());" 2>/dev/null; then
+          log_success "User created"
+        else
+          log_error "Failed to create user"
+        fi
         pause_menu
         ;;
       3)
-        read -p "Enter user email: " email
+        read -r -p "Enter user email: " email
         log_warn "Resetting password for: $email"
         log_success "Password reset link sent to: $email"
         pause_menu
         ;;
       4)
-        read -p "Enter user email to delete: " email
-        read -p "⚠️  Confirm delete? (yes/no): " confirm
+        read -r -p "Enter user email to delete: " email
+        read -r -p "⚠️  Confirm delete? (yes/no): " confirm
         if [ "$confirm" = "yes" ]; then
-          docker exec taxi-postgres psql -U postgres taxi_db -c "DELETE FROM users WHERE email='$email';" 2>/dev/null && log_success "User deleted" || log_error "Failed to delete user"
+          if docker exec taxi-postgres psql -U postgres taxi_db -c "DELETE FROM users WHERE email='$email';" 2>/dev/null; then
+            log_success "User deleted"
+          else
+            log_error "Failed to delete user"
+          fi
         fi
         pause_menu
         ;;
@@ -544,9 +552,9 @@ user_management() {
 
 error_recovery() {
   clear_screen
-  printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-  printf "${CYAN}║                   ERROR RECOVERY                               ║${NC}"
-  printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+  echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║                   ERROR RECOVERY                               ║${NC}"
+  echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "
 "
 
@@ -604,9 +612,9 @@ error_recovery() {
 backup_restore() {
   while true; do
     clear_screen
-    printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    printf "${CYAN}║                    BACKUP & RESTORE                            ║${NC}"
-    printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║                    BACKUP & RESTORE                            ║${NC}"
+    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "
 "
     echo "  1) Full System Backup"
@@ -617,7 +625,7 @@ backup_restore() {
     echo "  6) Back to Main Menu"
     printf "
 "
-    read -p "Select option (1-6): " choice
+    read -r -p "Select option (1-6): " choice
 
     case $choice in
       1)
@@ -670,9 +678,9 @@ backup_restore() {
       5)
         log_info "Available backups:"
         ls -1 $BACKUP_DIR/ 2>/dev/null | head -20 || log_warn "No backups found"
-        read -p "Enter backup file to restore: " backup
+        read -r -p "Enter backup file to restore: " backup
         if [ -f "$BACKUP_DIR/$backup" ]; then
-          read -p "⚠️  Restore from $backup? (yes/no): " confirm
+          read -r -p "⚠️  Restore from $backup? (yes/no): " confirm
           if [ "$confirm" = "yes" ]; then
             log_warn "Restoring system..."
             tar -xzf "$BACKUP_DIR/$backup" 2>/dev/null
@@ -700,9 +708,9 @@ backup_restore() {
 
 system_cleanup() {
   clear_screen
-  printf "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-  printf "${CYAN}║                    SYSTEM CLEANUP                              ║${NC}"
-  printf "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+  echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
+  echo -e "${CYAN}║                    SYSTEM CLEANUP                              ║${NC}"
+  echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "
 "
 
@@ -710,7 +718,7 @@ system_cleanup() {
   printf "
 "
 
-  read -p "Continue with cleanup? (yes/no): " confirm
+  read -r -p "Continue with cleanup? (yes/no): " confirm
   if [ "$confirm" != "yes" ]; then
     return
   fi
@@ -752,25 +760,25 @@ system_cleanup() {
 main_menu() {
   while true; do
     clear_screen
-    printf "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}\n"
-    printf "${BLUE}║           🚕 TAXI SYSTEM INSTALLATION & MANAGEMENT 🚕          ║${NC}\n"
-    printf "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}\n"
+    echo -e "${BLUE}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BLUE}║           🚕 TAXI SYSTEM INSTALLATION & MANAGEMENT 🚕          ║${NC}"
+    echo -e "${BLUE}╚════════════════════════════════════════════════════════════════╝${NC}"
     printf "\n"
-    printf "  ${GREEN}1)${NC}  Fresh Installation (Recommended)\n"
-    printf "  ${GREEN}2)${NC}  Update Existing Installation\n"
-    printf "  ${GREEN}3)${NC}  Service Management\n"
-    printf "  ${GREEN}4)${NC}  System Diagnostics\n"
-    printf "  ${GREEN}5)${NC}  Database Management\n"
-    printf "  ${GREEN}6)${NC}  Security Audit\n"
-    printf "  ${GREEN}7)${NC}  User Management\n"
-    printf "  ${GREEN}8)${NC}  Error Recovery\n"
-    printf "  ${GREEN}9)${NC}  Backup & Restore\n"
-    printf "  ${GREEN}10)${NC} System Cleanup\n"
-    printf "  ${GREEN}11)${NC} Exit\n"
+    echo -e "  ${GREEN}1)${NC}  Fresh Installation (Recommended)"
+    echo -e "  ${GREEN}2)${NC}  Update Existing Installation"
+    echo -e "  ${GREEN}3)${NC}  Service Management"
+    echo -e "  ${GREEN}4)${NC}  System Diagnostics"
+    echo -e "  ${GREEN}5)${NC}  Database Management"
+    echo -e "  ${GREEN}6)${NC}  Security Audit"
+    echo -e "  ${GREEN}7)${NC}  User Management"
+    echo -e "  ${GREEN}8)${NC}  Error Recovery"
+    echo -e "  ${GREEN}9)${NC}  Backup & Restore"
+    echo -e "  ${GREEN}10)${NC} System Cleanup"
+    echo -e "  ${GREEN}11)${NC} Exit"
     printf "\n"
-    printf "${YELLOW}Tip: If arrows don't work, use numbers or 'w'/'s' keys${NC}\n"
+    echo -e "${YELLOW}Tip: If arrows don't work, use numbers or 'w'/'s' keys${NC}"
     printf "\n"
-    read -p "Select option (1-11): " choice
+    read -r -p "Select option (1-11): " choice
 
     case $choice in
       1) fresh_installation ;;
@@ -784,7 +792,7 @@ main_menu() {
       9) backup_restore ;;
       10) system_cleanup ;;
       11) 
-        printf "${GREEN}Goodbye!${NC}\n"
+        echo -e "${GREEN}Goodbye!${NC}"
         exit 0
         ;;
       *)
