@@ -59,7 +59,8 @@ parse_arguments() {
         exit 0
     fi
     
-    while [[ $# -gt 0 ]]; do
+    # Handle command-line arguments
+    if [[ $# -gt 0 ]]; then
         case "$1" in
             --fresh)
                 fresh_install
@@ -111,8 +112,7 @@ parse_arguments() {
                 exit 1
                 ;;
         esac
-        shift
-    done
+    fi
 }
 
 fresh_install() {
