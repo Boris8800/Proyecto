@@ -43,7 +43,7 @@ get_vps_ip() {
         # Try to detect IP
         ip=$(hostname -I | awk '{print $1}')
         if [ -z "$ip" ] || [ "$ip" = "127.0.0.1" ]; then
-            read -p "Enter your VPS IP address: " ip
+            read -r -p "Enter your VPS IP address: " ip
         fi
     fi
     
@@ -101,7 +101,10 @@ deploy_services() {
     cd "$PROJECT_ROOT/config"
     
     print_status "Loading environment..."
-    export $(grep -v '^#' .env | xargs)
+    set -a
+    # shellcheck disable=SC1091
+    source .env
+    set +a
     
     print_status "Pulling Docker images..."
     docker-compose pull
@@ -120,7 +123,8 @@ wait_for_services() {
     local attempt=0
     
     while [ $attempt -lt $max_attempts ]; do
-        local running=$(docker ps --format '{{.Names}}' | wc -l)
+        local running
+        running=$(docker ps --format '{{.Names}}' | wc -l)
         
         if [ "$running" -ge 7 ]; then
             print_success "All services are running"
@@ -157,7 +161,8 @@ check_health() {
 
 # Display access information
 show_access_info() {
-    local vps_ip=$(grep "^VPS_IP=" "$PROJECT_ROOT/config/.env" | cut -d= -f2)
+    local vps_ip
+    vps_ip=$(grep "^VPS_IP=" "$PROJECT_ROOT/config/.env" | cut -d= -f2)
     
     print_header "Access Information"
     
@@ -236,7 +241,8 @@ EOF
 
 # Summary and next steps
 show_summary() {
-    local vps_ip=$(grep "^VPS_IP=" "$PROJECT_ROOT/config/.env" | cut -d= -f2)
+    local vps_ip
+    vps_ip=$(grep "^VPS_IP=" "$PROJECT_ROOT/config/.env" | cut -d= -f2)
     
     print_header "Setup Complete!"
     
@@ -277,7 +283,8 @@ main() {
     check_root
     
     # Get VPS IP
-    local vps_ip=$(get_vps_ip "$@")
+    local vps_ip
+    vps_ip=$(get_vps_ip "$@")
     
     # Setup steps
     check_docker
