@@ -26,19 +26,19 @@ mkdir -p $BACKUP_DIR $LOG_DIR
 # ============================================================================
 
 log_info() {
-  echo -e "${BLUE}[INFO]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  printf "${BLUE}[INFO]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 log_success() {
-  echo -e "${GREEN}[OK]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  printf "${GREEN}[OK]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 log_error() {
-  echo -e "${RED}[ERROR]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  printf "${RED}[ERROR]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 log_warn() {
-  echo -e "${YELLOW}[WARN]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
+  printf "${YELLOW}[WARN]${NC} %s\n" "$1" | tee -a "$LOG_DIR/system.log"
 }
 
 pause_menu() {
