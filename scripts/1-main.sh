@@ -69,11 +69,11 @@ clear_screen() {
 fresh_installation() {
   clear_screen
   echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-  echo -e "${CYAN}║              FRESH INSTALLATION & CONFIGURATION                ║${NC}"
+  echo -e "${CYAN}║              FRESH INSTALLATION - TAXI USER                    ║${NC}"
   echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
   printf "\n"
 
-  # Ensure we're in the project directory
+  # Ensure we're in the project directory (as root for admin tasks)
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
   cd "$PROJECT_ROOT" || {
@@ -84,9 +84,10 @@ fresh_installation() {
   # Confirmation prompt
   echo -e "${YELLOW}⚠️  WARNING:${NC} This will:"
   echo -e "  • Delete existing 'taxi' user (if exists)"
-  echo -e "  • Remove all existing services"
-  echo -e "  • Reinstall Node.js and dependencies"
-  echo -e "  • Deploy fresh system"
+  echo -e "  • Clean old files from /root"
+  echo -e "  • Create new 'taxi' user with home directory"
+  echo -e "  • Install all services as 'taxi' user"
+  echo -e "  • Deploy complete taxi system"
   printf "\n"
   read -r -p "Are you sure you want to proceed? (yes/no): " confirm
   if [[ ! "$confirm" =~ ^[Yy]([Ee][Ss])?$ ]]; then
@@ -96,13 +97,13 @@ fresh_installation() {
   fi
 
   printf "\n"
-  log_info "Starting fresh installation..."
+  log_info "Starting fresh installation with 'taxi' user..."
   
   # ============================================================================
-  # STEP 1: CLEAN TAXI USER (if exists)
+  # STEP 1: DELETE TAXI USER & CLEAN ROOT
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 1:${NC} Cleaning existing taxi user..."
+  echo -e "${BLUE}STEP 1:${NC} Cleaning up existing taxi user and root files..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   if id "taxi" &>/dev/null; then
@@ -114,40 +115,63 @@ fresh_installation() {
     log_info "No existing 'taxi' user found"
   fi
   
+  log_info "Cleaning old files from /root..."
+  sudo rm -rf /root/Proyecto* /root/*.tar.gz /root/*.zip 2>/dev/null || true
+  log_success "Root cleanup completed"
+  
   printf "\n"
   
   # ============================================================================
-  # STEP 2: INSTALL NODE.JS (if not present)
+  # STEP 2: CREATE TAXI USER
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 2:${NC} Checking Node.js installation..."
+  echo -e "${BLUE}STEP 2:${NC} Creating 'taxi' user with home directory..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  # Try to find npm in common locations
-  export PATH="/home/codespace/nvm/current/bin:/usr/local/bin:/usr/bin:$PATH"
+  log_info "Creating 'taxi' user..."
+  sudo useradd -m -s /bin/bash -G sudo taxi 2>/dev/null || true
+  log_success "Taxi user created"
   
-  if ! command -v node &>/dev/null || ! command -v npm &>/dev/null; then
-    log_warn "Node.js/npm not found"
-    printf "\n"
+  log_info "Copying Proyecto to /home/taxi..."
+  sudo cp -r "$PROJECT_ROOT" /home/taxi/Proyecto || {
+    log_error "Failed to copy project to /home/taxi"
+    return 1
+  }
+  
+  log_info "Setting ownership to taxi user..."
+  sudo chown -R taxi:taxi /home/taxi/Proyecto || {
+    log_error "Failed to set ownership"
+    return 1
+  }
+  
+  log_success "Taxi user setup completed"
+  
+  printf "\n"
+  
+  # ============================================================================
+  # STEP 3: INSTALL NODE.JS FOR TAXI USER
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 3:${NC} Installing Node.js for taxi user..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  # Check if Node.js is available for taxi user
+  if ! sudo -u taxi bash -c 'command -v node &>/dev/null' || ! sudo -u taxi bash -c 'command -v npm &>/dev/null'; then
+    log_warn "Node.js/npm not found for taxi user"
+    log_info "Installing Node.js via nvm..."
     
     if command -v curl &>/dev/null; then
-      log_info "Installing Node.js via NVM..."
-      
-      # Download and install NVM
-      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash 2>&1 | tail -3
-      
-      export NVM_DIR="$HOME/.nvm"
-      # shellcheck source=/dev/null
-      [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+      # Install NVM for taxi user
+      sudo -u taxi bash -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash' 2>&1 | grep -v "^$" | tail -3
+      sleep 2
       
       # Install Node.js
-      log_info "Installing Node.js LTS..."
-      nvm install --lts 2>&1 | tail -5
-      nvm use --lts 2>&1 | tail -3
+      sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && nvm install 24 2>&1 | tail -5'
+      sleep 2
       
-      # Verify installation
-      NODE_VERSION=$(node --version)
-      NPM_VERSION=$(npm --version)
+      # Verify
+      NODE_VERSION=$(sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && node --version')
+      NPM_VERSION=$(sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && npm --version')
       
       log_success "Node.js installed: $NODE_VERSION"
       log_success "npm installed: $NPM_VERSION"
@@ -158,19 +182,19 @@ fresh_installation() {
       return 1
     fi
   else
-    NODE_VERSION=$(node --version)
-    NPM_VERSION=$(npm --version)
-    log_success "Node.js found: $NODE_VERSION"
-    log_success "npm found: $NPM_VERSION"
+    NODE_VERSION=$(sudo -u taxi bash -c 'node --version')
+    NPM_VERSION=$(sudo -u taxi bash -c 'npm --version')
+    log_success "Node.js available: $NODE_VERSION"
+    log_success "npm available: $NPM_VERSION"
   fi
   
   printf "\n"
   
   # ============================================================================
-  # STEP 3: CHECK DOCKER
+  # STEP 4: CHECK DOCKER
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 3:${NC} Checking Docker installation..."
+  echo -e "${BLUE}STEP 4:${NC} Checking Docker installation..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   if ! command -v docker &>/dev/null; then
@@ -187,34 +211,32 @@ fresh_installation() {
   printf "\n"
   
   # ============================================================================
-  # STEP 4: INSTALL NPM PACKAGES
+  # STEP 5: INSTALL NPM PACKAGES FOR TAXI USER
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 4:${NC} Installing npm dependencies..."
+  echo -e "${BLUE}STEP 5:${NC} Installing npm dependencies as taxi user..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  cd web 2>/dev/null || true
-  if timeout 120 npm install --silent 2>&1 | tail -3; then
+  if sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && cd /home/taxi/Proyecto/web && timeout 120 npm install --silent 2>&1 | tail -3'; then
     log_success "npm dependencies installed successfully"
   else
     log_warn "npm install had issues, attempting cleanup and retry..."
-    rm -rf node_modules package-lock.json 2>/dev/null
+    sudo -u taxi bash -c 'rm -rf /home/taxi/Proyecto/web/node_modules /home/taxi/Proyecto/web/package-lock.json'
     sleep 2
-    if timeout 120 npm install --silent 2>&1 | tail -3; then
+    if sudo -u taxi bash -c 'source ~/.nvm/nvm.sh && cd /home/taxi/Proyecto/web && timeout 120 npm install --silent 2>&1 | tail -3'; then
       log_success "npm dependencies installed (retry)"
     else
       log_warn "npm install still failing, continuing anyway..."
     fi
   fi
-  cd .. || log_warn "Warning: could not return to project root"
   
   printf "\n"
   
   # ============================================================================
-  # STEP 5: CLEAN UP OLD PROCESSES
+  # STEP 6: CLEAN UP OLD PROCESSES
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 5:${NC} Cleaning up old processes..."
+  echo -e "${BLUE}STEP 6:${NC} Cleaning up old processes..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   for port in 3001 3002 3003 8080; do
@@ -229,10 +251,10 @@ fresh_installation() {
   printf "\n"
 
   # ============================================================================
-  # STEP 6: STOP DOCKER CONTAINERS
+  # STEP 7: STOP DOCKER CONTAINERS
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 6:${NC} Stopping Docker containers..."
+  echo -e "${BLUE}STEP 7:${NC} Stopping Docker containers..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   timeout 15 docker-compose down 2>/dev/null || true
@@ -242,16 +264,22 @@ fresh_installation() {
   printf "\n"
   
   # ============================================================================
-  # STEP 7: RUN COMPLETE DEPLOYMENT
+  # STEP 8: RUN DEPLOYMENT AS TAXI USER
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${BLUE}STEP 7:${NC} Starting complete deployment..."
+  echo -e "${BLUE}STEP 8:${NC} Running deployment as taxi user..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  bash scripts/6-complete-deployment.sh "$VPS_IP"
+  sudo -u taxi bash -c "source ~/.nvm/nvm.sh && cd /home/taxi/Proyecto && bash scripts/6-complete-deployment.sh '$VPS_IP'"
   
   printf "\n"
   log_success "✅ Fresh installation completed successfully!"
+  echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${GREEN}Taxi User Setup:${NC}"
+  echo -e "  User: ${YELLOW}taxi${NC}"
+  echo -e "  Home: ${YELLOW}/home/taxi${NC}"
+  echo -e "  Project: ${YELLOW}/home/taxi/Proyecto${NC}"
+  echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   printf "\n"
 }
 
