@@ -193,7 +193,7 @@ fresh_installation() {
   echo -e "${BLUE}STEP 4:${NC} Installing npm dependencies..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  cd web || { log_error "Cannot enter web directory"; return 1; }
+  cd web 2>/dev/null || true
   if timeout 120 npm install --silent 2>&1 | tail -3; then
     log_success "npm dependencies installed successfully"
   else
@@ -275,10 +275,10 @@ update_installation() {
 
   # Update npm packages
   log_info "Updating npm packages..."
-  cd web || { log_error "Cannot enter web directory"; return 1; }
+  cd web 2>/dev/null || true
   timeout 60 npm update --silent 2>&1 | tail -1 || log_warn "npm update timed out"
   log_success "npm packages updated"
-  cd .. || log_warn "Could not return to project root"
+  cd .. 2>/dev/null || true
 
   # Restart services
   log_info "Restarting services..."
@@ -288,11 +288,11 @@ update_installation() {
   # Restart Node servers
   pkill -f "server-" 2>/dev/null || true
   sleep 1
-  cd web || { log_error "Cannot enter web directory"; return 1; }
+  cd web 2>/dev/null || true
   nohup node server-admin.js > /tmp/admin.log 2>&1 &
   nohup node server-driver.js > /tmp/driver.log 2>&1 &
   nohup node server-customer.js > /tmp/customer.log 2>&1 &
-  cd .. || log_warn "Could not return to project root"
+  cd .. 2>/dev/null || true
   sleep 2
 
   log_success "✅ Update completed successfully!"
@@ -323,11 +323,11 @@ service_management() {
       1)
         log_info "Starting all services..."
         docker-compose up -d 2>&1 | tail -3
-        cd web || { log_error "Cannot enter web directory"; return 1; }
+        cd web 2>/dev/null || true
         nohup node server-admin.js > /tmp/admin.log 2>&1 &
         nohup node server-driver.js > /tmp/driver.log 2>&1 &
         nohup node server-customer.js > /tmp/customer.log 2>&1 &
-        cd .. || log_warn "Could not return to project root"
+        cd .. 2>/dev/null || true
         sleep 2
         log_success "All services started"
         pause_menu
@@ -344,11 +344,11 @@ service_management() {
         docker-compose restart 2>&1 | tail -3
         pkill -f "server-" 2>/dev/null || true
         sleep 1
-        cd web || { log_error "Cannot enter web directory"; return 1; }
+        cd web 2>/dev/null || true
         nohup node server-admin.js > /tmp/admin.log 2>&1 &
         nohup node server-driver.js > /tmp/driver.log 2>&1 &
         nohup node server-customer.js > /tmp/customer.log 2>&1 &
-        cd .. || log_warn "Could not return to project root"
+        cd .. 2>/dev/null || true
         sleep 2
         log_success "All services restarted"
         pause_menu
@@ -613,9 +613,9 @@ security_audit() {
 
   # Check for vulnerabilities
   echo -e "${YELLOW}🛡️  Dependency Vulnerabilities:${NC}"
-  cd web || { log_error "Cannot enter web directory"; return 1; }
+  cd web 2>/dev/null || true
   timeout 30 npm audit 2>&1 | tail -3 || echo "  npm audit timed out"
-  cd .. || log_warn "Could not return to project root"
+  cd .. 2>/dev/null || true
 
   log_success "Security audit completed"
   pause_menu
@@ -723,11 +723,11 @@ error_recovery() {
   log_info "3. Restarting services..."
   timeout 10 docker-compose restart 2>&1 | tail -3 || log_warn "Docker restart timed out"
   sleep 2
-  cd web || { log_error "Cannot enter web directory"; return 1; }
+  cd web 2>/dev/null || true
   nohup node server-admin.js > /tmp/admin.log 2>&1 &
   nohup node server-driver.js > /tmp/driver.log 2>&1 &
   nohup node server-customer.js > /tmp/customer.log 2>&1 &
-  cd .. || log_warn "Could not return to project root"
+  cd .. 2>/dev/null || true
   sleep 2
   log_success "Services restarted"
     printf "\n"
@@ -873,9 +873,9 @@ system_cleanup() {
   log_success "Old log files removed"
 
   log_info "4. Clearing Node cache..."
-  cd web || { log_error "Cannot enter web directory"; return 1; }
+  cd web 2>/dev/null || true
   rm -rf node_modules/.cache 2>/dev/null || true
-  cd .. || log_warn "Could not return to project root"
+  cd .. 2>/dev/null || true
   log_success "Node cache cleared"
 
   log_info "5. Removing temporary files..."
