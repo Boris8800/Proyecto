@@ -218,27 +218,19 @@ fresh_installation() {
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   for port in 3001 3002 3003 8080; do
-    echo "[DEBUG] Checking port $port" >&2
-    echo "[DEBUG] About to run lsof" >&2
-    pid=$(lsof -ti:$port 2>/dev/null) || pid=""
-    echo "[DEBUG] lsof returned: $?" >&2
-    echo "[DEBUG] Got pid='$pid' for port $port" >&2
+    pid=$(lsof -ti:$port 2>/dev/null)
     if [ -n "$pid" ]; then
-      echo "[DEBUG] Killing pid $pid" >&2
       kill -9 "$pid" 2>/dev/null || true
       log_info "Killed process on port $port"
     fi
   done
-  echo "[DEBUG] Finished port loop" >&2
   log_success "Old processes cleaned"
   
   printf "\n"
-  echo "[DEBUG] About to enter STEP 6" >&2
-  
+
   # ============================================================================
   # STEP 6: STOP DOCKER CONTAINERS
   # ============================================================================
-  echo "[DEBUG] Entering STEP 6" >&2
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo -e "${BLUE}STEP 6:${NC} Stopping Docker containers..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -256,7 +248,7 @@ fresh_installation() {
   echo -e "${BLUE}STEP 7:${NC} Starting complete deployment..."
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
-  bash scripts/complete-deployment.sh "$VPS_IP"
+  bash scripts/6-complete-deployment.sh "$VPS_IP"
   
   printf "\n"
   log_success "✅ Fresh installation completed successfully!"
