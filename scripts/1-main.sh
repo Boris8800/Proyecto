@@ -339,12 +339,185 @@ fresh_installation() {
   sudo -u taxi bash -c "source ~/.nvm/nvm.sh && cd $PROJECT_ROOT && bash scripts/6-complete-deployment.sh '$VPS_IP'"
   
   printf "\n"
-  log_success "✅ Fresh installation completed successfully!"
-  echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  echo -e "${GREEN}Installation Summary:${NC}"
+  
+  # ============================================================================
+  # STEP 9: POST-INSTALLATION VERIFICATION & DIAGNOSTICS
+  # ============================================================================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 9:${NC} Running post-installation verification..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  printf "\n"
+  
+  # Wait for services to stabilize
+  echo -e "${YELLOW}[INFO]${NC} Waiting for services to start (10 seconds)..."
+  sleep 10
+  
+  # Test each port
+  declare -A port_tests
+  port_tests[3001]="Admin Dashboard"
+  port_tests[3002]="Driver Portal"
+  port_tests[3003]="Customer App"
+  port_tests[8080]="Status Dashboard"
+  port_tests[3000]="API Server"
+  
+  declare -A port_status
+  declare -i working=0
+  declare -i total=0
+  
+  echo -e "${YELLOW}Testing Services:${NC}"
+  for port in "${!port_tests[@]}"; do
+    total=$((total + 1))
+    name="${port_tests[$port]}"
+    
+    if timeout 2 bash -c "echo >/dev/tcp/127.0.0.1/$port" 2>/dev/null; then
+      echo -e "  ${GREEN}✓${NC} Port $port (${name}) - ${GREEN}WORKING${NC}"
+      port_status[$port]="✓"
+      working=$((working + 1))
+    else
+      echo -e "  ${RED}✗${NC} Port $port (${name}) - ${RED}NOT RESPONDING${NC}"
+      port_status[$port]="✗"
+    fi
+  done
+  printf "\n"
+  
+  # Check Docker containers
+  echo -e "${YELLOW}Docker Containers:${NC}"
+  RUNNING_CONTAINERS=$(docker ps --format "{{.Names}}" 2>/dev/null | wc -l)
+  echo -e "  Running: ${GREEN}${RUNNING_CONTAINERS} containers${NC}"
+  docker ps --format "table {{.Names}}\t{{.Status}}" 2>/dev/null | tail -n +2 | sed 's/^/    /'
+  printf "\n"
+  
+  # Check Node.js processes
+  echo -e "${YELLOW}Node.js Processes:${NC}"
+  NODE_PROCESSES=$(ps aux | grep -E "node|server" | grep -v grep | wc -l)
+  if [ "$NODE_PROCESSES" -gt 0 ]; then
+    echo -e "  ${GREEN}✓${NC} ${NODE_PROCESSES} Node.js processes running"
+    ps aux | grep -E "server-admin|server-driver|server-customer" | grep -v grep | sed 's/^/    /'
+  else
+    echo -e "  ${RED}✗${NC} No Node.js processes found"
+  fi
+  printf "\n"
+  
+  # Check taxi user
+  echo -e "${YELLOW}Taxi User Status:${NC}"
+  if id taxi &>/dev/null 2>&1; then
+    echo -e "  ${GREEN}✓${NC} User 'taxi' exists"
+    echo -e "    Home: /home/taxi"
+    echo -e "    Shell: $(getent passwd taxi | cut -d: -f7)"
+  else
+    echo -e "  ${RED}✗${NC} User 'taxi' not found"
+  fi
+  printf "\n"
+  
+  # Summary
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  if [ "$working" -eq "$total" ]; then
+    log_success "✅ All services are running! Installation complete!"
+  elif [ "$working" -gt 0 ]; then
+    log_warn "⚠️  Some services are running ($working/$total). Check issues below."
+  else
+    log_error "❌ No services responding. Installation may have failed."
+  fi
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  printf "\n"
+  
+  # ============================================================================
+  # SERVICE ACCESS INFORMATION
+  # ============================================================================
+  echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
+  echo -e "${GREEN}ACCESS YOUR SERVICES:${NC}"
+  echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
+  echo ""
+  echo -e "  ${CYAN}Admin Dashboard${NC}"
+  echo -e "    Local:   http://localhost:3001"
+  echo -e "    Remote:  http://$VPS_IP:3001"
+  echo ""
+  echo -e "  ${CYAN}Driver Portal${NC}"
+  echo -e "    Local:   http://localhost:3002"
+  echo -e "    Remote:  http://$VPS_IP:3002"
+  echo ""
+  echo -e "  ${CYAN}Customer App${NC}"
+  echo -e "    Local:   http://localhost:3003"
+  echo -e "    Remote:  http://$VPS_IP:3003"
+  echo ""
+  echo -e "  ${CYAN}Status Dashboard${NC}"
+  echo -e "    Local:   http://localhost:8080"
+  echo -e "    Remote:  http://$VPS_IP:8080"
+  echo ""
+  echo -e "  ${CYAN}API Server${NC}"
+  echo -e "    Local:   http://localhost:3000"
+  echo -e "    Remote:  http://$VPS_IP:3000"
+  echo ""
+  echo -e "${GREEN}═══════════════════════════════════════════════════════════════${NC}"
+  printf "\n"
+  
+  # ============================================================================
+  # TROUBLESHOOTING GUIDE
+  # ============================================================================
+  if [ "$working" -lt "$total" ]; then
+    echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${YELLOW}⚠️  TROUBLESHOOTING:${NC}"
+    echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
+    printf "\n"
+    
+    # Check which ports are failing
+    for port in "${!port_status[@]}"; do
+      if [ "${port_status[$port]}" = "✗" ]; then
+        name="${port_tests[$port]}"
+        echo -e "${RED}Issue: Port $port ($name) not responding${NC}"
+        
+        case $port in
+          3001|3002|3003)
+            echo -e "  ${YELLOW}Solution:${NC}"
+            echo -e "    1. Check Node.js process: ps aux | grep server"
+            echo -e "    2. Check logs: tail -20 /root/Proyecto/logs/*.log"
+            echo -e "    3. Restart: sudo systemctl restart taxi-web"
+            echo -e "    4. Or run: cd /root/Proyecto && bash scripts/fix-all.sh"
+            ;;
+          8080)
+            echo -e "  ${YELLOW}Solution:${NC}"
+            echo -e "    1. Check Docker: docker ps | grep taxi-status"
+            echo -e "    2. Check logs: docker logs taxi-status"
+            echo -e "    3. Restart: docker-compose -f /root/Proyecto/config/docker-compose.yml restart taxi-status"
+            echo -e "    4. Or run: bash /root/Proyecto/scripts/diagnose-8080.sh"
+            ;;
+          3000)
+            echo -e "  ${YELLOW}Solution:${NC}"
+            echo -e "    1. Check Docker: docker ps | grep taxi-api"
+            echo -e "    2. Check logs: docker logs taxi-api"
+            echo -e "    3. Restart: docker-compose -f /root/Proyecto/config/docker-compose.yml restart taxi-api"
+            ;;
+        esac
+        printf "\n"
+      fi
+    done
+    
+    echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
+    printf "\n"
+  fi
+  
+  # ============================================================================
+  # LOG INFORMATION
+  # ============================================================================
+  echo -e "${CYAN}LOG FILES:${NC}"
+  echo -e "  System Log:  /root/Proyecto/logs/system.log"
+  echo -e "  Admin:       /root/Proyecto/logs/admin.log"
+  echo -e "  Driver:      /root/Proyecto/logs/driver.log"
+  echo -e "  Customer:    /root/Proyecto/logs/customer.log"
+  printf "\n"
+  
+  echo -e "${CYAN}USEFUL COMMANDS:${NC}"
+  echo -e "  Diagnose port 8080:    bash /root/Proyecto/scripts/diagnose-8080.sh"
+  echo -e "  Fix all services:      bash /root/Proyecto/scripts/fix-all.sh"
+  echo -e "  View Docker logs:      docker logs <container-name>"
+  echo -e "  Restart services:      cd /root/Proyecto && bash scripts/6-complete-deployment.sh"
+  printf "\n"
+  
+  log_success "Installation Summary:"
   echo -e "  User: ${YELLOW}taxi${NC}"
   echo -e "  Home: ${YELLOW}/home/taxi${NC}"
   echo -e "  Project: ${YELLOW}$PROJECT_ROOT${NC}"
+  echo -e "  Services Working: ${GREEN}${working}/${total}${NC}"
   echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   printf "\n"
 }
