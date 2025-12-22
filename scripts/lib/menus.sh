@@ -209,24 +209,23 @@ fresh_installation_menu() {
     clear
     print_header "Fresh Installation"
     echo ""
-    echo -e "${YELLOW}This will perform a CLEAN installation of the Taxi System.${NC}"
+    echo -e "${YELLOW}This will perform a FRESH installation of the Taxi System.${NC}"
     echo -e "${YELLOW}⚠️  WARNING: This will:${NC}"
     echo -e "${YELLOW}   • Delete the existing 'taxi' user${NC}"
     echo -e "${YELLOW}   • Remove old downloads from /root${NC}"
     echo -e "${YELLOW}   • Stop and remove old Docker containers${NC}"
+    echo -e "${YELLOW}   • Install everything from scratch${NC}"
     echo ""
     echo -e "${YELLOW}Make sure you have backed up any important data!${NC}"
     echo ""
     
-    interactive_menu "Continue with CLEAN installation?" 0 \
-        "Yes, perform clean installation" \
+    interactive_menu "Continue with fresh installation?" 0 \
+        "Yes, start fresh installation" \
         "No, cancel and go back"
     confirm=$INTERACTIVE_MENU_SELECTION
     
     if [ $confirm -eq 1 ]; then
-        # Clean old installation first
-        clean_install
-        # Then perform fresh installation
+        # Perform fresh installation (includes cleanup and full setup)
         fresh_install
         echo ""
         read -r -p "Press Enter to continue..."

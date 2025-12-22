@@ -314,9 +314,12 @@ initialize_system() {
     log_ok "System initialization completed"
 }
 
-# Fresh installation orchestrator with cleanup
-clean_install() {
-    log_step "Preparing for clean installation..."
+# Fresh installation orchestrator with complete cleanup
+fresh_install() {
+    log_step "Starting fresh Taxi System installation..."
+    
+    # Step 1: Clean old installation
+    log_info "Step 1/7: Cleaning old installation..."
     
     # Remove existing taxi user if present
     log_info "Removing existing taxi user if present..."
@@ -340,44 +343,37 @@ clean_install() {
     docker stop taxi-postgres taxi-mongo taxi-redis taxi-nginx 2>/dev/null || true
     docker rm taxi-postgres taxi-mongo taxi-redis taxi-nginx 2>/dev/null || true
     log_ok "Old containers removed"
-    
-    log_ok "Clean installation preparation completed"
     sleep 2
-}
-
-# Fresh installation orchestrator
-fresh_install() {
-    log_step "Starting fresh Taxi System installation..."
     
-    # Validate system requirements
-    log_info "Step 1/6: Validating system requirements..."
+    # Step 2: Validate system requirements
+    log_info "Step 2/7: Validating system requirements..."
     check_system_requirements
     check_ports
     
-    # Install and configure Docker
-    log_info "Step 2/6: Installing Docker..."
+    # Step 3: Install and configure Docker
+    log_info "Step 3/7: Installing Docker..."
     install_docker
     install_docker_compose
     setup_docker_permissions
     verify_docker_installation
     
-    # Initialize system
-    log_info "Step 3/6: Initializing system..."
+    # Step 4: Initialize system
+    log_info "Step 4/7: Initializing system..."
     initialize_system
     
-    # Initialize databases
-    log_info "Step 4/6: Initializing databases..."
+    # Step 5: Initialize databases
+    log_info "Step 5/7: Initializing databases..."
     initialize_postgresql
     initialize_mongodb
     setup_redis
     
-    # Create database schema
-    log_info "Step 5/6: Creating database schema..."
+    # Step 6: Create database schema
+    log_info "Step 6/7: Creating database schema..."
     create_database_schema
     seed_initial_data
     
-    # Deploy dashboards
-    log_info "Step 6/6: Deploying dashboards..."
+    # Step 7: Deploy dashboards
+    log_info "Step 7/7: Deploying dashboards..."
     create_all_dashboards
     
     log_ok "✅ Fresh installation completed successfully!"
