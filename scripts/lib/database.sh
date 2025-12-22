@@ -77,7 +77,7 @@ initialize_mongodb() {
         mongo_auth="-u admin -p $mongo_password --authenticationDatabase admin"
     fi
 
-    docker exec "$db_container" mongosh $mongo_auth << MONGO_SCRIPT 2>/dev/null
+    docker exec "$db_container" mongosh "$mongo_auth" << MONGO_SCRIPT 2>/dev/null
         use admin
         // Only create admin if it doesn't exist (though INITDB usually handles this)
         if (!db.getUser('admin')) {
@@ -362,7 +362,7 @@ database_status() {
         local mongo_auth=""
         [ -n "$mongo_pass" ] && mongo_auth="-u admin -p $mongo_pass --authenticationDatabase admin"
         
-        if docker exec taxi-mongo mongosh $mongo_auth --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
+        if docker exec taxi-mongo mongosh "$mongo_auth" --eval "db.adminCommand('ping')" >/dev/null 2>&1; then
             echo -e "  ${GREEN}✅ Accessible${NC}"
         else
             echo -e "  ${RED}❌ Not accessible${NC}"
@@ -381,11 +381,11 @@ database_status() {
         local redis_auth=""
         [ -n "$redis_pass" ] && redis_auth="-a $redis_pass"
         
-        if docker exec taxi-redis redis-cli $redis_auth ping 2>/dev/null | grep -q "PONG"; then
+        if docker exec taxi-redis redis-cli "$redis_auth" ping 2>/dev/null | grep -q "PONG"; then
             echo -e "  ${GREEN}✅ Accessible${NC}"
             
             local redis_mem
-            redis_mem=$(docker exec taxi-redis redis-cli $redis_auth INFO memory 2>/dev/null | grep used_memory_human | cut -d: -f2 | tr -d '\r')
+            redis_mem=$(docker exec taxi-redis redis-cli "$redis_auth" INFO memory 2>/dev/null | grep "used_memory_human" | cut -d: -f2 | tr -d '\r')
             echo "  💾 Memory: $redis_mem"
         else
             echo -e "  ${RED}❌ Not accessible${NC}"
