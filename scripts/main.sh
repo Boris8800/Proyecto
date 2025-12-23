@@ -638,9 +638,7 @@ install_system() {
         exit 0
     fi
     echo ""
-    
-    log_warn "Installation will begin in 30 seconds. Press Ctrl+C to cancel..."
-    sleep 30
+    log_ok "Confirmed. Starting installation immediately..."
     echo ""
 
     # ========================================================================
