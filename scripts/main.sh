@@ -961,7 +961,156 @@ EOF
     echo ""
     echo "Installation log: $INSTALL_LOG"
     echo ""
-    cat "$INSTALL_LOG"
+    
+    # Run post-installation check
+    sleep 5
+    post_installation_check
+}
+
+# ============================================================================
+# POST-INSTALLATION CHECK
+# ============================================================================
+post_installation_check() {
+    clear
+    VPS_IP="${VPS_IP:-5.249.164.40}"
+    INSTALL_LOG="/var/log/taxi-install.log"
+    
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║          POST-INSTALLATION CHECK - SERVICE VERIFICATION       ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    # Check if logs exist
+    if [ -f "$INSTALL_LOG" ]; then
+        log_ok "Installation log found: $INSTALL_LOG"
+        echo ""
+        log_step "Recent installation log excerpt:"
+        tail -20 "$INSTALL_LOG"
+        echo ""
+    else
+        log_warn "Installation log not found at $INSTALL_LOG"
+        echo ""
+    fi
+
+    # Service Verification
+    log_step "Verifying Docker services..."
+    echo ""
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" 2>/dev/null | grep -E "taxi-|Exited|Up" || echo "No Docker containers found"
+    echo ""
+
+    log_step "Verifying Node.js services (open ports)..."
+    echo ""
+    PORTS=("$STATUS_PORT" "$ADMIN_PORT" "$DRIVER_PORT" "$CUSTOMER_PORT" "$API_PORT" "$MAGIC_LINKS_PORT")
+    SERVICES=("Status Dashboard" "Admin Dashboard" "Driver Portal" "Customer App" "Main API" "Magic Links API")
+    SERVICES_RUNNING=0
+
+    for i in "${!PORTS[@]}"; do
+        PORT=${PORTS[$i]}
+        SERVICE=${SERVICES[$i]}
+        
+        if netstat -tuln 2>/dev/null | grep -q ":$PORT "; then
+            echo "  ✓ $SERVICE (port $PORT) - LISTENING"
+            SERVICES_RUNNING=$((SERVICES_RUNNING+1))
+        else
+            echo "  ✗ $SERVICE (port $PORT) - NOT LISTENING"
+        fi
+    done
+    echo ""
+
+    # Access Links
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║               ACCESS LINKS & ENDPOINTS                        ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    echo "📊 DASHBOARDS:"
+    echo "  • Status Dashboard    : http://$VPS_IP:$STATUS_PORT"
+    echo "  • Admin Dashboard     : http://$VPS_IP:$ADMIN_PORT"
+    echo "  • Driver Portal       : http://$VPS_IP:$DRIVER_PORT"
+    echo "  • Customer App        : http://$VPS_IP:$CUSTOMER_PORT"
+    echo ""
+
+    echo "🔌 API ENDPOINTS:"
+    echo "  • Main API            : http://$VPS_IP:$API_PORT"
+    echo "  • Magic Links API     : http://$VPS_IP:$MAGIC_LINKS_PORT"
+    echo ""
+
+    echo "🔧 BACKEND SERVICES:"
+    echo "  • PostgreSQL Database : postgresql://localhost:5432"
+    echo "  • MongoDB Database    : mongodb://localhost:27017"
+    echo "  • Redis Cache         : redis://localhost:6379"
+    echo ""
+
+    # System Information
+    log_step "System information..."
+    echo ""
+    echo "  OS Distribution : $(grep "^NAME=" /etc/os-release | cut -d= -f2 | tr -d '"')"
+    echo "  OS Version      : $(grep "^VERSION=" /etc/os-release | cut -d= -f2 | tr -d '"')"
+    echo "  Kernel Version  : $(uname -r)"
+    echo "  Uptime          : $(uptime -p 2>/dev/null || uptime | awk -F'up' '{print $2}')"
+    echo ""
+
+    # Docker & Node Status
+    echo "  Docker Status   : $(systemctl is-active docker 2>/dev/null || echo 'unknown')"
+    echo "  Node Processes  : $(pgrep -c "node" 2>/dev/null || echo "0") running"
+    echo "  Taxi User       : $(id -u taxi >/dev/null 2>&1 && echo 'Created ✓' || echo 'Not found')"
+    echo ""
+
+    # Firewall Status
+    log_step "Firewall status..."
+    echo ""
+    if command -v ufw &>/dev/null; then
+        UFW_STATUS=$(ufw status | head -1)
+        echo "  UFW Status      : $UFW_STATUS"
+        echo "  Open Ports      : "
+        ufw status | grep "ALLOW" | awk '{print "    • " $1}' | head -10
+    else
+        echo "  UFW not installed"
+    fi
+    echo ""
+
+    # Service Logs
+    log_step "Recent service logs..."
+    echo ""
+    for i in "${!PORTS[@]}"; do
+        PORT=${PORTS[$i]}
+        SERVICE=${SERVICES[$i]}
+        LOG_FILE="$LOG_DIR/$(echo "$SERVICE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]').log"
+        
+        if [ -f "$LOG_FILE" ]; then
+            echo "  📄 $SERVICE:"
+            tail -3 "$LOG_FILE" | sed 's/^/     /'
+            echo ""
+        fi
+    done
+
+    # Final Summary
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║                    INSTALLATION SUMMARY                       ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo ""
+
+    if [ $SERVICES_RUNNING -ge 4 ]; then
+        echo -e "${GREEN}✓ INSTALLATION SUCCESSFUL${NC}"
+        echo ""
+        echo "Services running: $SERVICES_RUNNING/6"
+        echo ""
+        echo "Next steps:"
+        echo "  1. Test your dashboards via the access links above"
+        echo "  2. Configure SSL/HTTPS: bash scripts/main.sh setup-https"
+        echo "  3. Setup Nginx reverse proxy: bash scripts/main.sh setup-nginx"
+        echo "  4. Configure email: bash scripts/main.sh setup-email"
+        echo "  5. Start monitoring: bash scripts/main.sh start-monitoring"
+    else
+        echo -e "${RED}⚠ SOME SERVICES NOT RUNNING${NC}"
+        echo ""
+        echo "Services running: $SERVICES_RUNNING/6"
+        echo ""
+        echo "Troubleshooting:"
+        echo "  1. Check logs: cat $LOG_DIR/*.log"
+        echo "  2. Restart services: bash scripts/main.sh"
+        echo "  3. Run diagnostics: bash scripts/main.sh diagnostics"
+    fi
     echo ""
 }
 
@@ -1732,9 +1881,10 @@ show_advanced_menu() {
     echo "[11] TEST WEB INTERFACES"
     echo "[12] SECURITY TESTING"
     echo "[13] DEMO MAGIC LINKS"
-    echo "[14] EXIT"
+    echo "[14] POST-INSTALLATION CHECK"
+    echo "[15] EXIT"
     echo ""
-    echo -n "Enter your choice [1-14] (default 7 after 30s): "
+    echo -n "Enter your choice [1-15] (default 7 after 30s): "
 }
 
 # ============================================================================
@@ -1754,6 +1904,7 @@ case "$1" in
     test-security) test_security ;;
     manage-dashboards) manage_dashboards ;;
     demo-magic-links) demo_magic_links ;;
+    post-check) post_installation_check ;;
     *)
         # Advanced menu only, default to option 7 after 30s (single run then exit)
         show_advanced_menu
@@ -1774,7 +1925,8 @@ case "$1" in
             11) test_web ;;
             12) test_security ;;
             13) demo_magic_links ;;
-            14) exit 0 ;;
+            14) post_installation_check ;;
+            15) exit 0 ;;
             *) echo "Invalid option." ;;
         esac
 
