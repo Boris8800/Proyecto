@@ -60,12 +60,12 @@ services:
       - /root/Proyecto/web/api:/app
       - /root/Proyecto/web/node_modules:/app/node_modules
     ports:
-      - "${VPS_IP:-0.0.0.0}:3000:3000"
+      - "${VPS_IP:-0.0.0.0}:3040:3040"
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3040
       VPS_IP: ${VPS_IP:-127.0.0.1}
-      API_BASE_URL: http://${VPS_IP:-127.0.0.1}:3000
+      API_BASE_URL: http://${VPS_IP:-127.0.0.1}:3040
     command: sh -c "npm install --prefer-offline && node magic-links-server.js"
     networks:
       - taxi_network
@@ -82,10 +82,10 @@ services:
       - /root/Proyecto/web:/app
       - /root/Proyecto/web/node_modules:/app/node_modules
     ports:
-      - "${VPS_IP:-0.0.0.0}:8080:8080"
+      - "${VPS_IP:-0.0.0.0}:3030:3030"
     environment:
       NODE_ENV: production
-      STATUS_PORT: 8080
+      STATUS_PORT: 3030
       VPS_IP: ${VPS_IP:-127.0.0.1}
     command: sh -c "npm install && node status/server.js"
     networks:

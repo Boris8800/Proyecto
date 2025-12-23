@@ -1,8 +1,8 @@
 #!/bin/bash
 
 ################################################################################
-# COMPREHENSIVE VPS FIX - ALL SERVICES
-# Fixes port 8080, Docker containers, and all web services
+# COMPREHENSIVE FIX - ALL SERVICES
+# Complete service restart and configuration with new port mappings
 ################################################################################
 
 set -e
@@ -11,7 +11,7 @@ PROJECT_ROOT="/root/Proyecto"
 cd "$PROJECT_ROOT" || exit 1
 
 echo "╔════════════════════════════════════════════════════════════════╗"
-echo "║        COMPREHENSIVE VPS FIX - ALL SERVICES                   ║"
+echo "║        COMPREHENSIVE SERVICE FIX - ALL SERVICES               ║"
 echo "╚════════════════════════════════════════════════════════════════╝"
 echo ""
 
@@ -33,7 +33,7 @@ docker ps -a | grep taxi || echo "No taxi containers found"
 echo ""
 
 echo "Listening Ports:"
-netstat -tuln 2>/dev/null | grep -E "(3000|3001|3002|3003|8080)" || echo "No services listening"
+netstat -tuln 2>/dev/null | grep -E "(3001|3002|3030|3040|3333)" || echo "No services listening"
 echo ""
 
 # ============================================================================
@@ -110,7 +110,7 @@ echo -e "${YELLOW}[STEP 7]${NC} Starting Node.js web services..."
 cd "$PROJECT_ROOT" || exit 1
 
 # Start Status Dashboard
-echo "Starting Status Dashboard (port 8080)..."
+echo "Starting Status Dashboard (port 3030)..."
 nohup node web/status/server.js > /root/Proyecto/logs/status.log 2>&1 &
 STATUS_PID=$!
 sleep 2
@@ -129,10 +129,10 @@ sleep 2
 echo -e "${GREEN}✓${NC} Driver Portal started"
 
 # Start Customer Server
-echo "Starting Customer App (port 3003)..."
+echo "Starting Customer App (port 3000)..."
 nohup npm run server-customer > /root/Proyecto/logs/customer.log 2>&1 &
 sleep 2
-echo -e "${GREEN}✓${nc} Customer App started"
+echo -e "${GREEN}✓${NC} Customer App started"
 
 echo ""
 
@@ -149,8 +149,8 @@ echo ""
 echo -e "${BLUE}[STEP 9]${NC} Verifying all services..."
 echo ""
 
-PORTS=(8080 3001 3002 3003)
-SERVICES=("Status Dashboard" "Admin Dashboard" "Driver Portal" "Customer App")
+declare -a PORTS=(3030 3001 3002 3000 3040 3333)
+declare -a SERVICES=("Status Dashboard" "Admin Dashboard" "Driver Portal" "Customer App" "Main API" "Magic Links API")
 FAILED=0
 
 for i in "${!PORTS[@]}"; do
@@ -180,7 +180,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}" | grep taxi
 
 echo ""
 echo "Listening Ports:"
-netstat -tuln 2>/dev/null | grep -E "(3001|3002|3003|8080)" | awk '{print $4}' | sort -u | while read port; do
+netstat -tuln 2>/dev/null | grep -E "(3001|3002|3030|3040|3333)" | awk '{print $4}' | sort -u | while read port; do
     echo "  ✓ $port"
 done
 
@@ -192,14 +192,16 @@ echo ""
 
 if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}✓ ALL SERVICES ARE OPERATIONAL (5/5)${NC}"
+    echo -e "${GREEN}✓ ALL SERVICES ARE OPERATIONAL${NC}"
     echo -e "${GREEN}════════════════════════════════════════════════════════════════${NC}"
     echo ""
     echo "Access your services:"
-    echo "  Status Dashboard: http://5.249.164.40:8080"
+    echo "  Status Dashboard: http://5.249.164.40:3030"
     echo "  Admin Dashboard:  http://5.249.164.40:3001"
     echo "  Driver Portal:    http://5.249.164.40:3002"
-    echo "  Customer App:     http://5.249.164.40:3003"
+    echo "  Customer App:     http://5.249.164.40:3000"
+    echo "  Main API:         http://5.249.164.40:3040"
+    echo "  Magic Links API:  http://5.249.164.40:3333"
 else
     echo -e "${RED}════════════════════════════════════════════════════════════════${NC}"
     echo -e "${RED}⚠ $FAILED service(s) failed to start${NC}"
