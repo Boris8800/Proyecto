@@ -12,7 +12,7 @@ rm -rf Proyecto 2>/dev/null || true
 git clone https://github.com/Boris8800/Proyecto.git
 chmod -R 755 Proyecto
 bash Proyecto/scripts/vps-deploy-fresh.sh 5.249.164.40
-DEPLOY
+DEPLOYha
 ```
 
 ### Option 2: Auto-detect IP
