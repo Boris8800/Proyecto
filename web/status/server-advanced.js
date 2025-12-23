@@ -68,6 +68,12 @@ app.use(express.static(statusDir));
 // CSRF protection middleware
 const csrfProtection = csurf({ cookie: false });
 
+// OPTIONAL: Disable CSRF for development/testing
+const isDevelopment = process.env.NODE_ENV === 'development';
+const optionalCsrfProtection = isDevelopment ? 
+    (req, res, next) => next() :  // Skip CSRF in development
+    csrfProtection;                 // Use CSRF in production
+
 // Rate limiting - General API limiter
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,  // 15 minutes
@@ -225,7 +231,7 @@ app.get('/api/auth/csrf', csrfProtection, (req, res) => {
 });
 
 // LOGIN endpoint with CSRF protection
-app.post('/api/auth/login', csrfProtection, (req, res) => {
+app.post('/api/auth/login', optionalCsrfProtection, (req, res) => {
     const { username, password } = req.body;
     
     if (!username || !password) {

@@ -644,6 +644,21 @@
     </div>
 
     <script>
+        let csrfToken = null;
+
+        // Get CSRF token
+        async function getCsrfToken() {
+            try {
+                const response = await fetch('/api/auth/csrf');
+                const data = await response.json();
+                csrfToken = data.csrfToken;
+                return csrfToken;
+            } catch (err) {
+                console.error('Failed to get CSRF token:', err);
+                return null;
+            }
+        }
+
         // Authentication
         async function handleLogin(e) {
             e.preventDefault();
@@ -656,9 +671,17 @@
             loginBtn.textContent = 'Logging in...';
 
             try {
+                // Get fresh CSRF token
+                if (!csrfToken) {
+                    await getCsrfToken();
+                }
+
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-csrf-token': csrfToken
+                    },
                     body: JSON.stringify({ username, password })
                 });
 
@@ -751,9 +774,17 @@
             };
 
             try {
+                // Get fresh CSRF token
+                if (!csrfToken) {
+                    await getCsrfToken();
+                }
+
                 const response = await fetch('/api/email/config', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-csrf-token': csrfToken
+                    },
                     body: JSON.stringify(config)
                 });
 
@@ -775,9 +806,17 @@
             if (!to) return;
 
             try {
+                // Get fresh CSRF token
+                if (!csrfToken) {
+                    await getCsrfToken();
+                }
+
                 const response = await fetch('/api/email/test', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-csrf-token': csrfToken
+                    },
                     body: JSON.stringify({
                         to: to,
                         subject: 'Test Email from Swift Cab',
@@ -818,7 +857,12 @@
         }
 
         // Initialize on page load
-        window.addEventListener('load', checkAuth);
+        window.addEventListener('load', async () => {
+            // Get CSRF token first
+            await getCsrfToken();
+            // Then check auth
+            checkAuth();
+        });
     </script>
 </body>
 </html>
