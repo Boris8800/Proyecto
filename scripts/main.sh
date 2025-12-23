@@ -488,7 +488,7 @@ fix_all_services() {
             else
                 log_warn "Status Dashboard failed to start, retrying... (attempt $((START_RETRIES+1))/3)"
                 echo "  Error log:"
-                cat "$LOG_DIR/status.log" 2>/dev/null | tail -5
+                tail -5 "$LOG_DIR/status.log" 2>/dev/null
                 START_RETRIES=$((START_RETRIES+1))
                 sleep 2
             fi
