@@ -15,7 +15,7 @@ const path = require('path');
 const os = require('os');
 
 // Load custom email server
-const CustomEmailServer = require('./custom-email-server');
+const CustomEmailServer = require('../api/custom-email-server');
 let emailServer;
 
 const app = express();
@@ -69,21 +69,6 @@ function initializeEmailConfig() {
                 port: 25,
                 enableTLS: false,
                 status: 'running'
-            }
-                    pass: 'your-app-password'
-                },
-                from: 'noreply@yourcompany.com',
-                replyTo: 'support@yourcompany.com'
-            },
-            sendgrid: {
-                apiKey: 'your-sendgrid-api-key',
-                fromEmail: 'noreply@yourcompany.com',
-                fromName: 'Swift Cab'
-            },
-            mailgun: {
-                apiKey: 'your-mailgun-api-key',
-                domain: 'mg.yourcompany.com',
-                fromEmail: 'noreply@yourcompany.com'
             }
         },
         services: {
@@ -297,36 +282,95 @@ app.post('/api/email/test', async (req, res) => {
         res.status(400).json({ success: false, message: err.message });
     }
 });
-                }
-            });
+
+// API: Health check
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+        uptime: process.uptime(),
+        services: [
+            { name: 'Admin Server', port: 3001 },
+            { name: 'Customer Server', port: 3002 },
+            { name: 'Driver Server', port: 3003 },
+            { name: 'Status Dashboard', port: 8080 }
+        ]
+    });
+});
+
+// API: Get all services
+app.get('/api/services', (req, res) => {
+    res.json({
+        services: [
+            { name: 'Admin Server', port: 3001 },
+            { name: 'Customer Server', port: 3002 },
+            { name: 'Driver Server', port: 3003 },
+            { name: 'Status Dashboard', port: 8080 }
+        ]
+    });
+});
+
+// API: Get services configuration
+app.get('/api/services/config', (req, res) => {
+    const config = loadConfig();
+    res.json(config.services || {});
+});
+
+// API: Update services configuration
+app.post('/api/services/config', (req, res) => {
+    try {
+        const config = loadConfig();
+        
+        if (req.body.maps) {
+            config.services.maps = { ...config.services.maps, ...req.body.maps };
+        }
+        
+        if (req.body.sms) {
+            config.services.sms = { ...config.services.sms, ...req.body.sms };
+        }
+        
+        if (req.body.payment) {
+            config.services.payment = { ...config.services.payment, ...req.body.payment };
+        }
+        
+        if (saveConfig(config)) {
+            res.json({ success: true, message: 'Services configuration updated' });
+        } else {
+            res.status(500).json({ success: false, message: 'Failed to save configuration' });
+        }
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
+
+// API: Test maps service
+app.post('/api/maps/test', async (req, res) => {
+    try {
+        const config = loadConfig();
+        const { origin, destination } = req.body;
+
+        if (!origin || !destination) {
+            return res.status(400).json({ success: false, message: 'Missing required fields: origin, destination' });
         }
 
-        const getFromEmail = () => {
-            if (config.email.provider === 'smtp') return config.email.smtp.from;
-            if (config.email.provider === 'sendgrid') return config.email.sendgrid.fromEmail;
-            if (config.email.provider === 'mailgun') return config.email.mailgun.fromEmail;
-            return 'noreply@example.com';
-        };
+        if (!config.services.maps.enabled) {
+            return res.status(400).json({ success: false, message: 'Maps service is not enabled' });
+        }
 
-        const mailOptions = {
-            from: getFromEmail(),
-            to: to,
-            subject: subject,
-            html: `<p>${message}</p><p><br/><small>Test email sent from Swift Cab Status Dashboard</small></p>`
-        };
-
-        const info = await transporter.sendMail(mailOptions);
+        // Simulate route calculation (would be real API call in production)
         res.json({
             success: true,
-            message: 'Test email sent successfully',
-            messageId: info.messageId
+            data: {
+                origin: origin,
+                destination: destination,
+                distance: '5.2 km',
+                duration: '12 mins',
+                status: 'OK'
+            },
+            message: 'Route calculated successfully'
         });
     } catch (err) {
-        console.error('[ERR] Email error:', err);
-        res.status(500).json({
-            success: false,
-            message: `Failed to send email: ${err.message}`
-        });
+        res.status(500).json({ success: false, message: err.message });
     }
 });
 
@@ -406,6 +450,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     if (emailServer) {
         console.log(`[INFO] API Endpoints: /api/email/config, /api/email/test, /api/services/config, /api/maps/test`);
     }
+});
+
 process.on('SIGINT', () => {
     console.log('\n[INFO] Status Dashboard shutting down...');
     server.close();
