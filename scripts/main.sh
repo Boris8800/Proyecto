@@ -500,27 +500,60 @@ fix_all_services() {
 
     echo "Starting Admin Dashboard (port $ADMIN_PORT)..."
     if [ -f "package.json" ]; then
-        nohup npm run server-admin > "$LOG_DIR/admin.log" 2>&1 &
-        sleep 3
-        log_ok "Admin Dashboard started"
+        if grep -q '"server-admin"' package.json; then
+            nohup npm run server-admin > "$LOG_DIR/admin.log" 2>&1 &
+            ADMIN_PID=$!
+            sleep 3
+            if kill -0 "$ADMIN_PID" 2>/dev/null; then
+                log_ok "Admin Dashboard started"
+            else
+                log_error "Admin Dashboard failed to start"
+                echo "  Error output:"
+                tail -10 "$LOG_DIR/admin.log" 2>/dev/null
+            fi
+        else
+            log_warn "server-admin script not found in package.json"
+        fi
     else
         log_warn "package.json not found, skipping Admin Dashboard"
     fi
 
     echo "Starting Driver Portal (port $DRIVER_PORT)..."
     if [ -f "package.json" ]; then
-        nohup npm run server-driver > "$LOG_DIR/driver.log" 2>&1 &
-        sleep 3
-        log_ok "Driver Portal started"
+        if grep -q '"server-driver"' package.json; then
+            nohup npm run server-driver > "$LOG_DIR/driver.log" 2>&1 &
+            DRIVER_PID=$!
+            sleep 3
+            if kill -0 "$DRIVER_PID" 2>/dev/null; then
+                log_ok "Driver Portal started"
+            else
+                log_error "Driver Portal failed to start"
+                echo "  Error output:"
+                tail -10 "$LOG_DIR/driver.log" 2>/dev/null
+            fi
+        else
+            log_warn "server-driver script not found in package.json"
+        fi
     else
         log_warn "package.json not found, skipping Driver Portal"
     fi
 
     echo "Starting Customer App (port $CUSTOMER_PORT)..."
     if [ -f "package.json" ]; then
-        nohup npm run server-customer > "$LOG_DIR/customer.log" 2>&1 &
-        sleep 3
-        log_ok "Customer App started"
+        if grep -q '"server-customer"' package.json; then
+            nohup npm run server-customer > "$LOG_DIR/customer.log" 2>&1 &
+            CUSTOMER_PID=$!
+            sleep 3
+            if kill -0 "$CUSTOMER_PID" 2>/dev/null; then
+                log_ok "Customer App started"
+            else
+                log_error "Customer App failed to start"
+                echo "  Error output:"
+                tail -10 "$LOG_DIR/customer.log" 2>/dev/null
+            fi
+        else
+            log_warn "server-customer script not found in package.json"
+        fi
     else
         log_warn "package.json not found, skipping Customer App"
     fi
