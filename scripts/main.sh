@@ -1266,28 +1266,27 @@ show_menu() {
     echo -e "  ${CYAN}2)${NC}  Start Real-Time Monitoring"
     echo ""
     echo -e "${CYAN}SERVICE MANAGEMENT:${NC}"
-    echo -e "  ${CYAN}3)${NC}  Fix Status Dashboard (Port $STATUS_PORT)"
-    echo -e "  ${CYAN}4)${NC}  Fix All Services"
-    echo -e "  ${CYAN}5)${NC}  Manage Dashboards"
+    echo -e "  ${CYAN}3)${NC}  Fix All Services"
+    echo -e "  ${CYAN}4)${NC}  Manage Dashboards"
     echo ""
     echo -e "${CYAN}DEPLOYMENT & INSTALLATION:${NC}"
-    echo -e "  ${CYAN}6)${NC}  Deploy to VPS"
-    echo -e "  ${CYAN}7)${NC}  Full System Installation"
+    echo -e "  ${CYAN}5)${NC}  Deploy to VPS"
+    echo -e "  ${CYAN}6)${NC}  Full System Installation"
     echo ""
     echo -e "${CYAN}CONFIGURATION:${NC}"
-    echo -e "  ${CYAN}8)${NC}  Setup Email Server"
-    echo -e "  ${CYAN}9)${NC}  Configure HTTPS/SSL"
-    echo -e "  ${CYAN}10)${NC} Deploy Nginx"
+    echo -e "  ${CYAN}7)${NC}  Setup Email Server"
+    echo -e "  ${CYAN}8)${NC}  Configure HTTPS/SSL"
+    echo -e "  ${CYAN}9)${NC} Deploy Nginx"
     echo ""
     echo -e "${CYAN}TESTING:${NC}"
-    echo -e "  ${CYAN}11)${NC} Test Web Interfaces"
-    echo -e "  ${CYAN}12)${NC} Security Testing"
+    echo -e "  ${CYAN}10)${NC} Test Web Interfaces"
+    echo -e "  ${CYAN}11)${NC} Security Testing"
     echo ""
     echo -e "${CYAN}UTILITIES:${NC}"
-    echo -e "  ${CYAN}13)${NC} Demo Magic Links"
-    echo -e "  ${CYAN}14)${NC} Exit"
+    echo -e "  ${CYAN}12)${NC} Demo Magic Links"
+    echo -e "  ${CYAN}13)${NC} Exit"
     echo ""
-    echo -n "Enter option (1-14): "
+    echo -n "Enter option (1-13): "
 }
 
 # ============================================================================
@@ -1342,18 +1341,17 @@ case "$1" in
             case $choice in
                 1)  run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
                 2)  start_monitoring ;;
-                3)  fix_status_dashboard; echo ""; read -rp "Press Enter to continue..." ;;
-                4)  fix_all_services; echo ""; read -rp "Press Enter to continue..." ;;
-                5)  manage_dashboards; echo ""; read -rp "Press Enter to continue..." ;;
-                6)  deploy_vps; echo ""; read -rp "Press Enter to continue..." ;;
-                7)  install_system; echo ""; read -rp "Press Enter to continue..." ;;
-                8)  setup_email; echo ""; read -rp "Press Enter to continue..." ;;
-                9)  setup_https; echo ""; read -rp "Press Enter to continue..." ;;
-                10) setup_nginx; echo ""; read -rp "Press Enter to continue..." ;;
-                11) test_web; echo ""; read -rp "Press Enter to continue..." ;;
-                12) test_security; echo ""; read -rp "Press Enter to continue..." ;;
-                13) demo_magic_links; echo ""; read -rp "Press Enter to continue..." ;;
-                14) echo "Goodbye!"; exit 0 ;;
+                3)  fix_all_services; echo ""; read -rp "Press Enter to continue..." ;;
+                4)  manage_dashboards; echo ""; read -rp "Press Enter to continue..." ;;
+                5)  deploy_vps; echo ""; read -rp "Press Enter to continue..." ;;
+                6)  install_system; echo ""; read -rp "Press Enter to continue..." ;;
+                7)  setup_email; echo ""; read -rp "Press Enter to continue..." ;;
+                8)  setup_https; echo ""; read -rp "Press Enter to continue..." ;;
+                9)  setup_nginx; echo ""; read -rp "Press Enter to continue..." ;;
+                10) test_web; echo ""; read -rp "Press Enter to continue..." ;;
+                11) test_security; echo ""; read -rp "Press Enter to continue..." ;;
+                12) demo_magic_links; echo ""; read -rp "Press Enter to continue..." ;;
+                13) echo "Goodbye!"; exit 0 ;;
                 *)  echo "Invalid option. Please try again."; sleep 1 ;;
             esac
         done
