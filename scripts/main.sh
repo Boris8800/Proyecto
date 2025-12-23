@@ -79,7 +79,7 @@ run_diagnostics() {
 
     for port in 3030 3001 3002 3000 3040 3333; do
         echo -n "Port $port: "
-        RESULT=$(timeout 3 curl -s -w "%{http_code}" -o /dev/null http://127.0.0.1:$port/ 2>&1)
+        RESULT=$(timeout 3 curl -s -w "%{http_code}" -o /dev/null "http://127.0.0.1:$port/" 2>&1)
         if [ -z "$RESULT" ]; then
             echo "❌ TIMEOUT or no response"
         elif [ "$RESULT" = "200" ]; then
@@ -96,7 +96,7 @@ run_diagnostics() {
     echo "═══════════════════════════════════════════════════════════════"
     echo ""
 
-    ps aux | grep -E "node|npm" | grep -v grep | awk '{print $2, $11, $12, $13}' | head -20 || echo "No Node.js processes"
+    pgrep -a "node|npm" | awk '{print $1, $2, $3, $4}' | head -20 || echo "No Node.js processes"
     echo ""
 
     # 5. Docker Logs
@@ -127,7 +127,13 @@ run_diagnostics() {
         echo "✓ Project exists at: $PROJECT_ROOT"
         echo ""
         echo "Structure:"
-        ls -la "$PROJECT_ROOT"/ | grep -E "web|config|scripts|logs" | awk '{print "  " $9, "(" $5 " bytes)"}'
+        for item in "$PROJECT_ROOT"/web "$PROJECT_ROOT"/config "$PROJECT_ROOT"/scripts "$PROJECT_ROOT"/logs; do
+            if [ -d "$item" ] || [ -f "$item" ]; then
+                size=$(stat -f%z "$item" 2>/dev/null || stat -c%s "$item" 2>/dev/null || echo 0)
+                basename=$(basename "$item")
+                echo "  $basename ($size bytes)"
+            fi
+        done
     else
         echo "❌ Project does NOT exist at $PROJECT_ROOT"
     fi
@@ -143,7 +149,7 @@ run_diagnostics() {
     echo "  docker ps -a              # View all containers"
     echo "  docker logs taxi-status   # View status dashboard logs"
     echo "  netstat -tuln             # View listening ports"
-    echo "  ps aux | grep node        # View Node.js processes"
+    echo "  pgrep node                # View Node.js processes"
     echo ""
 }
 
@@ -242,7 +248,7 @@ fix_status_dashboard() {
     for i in "${!PORTS[@]}"; do
         PORT=${PORTS[$i]}
         NAME=${NAMES[$i]}
-        RESP=$(curl -s -w "%{http_code}" -o /dev/null http://127.0.0.1:$PORT/ 2>&1)
+        RESP=$(curl -s -w "%{http_code}" -o /dev/null "http://127.0.0.1:$PORT/" 2>&1)
         
         if [ "$RESP" = "200" ]; then
             echo "✓ Port $PORT ($NAME) - WORKING"
@@ -382,7 +388,8 @@ fix_all_services() {
         PORT=${PORTS[$i]}
         SERVICE=${SERVICES[$i]}
         
-        if timeout 2 curl -s -w "%{http_code}" -o /dev/null "http://127.0.0.1:$PORT/" 2>/dev/null | grep -q "200"; then
+        CURL_RESP=$(timeout 2 curl -s -w "%{http_code}" -o /dev/null "http://127.0.0.1:$PORT/" 2>/dev/null)
+        if [ "$CURL_RESP" = "200" ]; then
             echo -e "${GREEN}✓${NC} Port $PORT ($SERVICE) - RESPONDING"
         else
             echo -e "${RED}✗${NC} Port $PORT ($SERVICE) - NOT RESPONDING"
@@ -408,7 +415,8 @@ fix_all_services() {
 
     echo ""
     echo "Node.js Processes:"
-    ps aux | grep -E "node.*server|status" | grep -v grep | wc -l | xargs echo "  Running processes:"
+    count=$(pgrep -c "node" 2>/dev/null || echo 0)
+    echo "  Running processes: $count"
 
     echo ""
 
@@ -563,27 +571,27 @@ else
             1)
                 run_diagnostics
                 echo ""
-                read -p "Press Enter to continue..."
+                read -rp "Press Enter to continue..."
                 ;;
             2)
                 fix_status_dashboard
                 echo ""
-                read -p "Press Enter to continue..."
+                read -rp "Press Enter to continue..."
                 ;;
             3)
                 fix_all_services
                 echo ""
-                read -p "Press Enter to continue..."
+                read -rp "Press Enter to continue..."
                 ;;
             4)
                 deploy_vps
                 echo ""
-                read -p "Press Enter to continue..."
+                read -rp "Press Enter to continue..."
                 ;;
             5)
                 install_system
                 echo ""
-                read -p "Press Enter to continue..."
+                read -rp "Press Enter to continue..."
                 ;;
             6)
                 echo "Goodbye!"
