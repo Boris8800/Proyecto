@@ -34,10 +34,21 @@
 
 set -e
 
+# Trap errors and cleanup
+trap 'echo "[ERROR] Script failed at line $LINENO"; exit 1' ERR
+
 PROJECT_ROOT="${PROJECT_ROOT:-/root/Proyecto}"
-[ ! -d "$PROJECT_ROOT" ] && PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [ ! -d "$PROJECT_ROOT" ]; then
+    PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+fi
+
+if [ ! -d "$PROJECT_ROOT" ]; then
+    echo "ERROR: Project root not found at $PROJECT_ROOT"
+    exit 1
+fi
 
 cd "$PROJECT_ROOT" || exit 1
+export PROJECT_ROOT
 
 # Colors for output
 RED='\033[0;31m'
@@ -411,26 +422,40 @@ fix_all_services() {
 
     log_step "[STEP 3] Stopping Docker containers..."
 
-    cd "$PROJECT_ROOT/config" || exit 1
-    docker-compose -f docker-compose.yml down 2>/dev/null || true
-    sleep 3
+    if [ -f "$PROJECT_ROOT/config/docker-compose.yml" ]; then
+        cd "$PROJECT_ROOT/config" || exit 1
+        docker-compose -f docker-compose.yml down 2>/dev/null || true
+        sleep 3
+    else
+        log_warn "docker-compose.yml not found, skipping compose down"
+    fi
 
     log_ok "Docker containers stopped"
     echo ""
 
     log_step "[STEP 4] Installing dependencies..."
 
-    cd "$PROJECT_ROOT/web" || exit 1
-    rm -rf node_modules package-lock.json 2>/dev/null || true
-    npm install --prefer-offline 2>&1 | tail -5
+    if [ -d "$PROJECT_ROOT/web" ]; then
+        cd "$PROJECT_ROOT/web" || exit 1
+        rm -rf node_modules package-lock.json 2>/dev/null || true
+        if [ -f "package.json" ]; then
+            npm install --prefer-offline --no-audit 2>&1 | tail -5 || log_warn "npm install had warnings"
+        fi
+    else
+        log_warn "web directory not found, skipping npm install"
+    fi
 
     log_ok "Dependencies installed"
     echo ""
 
     log_step "[STEP 5] Starting Docker containers..."
 
-    cd "$PROJECT_ROOT/config" || exit 1
-    docker-compose -f docker-compose.yml up -d 2>&1 | tail -10
+    if [ -f "$PROJECT_ROOT/config/docker-compose.yml" ]; then
+        cd "$PROJECT_ROOT/config" || exit 1
+        docker-compose -f docker-compose.yml up -d 2>&1 | tail -10 || log_warn "docker-compose up had warnings"
+    else
+        log_warn "docker-compose.yml not found, skipping"
+    fi
 
     echo "Waiting for containers to start (15 seconds)..."
     sleep 15
@@ -607,9 +632,17 @@ install_system() {
     echo ""
 
     log_step "[STEP 2] Installing project dependencies..."
-    cd "$PROJECT_ROOT/web"
-    npm install --prefer-offline > /dev/null 2>&1
-    log_ok "npm dependencies installed"
+    if [ -d "$PROJECT_ROOT/web" ]; then
+        cd "$PROJECT_ROOT/web" || exit 1
+        if [ -f "package.json" ]; then
+            npm install --prefer-offline --no-audit 2>&1 | tail -5 || log_warn "npm install had warnings"
+        else
+            log_warn "No package.json found in web directory"
+        fi
+    else
+        log_warn "web directory not found"
+    fi
+    log_ok "npm dependencies check completed"
     echo ""
 
     log_step "[STEP 3] Starting services..."
