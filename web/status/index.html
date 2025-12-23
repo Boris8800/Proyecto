@@ -685,7 +685,14 @@
                     body: JSON.stringify({ username, password })
                 });
 
-                const data = await response.json();
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                let data = {};
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    throw new Error('Server returned invalid response format');
+                }
 
                 if (response.ok) {
                     document.getElementById('loginScreen').style.display = 'none';
@@ -718,7 +725,11 @@
         async function checkAuth() {
             try {
                 const response = await fetch('/api/auth/status');
-                const data = await response.json();
+                const contentType = response.headers.get('content-type');
+                let data = {};
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                }
                 
                 if (!data.authenticated) {
                     document.getElementById('loginScreen').style.display = 'flex';
@@ -731,6 +742,7 @@
                 }
             } catch (err) {
                 console.error('Auth check failed:', err);
+                document.getElementById('loginScreen').style.display = 'flex';
             }
         }
 
@@ -751,10 +763,16 @@
         async function loadDashboard() {
             try {
                 const response = await fetch('/api/health');
-                const data = await response.json();
+                const contentType = response.headers.get('content-type');
+                let data = {};
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                }
                 
-                document.getElementById('memoryUsage').textContent = data.memory?.used || '--';
-                document.getElementById('systemUptime').textContent = formatUptime(data.uptime);
+                if (data.memory && data.uptime) {
+                    document.getElementById('memoryUsage').textContent = data.memory.used || '--';
+                    document.getElementById('systemUptime').textContent = formatUptime(data.uptime);
+                }
             } catch (err) {
                 console.error('Error loading dashboard:', err);
             }
