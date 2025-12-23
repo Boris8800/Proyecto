@@ -64,9 +64,8 @@ app.use(session({
     }
 }));
 
-// Serve static files
+// Static file directory (will be served AFTER API routes)
 const statusDir = path.join(__dirname);
-app.use(express.static(statusDir));
 
 // CSRF protection middleware
 const csrfProtection = csurf({ cookie: false });
@@ -470,6 +469,13 @@ app.post('/api/users', requireAuth, requireRole('admin'), requirePermission('use
 
     res.status(500).json({ error: 'Failed to create user' });
 });
+
+// ============================================================
+// SERVE STATIC FILES (AFTER API ROUTES)
+// ============================================================
+// IMPORTANT: Static files must be served after API routes
+// so that /api/* requests are handled by route handlers, not static middleware
+app.use(express.static(statusDir));
 
 // ============================================================
 // CONFIGURATION HELPERS

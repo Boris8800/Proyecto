@@ -50,9 +50,8 @@ app.use(session({
     }
 }));
 
-// Serve static files
+// Static file directory (will be served AFTER API routes)
 const statusDir = path.join(__dirname);
-app.use(express.static(statusDir));
 
 // ============================================================
 // AUTHENTICATION MIDDLEWARE
@@ -366,6 +365,13 @@ app.get('/api/web-servers/:type/email-config', (req, res) => {
     const config = loadConfig(CONFIG_FILE);
     res.json(config?.email || {});
 });
+
+// ============================================================
+// SERVE STATIC FILES (AFTER API ROUTES)
+// ============================================================
+// IMPORTANT: Static files must be served after API routes
+// so that /api/* requests are handled by route handlers, not static middleware
+app.use(express.static(statusDir));
 
 // ============================================================
 // ERROR HANDLING

@@ -33,9 +33,8 @@ const CONFIG_FILE = path.join(__dirname, '../..', 'config', 'email-config.json')
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Serve static files
+// Static file directory (will be served AFTER API routes)
 const statusDir = path.join(__dirname);
-app.use(express.static(statusDir));
 
 // Initialize default email config
 function initializeEmailConfig() {
@@ -382,6 +381,13 @@ app.post('/api/maps/test', async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+// ============================================================
+// SERVE STATIC FILES (AFTER API ROUTES)
+// ============================================================
+// IMPORTANT: Static files must be served after API routes
+// so that /api/* requests are handled by route handlers, not static middleware
+app.use(express.static(statusDir));
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
