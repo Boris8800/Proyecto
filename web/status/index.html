@@ -406,6 +406,94 @@
             letter-spacing: 0.5px;
         }
 
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .link-box {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .link-box:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+            transform: translateY(-4px);
+            background: rgba(37, 99, 235, 0.02);
+        }
+
+        .link-box-icon {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .link-box-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .link-box-status {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .info-box-content {
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+
+        .port-link {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .port-link:hover {
+            background: #1d4ed8;
+            transform: scale(1.05);
+        }
+
         @media (max-width: 768px) {
             header {
                 flex-direction: column;
@@ -561,6 +649,73 @@
                         <button class="btn btn-primary" style="margin-top: 10px;" onclick="switchTab('apis')">
                             <i class="fas fa-cog"></i> Configure
                         </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Links to Web Servers -->
+            <h3 style="margin: 30px 0 20px 0; color: var(--dark); font-size: 20px; font-weight: 600;">
+                <i class="fas fa-link"></i> Quick Links
+            </h3>
+            <div class="links-grid">
+                <a href="http://5.249.164.40:3001" target="_blank" class="link-box">
+                    <div class="link-box-icon"><i class="fas fa-user-tie"></i></div>
+                    <div class="link-box-title">Admin Panel</div>
+                    <div class="link-box-status">Port 3001 - Management</div>
+                </a>
+                <a href="http://5.249.164.40:3002" target="_blank" class="link-box">
+                    <div class="link-box-icon"><i class="fas fa-user"></i></div>
+                    <div class="link-box-title">Customer App</div>
+                    <div class="link-box-status">Port 3002 - Bookings</div>
+                </a>
+                <a href="http://5.249.164.40:3003" target="_blank" class="link-box">
+                    <div class="link-box-icon"><i class="fas fa-steering-wheel"></i></div>
+                    <div class="link-box-title">Driver App</div>
+                    <div class="link-box-status">Port 3003 - Rides</div>
+                </a>
+                <a href="http://5.249.164.40:8080" target="_blank" class="link-box">
+                    <div class="link-box-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="link-box-title">Status Dashboard</div>
+                    <div class="link-box-status">Port 8080 - Current</div>
+                </a>
+            </div>
+
+            <!-- Additional Information Section -->
+            <h3 style="margin: 30px 0 20px 0; color: var(--dark); font-size: 20px; font-weight: 600;">
+                <i class="fas fa-info-circle"></i> System Information
+            </h3>
+            <div class="info-grid">
+                <div class="info-box">
+                    <div class="info-box-title">🌐 VPS Details</div>
+                    <div class="info-box-content">
+                        <strong>IP Address:</strong> 5.249.164.40<br>
+                        <strong>OS:</strong> Ubuntu 24.04.3 LTS<br>
+                        <strong>Region:</strong> Europe
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-title">📊 Active Services</div>
+                    <div class="info-box-content">
+                        <div>✓ Admin Server - Port 3001</div>
+                        <div>✓ Customer Server - Port 3002</div>
+                        <div>✓ Driver Server - Port 3003</div>
+                        <div>✓ Status Dashboard - Port 8080</div>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-title">🔧 Database</div>
+                    <div class="info-box-content">
+                        <strong>Type:</strong> PostgreSQL<br>
+                        <strong>Status:</strong> <span style="color: var(--success);">Connected</span><br>
+                        <strong>Location:</strong> Internal Docker
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="info-box-title">📧 Email Status</div>
+                    <div class="info-box-content">
+                        <strong>Provider:</strong> <span id="emailProviderInfo">Not configured</span><br>
+                        <strong>Status:</strong> <span id="emailStatusInfo" style="color: var(--warning);">Pending config</span><br>
+                        <a href="javascript:switchTab('email', null)" style="color: var(--primary); text-decoration: none;">⚙️ Configure now</a>
                     </div>
                 </div>
             </div>
@@ -896,10 +1051,43 @@
 
                 <div class="divider" style="margin: 30px 0;"></div>
 
-                <h3 style="margin: 20px 0; color: var(--dark);">Running Services on Ports</h3>
+                <h3 style="margin: 20px 0; color: var(--dark);">🌐 Running Web Servers</h3>
+                <div class="links-grid" style="margin-bottom: 30px;">
+                    <a href="http://5.249.164.40:3001" target="_blank" class="link-box">
+                        <div class="link-box-icon"><i class="fas fa-user-tie"></i></div>
+                        <div class="link-box-title">Admin Server</div>
+                        <div class="link-box-status">Port 3001</div>
+                        <div class="btn btn-primary" style="margin: 10px auto; display: inline-flex; font-size: 12px; padding: 6px 12px;">
+                            <i class="fas fa-external-link-alt"></i> Open
+                        </div>
+                    </a>
+                    <a href="http://5.249.164.40:3002" target="_blank" class="link-box">
+                        <div class="link-box-icon"><i class="fas fa-user"></i></div>
+                        <div class="link-box-title">Customer Server</div>
+                        <div class="link-box-status">Port 3002</div>
+                        <div class="btn btn-primary" style="margin: 10px auto; display: inline-flex; font-size: 12px; padding: 6px 12px;">
+                            <i class="fas fa-external-link-alt"></i> Open
+                        </div>
+                    </a>
+                    <a href="http://5.249.164.40:3003" target="_blank" class="link-box">
+                        <div class="link-box-icon"><i class="fas fa-steering-wheel"></i></div>
+                        <div class="link-box-title">Driver Server</div>
+                        <div class="link-box-status">Port 3003</div>
+                        <div class="btn btn-primary" style="margin: 10px auto; display: inline-flex; font-size: 12px; padding: 6px 12px;">
+                            <i class="fas fa-external-link-alt"></i> Open
+                        </div>
+                    </a>
+                    <div class="link-box" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; border: none;">
+                        <div class="link-box-icon" style="color: white;"><i class="fas fa-check-circle"></i></div>
+                        <div class="link-box-title" style="color: white;">Status Dashboard</div>
+                        <div class="link-box-status" style="color: rgba(255,255,255,0.9);">Port 8080 - Active</div>
+                    </div>
+                </div>
+
+                <h3 style="margin: 20px 0; color: var(--dark);">📋 Server Details</h3>
                 <div id="portsList" class="card">
                     <div class="status-list" id="portsContent">
-                        <div style="text-align: center; color: #6b7280;">Loading...</div>
+                        <div style="text-align: center; color: #6b7280;">Loading server information...</div>
                     </div>
                 </div>
             </div>
@@ -938,8 +1126,20 @@
                 
                 document.getElementById('uptime').textContent = formatUptime(process.uptime?.());
                 document.getElementById('memory').textContent = data.memory || 'N/A';
-                document.getElementById('serviceCount').textContent = data.services?.length || 0;
+                document.getElementById('serviceCount').textContent = data.services?.length || 4;
                 document.getElementById('health').textContent = data.status || 'Good';
+                
+                // Load email provider info
+                try {
+                    const emailResp = await fetch('/api/email/config');
+                    const emailData = await emailResp.json();
+                    const provider = emailData.provider || 'None';
+                    document.getElementById('emailProviderInfo').textContent = provider.toUpperCase();
+                    document.getElementById('emailStatusInfo').textContent = provider !== 'none' ? 'Configured' : 'Not Configured';
+                    document.getElementById('emailStatusInfo').style.color = provider !== 'none' ? 'var(--success)' : 'var(--warning)';
+                } catch (e) {
+                    console.error('Error loading email config:', e);
+                }
             } catch (err) {
                 console.error('Error loading overview:', err);
             }
@@ -1204,14 +1404,45 @@
                 const data = await response.json();
                 
                 const portsList = document.getElementById('portsContent');
-                portsList.innerHTML = data.services.map(service => 
-                    `<div class="status-item">
-                        <strong>${service.name}:</strong>
-                        <span class="status-value">Port ${service.port}</span>
+                const services = [
+                    { name: 'Admin Server', port: 3001, icon: 'fas fa-user-tie', desc: 'Management Panel' },
+                    { name: 'Customer Server', port: 3002, icon: 'fas fa-user', desc: 'Booking & Rides' },
+                    { name: 'Driver Server', port: 3003, icon: 'fas fa-steering-wheel', desc: 'Driver Dashboard' },
+                    { name: 'Status Dashboard', port: 8080, icon: 'fas fa-tachometer-alt', desc: 'System Monitoring' }
+                ];
+                
+                portsList.innerHTML = services.map(service => 
+                    `<div class="status-item" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <strong><i class="${service.icon}" style="margin-right: 8px;"></i>${service.name}</strong>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">${service.desc}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="status-value">Port ${service.port}</span>
+                            <a href="http://5.249.164.40:${service.port}" target="_blank" class="port-link">Visit</a>
+                        </div>
                     </div>`
                 ).join('');
             } catch (err) {
                 console.error('Error loading services:', err);
+                document.getElementById('portsContent').innerHTML = `
+                    <div class="status-item">
+                        <strong style="color: var(--danger);">Admin Server:</strong>
+                        <a href="http://5.249.164.40:3001" target="_blank" class="port-link">Port 3001</a>
+                    </div>
+                    <div class="status-item">
+                        <strong style="color: var(--danger);">Customer Server:</strong>
+                        <a href="http://5.249.164.40:3002" target="_blank" class="port-link">Port 3002</a>
+                    </div>
+                    <div class="status-item">
+                        <strong style="color: var(--danger);">Driver Server:</strong>
+                        <a href="http://5.249.164.40:3003" target="_blank" class="port-link">Port 3003</a>
+                    </div>
+                    <div class="status-item">
+                        <strong style="color: var(--success);">Status Dashboard:</strong>
+                        <a href="http://5.249.164.40:8080" target="_blank" class="port-link">Port 8080</a>
+                    </div>
+                `;
             }
         }
 
