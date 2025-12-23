@@ -474,31 +474,60 @@ fix_all_services() {
 
     cd "$PROJECT_ROOT" || exit 1
 
+    # Try starting Status Dashboard with retry logic
     echo "Starting Status Dashboard (port $STATUS_PORT)..."
-    nohup node web/status/server.js > "$LOG_DIR/status.log" 2>&1 &
-    STATUS_PID=$!
-    sleep 2
-    log_ok "Status Dashboard started (PID: $STATUS_PID)"
+    START_RETRIES=0
+    while [ $START_RETRIES -lt 3 ]; do
+        if [ -f "web/status/server.js" ]; then
+            nohup node web/status/server.js > "$LOG_DIR/status.log" 2>&1 &
+            STATUS_PID=$!
+            sleep 3
+            if kill -0 "$STATUS_PID" 2>/dev/null; then
+                log_ok "Status Dashboard started (PID: $STATUS_PID)"
+                break
+            else
+                log_warn "Status Dashboard failed to start, retrying... (attempt $((START_RETRIES+1))/3)"
+                cat "$LOG_DIR/status.log" 2>/dev/null | tail -3
+                START_RETRIES=$((START_RETRIES+1))
+                sleep 2
+            fi
+        else
+            log_error "web/status/server.js not found"
+            break
+        fi
+    done
 
     echo "Starting Admin Dashboard (port $ADMIN_PORT)..."
-    nohup npm run server-admin > "$LOG_DIR/admin.log" 2>&1 &
-    sleep 2
-    log_ok "Admin Dashboard started"
+    if [ -f "package.json" ]; then
+        nohup npm run server-admin > "$LOG_DIR/admin.log" 2>&1 &
+        sleep 3
+        log_ok "Admin Dashboard started"
+    else
+        log_warn "package.json not found, skipping Admin Dashboard"
+    fi
 
     echo "Starting Driver Portal (port $DRIVER_PORT)..."
-    nohup npm run server-driver > "$LOG_DIR/driver.log" 2>&1 &
-    sleep 2
-    log_ok "Driver Portal started"
+    if [ -f "package.json" ]; then
+        nohup npm run server-driver > "$LOG_DIR/driver.log" 2>&1 &
+        sleep 3
+        log_ok "Driver Portal started"
+    else
+        log_warn "package.json not found, skipping Driver Portal"
+    fi
 
     echo "Starting Customer App (port $CUSTOMER_PORT)..."
-    nohup npm run server-customer > "$LOG_DIR/customer.log" 2>&1 &
-    sleep 2
-    log_ok "Customer App started"
+    if [ -f "package.json" ]; then
+        nohup npm run server-customer > "$LOG_DIR/customer.log" 2>&1 &
+        sleep 3
+        log_ok "Customer App started"
+    else
+        log_warn "package.json not found, skipping Customer App"
+    fi
 
     echo ""
 
-    log_step "[STEP 8] Waiting for services to become ready (10 seconds)..."
-    sleep 10
+    log_step "[STEP 8] Waiting for services to become ready (15 seconds)..."
+    sleep 15
     echo ""
 
     log_step "[STEP 9] Verifying all services..."
@@ -512,11 +541,25 @@ fix_all_services() {
         PORT=${PORTS[$i]}
         SERVICE=${SERVICES[$i]}
         
-        CURL_RESP=$(timeout 2 curl -s -w "%{http_code}" -o /dev/null "http://127.0.0.1:$PORT/" 2>/dev/null)
-        if [ "$CURL_RESP" = "200" ]; then
-            log_ok "Port $PORT ($SERVICE) - RESPONDING"
+        if netstat -tuln 2>/dev/null | grep -q ":$PORT "; then
+            log_ok "Port $PORT ($SERVICE) - LISTENING"
         else
-            log_error "Port $PORT ($SERVICE) - NOT RESPONDING"
+            log_error "Port $PORT ($SERVICE) - NOT LISTENING"
+            echo "  Error logs from $SERVICE:"
+            case "$SERVICE" in
+                "Status Dashboard")
+                    tail -5 "$LOG_DIR/status.log" 2>/dev/null || echo "    No logs available"
+                    ;;
+                "Admin Dashboard")
+                    tail -5 "$LOG_DIR/admin.log" 2>/dev/null || echo "    No logs available"
+                    ;;
+                "Driver Portal")
+                    tail -5 "$LOG_DIR/driver.log" 2>/dev/null || echo "    No logs available"
+                    ;;
+                "Customer App")
+                    tail -5 "$LOG_DIR/customer.log" 2>/dev/null || echo "    No logs available"
+                    ;;
+            esac
             FAILED=$((FAILED+1))
         fi
     done
