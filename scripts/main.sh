@@ -634,6 +634,23 @@ install_system() {
     log_warn "Installation will begin in 30 seconds. Press Ctrl+C to cancel..."
     sleep 30
     echo ""
+    
+    # Final confirmation prompt
+    echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║  FINAL CONFIRMATION REQUIRED                                  ║${NC}"
+    echo -e "${RED}║  Type 'yes' to proceed or 'no' to cancel                      ║${NC}"
+    echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
+    read -p "Are you absolutely sure? (type 'yes' or 'no'): " -r CONFIRM
+    echo ""
+    
+    if [ "$CONFIRM" != "yes" ]; then
+        log_warn "Installation cancelled by user"
+        return 1
+    fi
+    
+    log_ok "Proceeding with installation..."
+    echo ""
 
     # ========================================================================
     # PHASE 0: Confirmation and Pre-checks
