@@ -15,10 +15,10 @@ GREEN='\e[32m'
 YELLOW='\e[33m'
 BLUE='\e[34m'
 CYAN='\e[31m'
-NC='\e[0m'
+NC='\e[0m'=
 
 # Global variables
-VPS_IP="5.249.164.40"
+VPS_IP="5.249.164.40"o
 BACKUP_DIR="backups"
 LOG_DIR="logs"
 
