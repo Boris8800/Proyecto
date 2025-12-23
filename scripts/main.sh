@@ -1439,6 +1439,7 @@ case "$1" in
         echo ""
         echo "Running post-action diagnostics..."
         run_diagnostics
-        echo ""  
+        echo ""
+        log_ok "Script execution completed."
         ;;
 esac
