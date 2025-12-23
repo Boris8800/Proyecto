@@ -1041,7 +1041,7 @@ test_security() {
     # Check for running as root
     echo "2. PROCESS OWNERSHIP:"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    ps aux | grep "[n]ode" | awk '{print "User: " $1 ", PID: " $2 ", Process: " $11}' | head -10
+    pgrep -a node 2>/dev/null | head -10 || echo "No node processes found"
     echo ""
 
     # Check file permissions
@@ -1049,7 +1049,7 @@ test_security() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     for file in "$PROJECT_ROOT/.env" "$PROJECT_ROOT/.env.production" "$PROJECT_ROOT/config/email-config.json"; do
         if [ -f "$file" ]; then
-            perms=$(ls -la "$file" | awk '{print $1}')
+            perms=$(stat -c '%A' "$file" 2>/dev/null || stat -f '%Sp' "$file" 2>/dev/null)
             echo "  $file: $perms"
         fi
     done
