@@ -66,7 +66,7 @@ services:
       PORT: 3040
       VPS_IP: ${VPS_IP:-127.0.0.1}
       API_BASE_URL: http://${VPS_IP:-127.0.0.1}:3040
-    command: sh -c "npm install --prefer-offline && node magic-links-server.js"
+    command: sh -c "rm -rf node_modules && npm install --prefer-offline --no-audit && node magic-links-server.js"
     networks:
       - taxi_network
     depends_on:
@@ -87,7 +87,7 @@ services:
       NODE_ENV: production
       STATUS_PORT: 3030
       VPS_IP: ${VPS_IP:-127.0.0.1}
-    command: sh -c "npm install && node status/server.js"
+    command: sh -c "rm -rf node_modules && npm install --prefer-offline --no-audit && node status/server.js"
     networks:
       - taxi_network
     depends_on:
