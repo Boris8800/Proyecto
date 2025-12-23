@@ -479,7 +479,7 @@ fix_all_services() {
     START_RETRIES=0
     while [ $START_RETRIES -lt 3 ]; do
         if [ -f "web/status/server.js" ]; then
-            nohup node web/status/server.js > "$LOG_DIR/status.log" 2>&1 &
+            nohup env STATUS_PORT="$STATUS_PORT" VPS_IP="$VPS_IP" node web/status/server.js > "$LOG_DIR/status.log" 2>&1 &
             STATUS_PID=$!
             sleep 3
             if kill -0 "$STATUS_PID" 2>/dev/null; then
@@ -487,7 +487,8 @@ fix_all_services() {
                 break
             else
                 log_warn "Status Dashboard failed to start, retrying... (attempt $((START_RETRIES+1))/3)"
-                cat "$LOG_DIR/status.log" 2>/dev/null | tail -3
+                echo "  Error log:"
+                cat "$LOG_DIR/status.log" 2>/dev/null | tail -5
                 START_RETRIES=$((START_RETRIES+1))
                 sleep 2
             fi
