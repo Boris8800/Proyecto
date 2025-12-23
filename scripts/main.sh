@@ -61,6 +61,60 @@ LOG_DIR="$PROJECT_ROOT/logs"
 mkdir -p "$LOG_DIR"
 
 # ============================================================================
+# SYSTEM DETECTION HELPERS
+# ============================================================================
+OS_NAME="Unknown"
+OS_VERSION="Unknown"
+PKG_MANAGER="apt"
+
+detect_os_info() {
+    if [ -f /etc/os-release ]; then
+        # shellcheck disable=SC1091
+        . /etc/os-release
+        OS_NAME=${NAME:-Unknown}
+        OS_VERSION=${VERSION_ID:-Unknown}
+    fi
+    if command -v apt-get >/dev/null 2>&1; then
+        PKG_MANAGER="apt"
+    elif command -v yum >/dev/null 2>&1; then
+        PKG_MANAGER="yum"
+    fi
+}
+
+clean_downloads() {
+    if [ -d /root/Downloads ]; then
+        rm -rf /root/Downloads/* 2>/dev/null || true
+    fi
+}
+
+kill_taxi_processes() {
+    # Kill processes on known service ports
+    for port in $STATUS_PORT $ADMIN_PORT $DRIVER_PORT $CUSTOMER_PORT $API_PORT $MAGIC_LINKS_PORT; do
+        fuser -k "$port"/tcp 2>/dev/null || true
+    done
+    # Kill common process names
+    pkill -f "taxi" 2>/dev/null || true
+    pkill -f "status/server.js" 2>/dev/null || true
+    pkill -f "server-admin" 2>/dev/null || true
+    pkill -f "server-driver" 2>/dev/null || true
+    pkill -f "server-customer" 2>/dev/null || true
+    pkill -f "magic-links" 2>/dev/null || true
+}
+
+remove_taxi_user() {
+    if id -u taxi >/dev/null 2>&1; then
+        pkill -u taxi 2>/dev/null || true
+        userdel -r taxi 2>/dev/null || true
+    fi
+}
+
+create_taxi_user() {
+    if ! id -u taxi >/dev/null 2>&1; then
+        useradd -m -s /bin/bash taxi 2>/dev/null || true
+    fi
+}
+
+# ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
 log_info() { echo -e "${BLUE}[INFO]${NC} $1"; }
@@ -562,6 +616,49 @@ install_system() {
     echo "║              INSTALLATION COMPLETE                            ║"
     echo "╚════════════════════════════════════════════════════════════════╝"
     echo ""
+}
+
+# ============================================================================
+# CLEAN INSTALL & UPDATE FLOWS
+# ============================================================================
+full_clean_install() {
+    clear
+    detect_os_info
+    echo "===================================================="
+    echo "        VPS TAXI SYSTEM – MAIN MENU"
+    echo "===================================================="
+    echo ""
+    echo "Detected OS:"
+    echo "→ Distribution  : $OS_NAME"
+    echo "→ Version       : $OS_VERSION"
+    echo "→ Package Manager: $PKG_MANAGER"
+    echo ""
+    log_step "Performing full clean install (destructive)"
+    clean_downloads
+    kill_taxi_processes
+    remove_taxi_user
+    create_taxi_user
+    install_system
+}
+
+update_existing_taxi_user() {
+    clear
+    detect_os_info
+    echo "===================================================="
+    echo "        VPS TAXI SYSTEM – MAIN MENU"
+    echo "===================================================="
+    echo ""
+    echo "Detected OS:"
+    echo "→ Distribution  : $OS_NAME"
+    echo "→ Version       : $OS_VERSION"
+    echo "→ Package Manager: $PKG_MANAGER"
+    echo ""
+    log_step "Updating existing taxi user (non-destructive)"
+    if [ "$PKG_MANAGER" = "apt" ]; then
+        apt-get update -y >/dev/null 2>&1 || true
+        apt-get upgrade -y >/dev/null 2>&1 || true
+    fi
+    fix_all_services
 }
 
 # ============================================================================
@@ -1251,109 +1348,145 @@ demo_magic_links() {
 }
 
 # ============================================================================
-# SHOW MENU
+# MENUS
 # ============================================================================
-show_menu() {
+show_primary_menu() {
     clear
-    echo "╔════════════════════════════════════════════════════════════════╗"
-    echo "║     PROYECTO TAXI - COMPREHENSIVE SERVICE MANAGEMENT          ║"
-    echo "╚════════════════════════════════════════════════════════════════╝"
+    detect_os_info
+    echo "===================================================="
+    echo "        VPS TAXI SYSTEM – MAIN MENU"
+    echo "===================================================="
     echo ""
-    echo "Select an option:"
+    echo "System Check:"
+    echo "- Detecting Linux distribution..."
+    echo "- Supported systems:"
+    echo "  • Ubuntu (18.04 / 20.04 / 22.04 / 24.04)"
+    echo "  • Debian (10 / 11 / 12)"
     echo ""
-    echo -e "${CYAN}DIAGNOSTICS & STATUS:${NC}"
-    echo -e "  ${CYAN}1)${NC}  Run Full Diagnostics"
-    echo -e "  ${CYAN}2)${NC}  Start Real-Time Monitoring"
+    echo "If an unsupported distribution is detected,"
+    echo "the installer will stop automatically."
     echo ""
-    echo -e "${CYAN}SERVICE MANAGEMENT:${NC}"
-    echo -e "  ${CYAN}3)${NC}  Fix All Services"
-    echo -e "  ${CYAN}4)${NC}  Manage Dashboards"
+    echo "Detected OS:"
+    echo "→ Distribution  : $OS_NAME"
+    echo "→ Version       : $OS_VERSION"
+    echo "→ Package Manager: $PKG_MANAGER"
     echo ""
-    echo -e "${CYAN}DEPLOYMENT & INSTALLATION:${NC}"
-    echo -e "  ${CYAN}5)${NC}  Deploy to VPS"
-    echo -e "  ${CYAN}6)${NC}  Full System Installation"
+    echo "Please choose one of the following options:"
+    echo "----------------------------------------------------"
+    echo "[1] FULL CLEAN INSTALL (RECOMMENDED)"
+    echo "  - Remove old downloads"
+    echo "  - Kill Taxi processes"
+    echo "  - Remove/create taxi user"
+    echo "  - Fresh install"
     echo ""
-    echo -e "${CYAN}CONFIGURATION:${NC}"
-    echo -e "  ${CYAN}7)${NC}  Setup Email Server"
-    echo -e "  ${CYAN}8)${NC}  Configure HTTPS/SSL"
-    echo -e "  ${CYAN}9)${NC} Deploy Nginx"
+    echo "[2] UPDATE EXISTING TAXI USER"
+    echo "  - Keep taxi user"
+    echo "  - Update services"
     echo ""
-    echo -e "${CYAN}TESTING:${NC}"
-    echo -e "  ${CYAN}10)${NC} Test Web Interfaces"
-    echo -e "  ${CYAN}11)${NC} Security Testing"
+    echo "[3] TESTS & ERROR DIAGNOSTICS"
+    echo "  - Verify OS, permissions, ports, services"
     echo ""
-    echo -e "${CYAN}UTILITIES:${NC}"
-    echo -e "  ${CYAN}12)${NC} Demo Magic Links"
-    echo -e "  ${CYAN}13)${NC} Exit"
+    echo "[4] EXIT"
     echo ""
-    echo -n "Enter option (1-13): "
+    echo -n "Enter your choice [1-4]: "
+}
+
+show_advanced_menu() {
+    clear
+    detect_os_info
+    echo "===================================================="
+    echo "        VPS TAXI SYSTEM – ADVANCED MENU"
+    echo "===================================================="
+    echo ""
+    echo "System Pre-Check:"
+    echo "- Detecting Linux distribution (Ubuntu / Debian)"
+    echo "- Validating root permissions"
+    echo "- Checking network connectivity"
+    echo "- Scanning critical ports status"
+    echo ""
+    echo "Supported OS only. Installer will stop if unsupported."
+    echo ""
+    echo "Detected OS:"
+    echo "→ Distribution  : $OS_NAME"
+    echo "→ Version       : $OS_VERSION"
+    echo "→ Package Manager: $PKG_MANAGER"
+    echo ""
+    echo "Please select an option (auto-select 7 in 30s):"
+    echo "----------------------------------------------------"
+    echo "[1] RUN FULL DIAGNOSTICS"
+    echo "[2] START REAL-TIME MONITORING"
+    echo "[3] FIX STATUS DASHBOARD"
+    echo "[4] FIX ALL SERVICES"
+    echo "[5] MANAGE DASHBOARDS"
+    echo "[6] DEPLOY TO VPS"
+    echo "[7] FULL SYSTEM INSTALLATION"
+    echo "[8] SETUP EMAIL SERVER"
+    echo "[9] CONFIGURE HTTPS / SSL"
+    echo "[10] DEPLOY NGINX"
+    echo "[11] TEST WEB INTERFACES"
+    echo "[12] SECURITY TESTING"
+    echo "[13] DEMO MAGIC LINKS"
+    echo "[14] EXIT"
+    echo ""
+    echo -n "Enter your choice [1-14] (default 7 after 30s): "
 }
 
 # ============================================================================
 # MAIN LOGIC
 # ============================================================================
 case "$1" in
-    diagnose)
-        run_diagnostics
-        ;;
-    fix-status)
-        fix_status_dashboard
-        ;;
-    fix-all)
-        fix_all_services
-        ;;
-    deploy-vps)
-        deploy_vps
-        ;;
-    install)
-        install_system
-        ;;
-    setup-email)
-        setup_email
-        ;;
-    setup-https)
-        setup_https
-        ;;
-    setup-nginx)
-        setup_nginx
-        ;;
-    monitor)
-        start_monitoring
-        ;;
-    test-web)
-        test_web
-        ;;
-    test-security)
-        test_security
-        ;;
-    manage-dashboards)
-        manage_dashboards
-        ;;
-    demo-magic-links)
-        demo_magic_links
-        ;;
+    diagnose) run_diagnostics ;;
+    fix-status) fix_status_dashboard ;;
+    fix-all) fix_all_services ;;
+    deploy-vps) deploy_vps ;;
+    install) install_system ;;
+    setup-email) setup_email ;;
+    setup-https) setup_https ;;
+    setup-nginx) setup_nginx ;;
+    monitor) start_monitoring ;;
+    test-web) test_web ;;
+    test-security) test_security ;;
+    manage-dashboards) manage_dashboards ;;
+    demo-magic-links) demo_magic_links ;;
     *)
-        # Interactive menu
+        # Primary menu
         while true; do
-            show_menu
-            read -r choice
-            
-            case $choice in
-                1)  run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
-                2)  start_monitoring ;;
-                3)  fix_all_services; echo ""; read -rp "Press Enter to continue..." ;;
-                4)  manage_dashboards; echo ""; read -rp "Press Enter to continue..." ;;
-                5)  deploy_vps; echo ""; read -rp "Press Enter to continue..." ;;
-                6)  install_system; echo ""; read -rp "Press Enter to continue..." ;;
-                7)  setup_email; echo ""; read -rp "Press Enter to continue..." ;;
-                8)  setup_https; echo ""; read -rp "Press Enter to continue..." ;;
-                9)  setup_nginx; echo ""; read -rp "Press Enter to continue..." ;;
-                10) test_web; echo ""; read -rp "Press Enter to continue..." ;;
-                11) test_security; echo ""; read -rp "Press Enter to continue..." ;;
-                12) demo_magic_links; echo ""; read -rp "Press Enter to continue..." ;;
-                13) echo "Goodbye!"; exit 0 ;;
-                *)  echo "Invalid option. Please try again."; sleep 1 ;;
+            show_primary_menu
+            if ! read -r primary_choice; then
+                exit 1
+            fi
+            case $primary_choice in
+                1) full_clean_install; echo ""; read -rp "Press Enter to continue..." ;;
+                2) update_existing_taxi_user; echo ""; read -rp "Press Enter to continue..." ;;
+                3) run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
+                4) exit 0 ;;
+                *) echo "Invalid option. Please try again."; sleep 1 ;;
             esac
+
+            # After primary choice, show advanced menu with 30s default to option 7
+            while true; do
+                show_advanced_menu
+                if ! read -t 30 -r adv_choice; then
+                    adv_choice=7
+                fi
+                case $adv_choice in
+                    1) run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
+                    2) start_monitoring ;;
+                    3) fix_status_dashboard; echo ""; read -rp "Press Enter to continue..." ;;
+                    4) fix_all_services; echo ""; read -rp "Press Enter to continue..." ;;
+                    5) manage_dashboards; echo ""; read -rp "Press Enter to continue..." ;;
+                    6) deploy_vps; echo ""; read -rp "Press Enter to continue..." ;;
+                    7) install_system; echo ""; read -rp "Press Enter to continue..." ;;
+                    8) setup_email; echo ""; read -rp "Press Enter to continue..." ;;
+                    9) setup_https; echo ""; read -rp "Press Enter to continue..." ;;
+                    10) setup_nginx; echo ""; read -rp "Press Enter to continue..." ;;
+                    11) test_web; echo ""; read -rp "Press Enter to continue..." ;;
+                    12) test_security; echo ""; read -rp "Press Enter to continue..." ;;
+                    13) demo_magic_links; echo ""; read -rp "Press Enter to continue..." ;;
+                    14) exit 0 ;;
+                    *) echo "Invalid option. Please try again."; sleep 1 ;;
+                esac
+            done
         done
         ;;
 esac
