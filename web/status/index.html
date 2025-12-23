@@ -644,21 +644,6 @@
     </div>
 
     <script>
-        let csrfToken = null;
-
-        // Get CSRF token
-        async function getCsrfToken() {
-            try {
-                const response = await fetch('/api/auth/csrf');
-                const data = await response.json();
-                csrfToken = data.csrfToken;
-                return csrfToken;
-            } catch (err) {
-                console.error('Failed to get CSRF token:', err);
-                return null;
-            }
-        }
-
         // Authentication
         async function handleLogin(e) {
             e.preventDefault();
@@ -671,42 +656,38 @@
             loginBtn.textContent = 'Logging in...';
 
             try {
-                // Get fresh CSRF token
-                if (!csrfToken) {
-                    await getCsrfToken();
-                }
-
                 const response = await fetch('/api/auth/login', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-csrf-token': csrfToken
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ username, password })
                 });
 
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                let data = {};
-                if (contentType && contentType.includes('application/json')) {
-                    data = await response.json();
-                } else {
-                    throw new Error('Server returned invalid response format');
+                if (!response.ok) {
+                    const error = await response.text();
+                    alertDiv.innerHTML = `<div class="alert alert-danger">Login failed: ${response.status}</div>`;
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
+                    return;
                 }
 
-                if (response.ok) {
+                const data = await response.json();
+
+                if (data.success) {
                     document.getElementById('loginScreen').style.display = 'none';
                     document.getElementById('dashboard').classList.add('show');
                     document.getElementById('currentUser').textContent = data.user.username;
                     loadDashboard();
                 } else {
                     alertDiv.innerHTML = `<div class="alert alert-danger">${data.error || 'Login failed'}</div>`;
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
                 }
             } catch (err) {
                 alertDiv.innerHTML = `<div class="alert alert-danger">Connection error: ${err.message}</div>`;
-            } finally {
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Login';
+                console.error('Login error:', err);
             }
         }
 
@@ -725,11 +706,7 @@
         async function checkAuth() {
             try {
                 const response = await fetch('/api/auth/status');
-                const contentType = response.headers.get('content-type');
-                let data = {};
-                if (contentType && contentType.includes('application/json')) {
-                    data = await response.json();
-                }
+                const data = await response.json();
                 
                 if (!data.authenticated) {
                     document.getElementById('loginScreen').style.display = 'flex';
@@ -742,7 +719,6 @@
                 }
             } catch (err) {
                 console.error('Auth check failed:', err);
-                document.getElementById('loginScreen').style.display = 'flex';
             }
         }
 
@@ -763,16 +739,10 @@
         async function loadDashboard() {
             try {
                 const response = await fetch('/api/health');
-                const contentType = response.headers.get('content-type');
-                let data = {};
-                if (contentType && contentType.includes('application/json')) {
-                    data = await response.json();
-                }
+                const data = await response.json();
                 
-                if (data.memory && data.uptime) {
-                    document.getElementById('memoryUsage').textContent = data.memory.used || '--';
-                    document.getElementById('systemUptime').textContent = formatUptime(data.uptime);
-                }
+                document.getElementById('memoryUsage').textContent = data.memory?.used || '--';
+                document.getElementById('systemUptime').textContent = formatUptime(data.uptime);
             } catch (err) {
                 console.error('Error loading dashboard:', err);
             }
@@ -792,30 +762,30 @@
             };
 
             try {
-                // Get fresh CSRF token
-                if (!csrfToken) {
-                    await getCsrfToken();
-                }
-
                 const response = await fetch('/api/email/config', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-csrf-token': csrfToken
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify(config)
                 });
+
+                if (!response.ok) {
+                    const alertDiv = document.getElementById('emailAlert');
+                    alertDiv.innerHTML = `<div class="alert alert-danger">✗ Error: ${response.status}</div>`;
+                    return;
+                }
 
                 const data = await response.json();
                 const alertDiv = document.getElementById('emailAlert');
                 
-                if (response.ok) {
+                if (data.success) {
                     alertDiv.innerHTML = '<div class="alert alert-success">✓ Configuration saved successfully</div>';
                 } else {
                     alertDiv.innerHTML = `<div class="alert alert-danger">✗ Error: ${data.error}</div>`;
                 }
             } catch (err) {
                 document.getElementById('emailAlert').innerHTML = `<div class="alert alert-danger">✗ Error: ${err.message}</div>`;
+                console.error('Save error:', err);
             }
         }
 
@@ -824,17 +794,10 @@
             if (!to) return;
 
             try {
-                // Get fresh CSRF token
-                if (!csrfToken) {
-                    await getCsrfToken();
-                }
-
                 const response = await fetch('/api/email/test', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-csrf-token': csrfToken
-                    },
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
                     body: JSON.stringify({
                         to: to,
                         subject: 'Test Email from Swift Cab',
@@ -842,16 +805,23 @@
                     })
                 });
 
+                if (!response.ok) {
+                    const alertDiv = document.getElementById('emailAlert');
+                    alertDiv.innerHTML = `<div class="alert alert-danger">✗ Error: ${response.status}</div>`;
+                    return;
+                }
+
                 const data = await response.json();
                 const alertDiv = document.getElementById('emailAlert');
                 
-                if (response.ok) {
+                if (data.success) {
                     alertDiv.innerHTML = '<div class="alert alert-success">✓ Test email sent successfully</div>';
                 } else {
                     alertDiv.innerHTML = `<div class="alert alert-danger">✗ Error: ${data.error}</div>`;
                 }
             } catch (err) {
                 document.getElementById('emailAlert').innerHTML = `<div class="alert alert-danger">✗ Error: ${err.message}</div>`;
+                console.error('Email test error:', err);
             }
         }
 
@@ -875,12 +845,7 @@
         }
 
         // Initialize on page load
-        window.addEventListener('load', async () => {
-            // Get CSRF token first
-            await getCsrfToken();
-            // Then check auth
-            checkAuth();
-        });
+        window.addEventListener('load', checkAuth);
     </script>
 </body>
 </html>
