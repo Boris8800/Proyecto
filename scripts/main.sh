@@ -597,8 +597,12 @@ install_system() {
     echo ""
 
     log_step "[STEP 1] Installing system dependencies..."
-    apt-get update -qq
-    apt-get install -y -qq curl wget git nodejs npm docker.io docker-compose jq netcat openssl > /dev/null 2>&1
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y -qq
+    apt-get install -y -qq \
+        curl wget git nodejs npm docker.io docker-compose jq netcat openssl \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold"
     log_ok "System dependencies installed"
     echo ""
 
