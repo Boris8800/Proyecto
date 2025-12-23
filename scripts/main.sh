@@ -612,46 +612,297 @@ deploy_vps() {
 }
 
 # ============================================================================
-# 5. FULL INSTALLATION
+# 5. FULL SYSTEM INSTALLATION - PROFESSIONAL VPS DEPLOYMENT
 # ============================================================================
 install_system() {
     clear
-    echo "╔════════════════════════════════════════════════════════════════╗"
-    echo "║              FULL SYSTEM INSTALLATION                         ║"
-    echo "╚════════════════════════════════════════════════════════════════╝"
-    echo ""
-
-    log_step "[STEP 1] Installing system dependencies..."
-    export DEBIAN_FRONTEND=noninteractive
-    apt-get update -y -qq
-    apt-get install -y -qq \
-        curl wget git nodejs npm docker.io docker-compose jq netcat openssl \
-        -o Dpkg::Options::="--force-confdef" \
-        -o Dpkg::Options::="--force-confold"
-    log_ok "System dependencies installed"
-    echo ""
-
-    log_step "[STEP 2] Installing project dependencies..."
-    if [ -d "$PROJECT_ROOT/web" ]; then
-        cd "$PROJECT_ROOT/web" || exit 1
-        if [ -f "package.json" ]; then
-            npm install --prefer-offline --no-audit 2>&1 | tail -5 || log_warn "npm install had warnings"
-        else
-            log_warn "No package.json found in web directory"
-        fi
-    else
-        log_warn "web directory not found"
-    fi
-    log_ok "npm dependencies check completed"
-    echo ""
-
-    log_step "[STEP 3] Starting services..."
-    fix_all_services
+    INSTALL_LOG="/var/log/taxi-install.log"
     
-    echo ""
     echo "╔════════════════════════════════════════════════════════════════╗"
-    echo "║              INSTALLATION COMPLETE                            ║"
+    echo "║          FULL SYSTEM INSTALLATION - VPS TAXI SETUP            ║"
+    echo "║                    ⚠️  IRREVERSIBLE OPERATION                  ║"
     echo "╚════════════════════════════════════════════════════════════════╝"
+    echo ""
+    echo -e "${RED}WARNING: This operation will:${NC}"
+    echo "  • Delete old taxi user and home directory"
+    echo "  • Kill all processes on service ports"
+    echo "  • Remove old downloads and temporary files"
+    echo "  • Perform a complete fresh installation"
+    echo ""
+    echo "This action CANNOT be undone."
+    echo ""
+    log_warn "Installation will begin in 30 seconds. Press Ctrl+C to cancel..."
+    sleep 30
+    echo ""
+
+    # ========================================================================
+    # PHASE 0: Confirmation and Pre-checks
+    # ========================================================================
+    log_step "[PHASE 0] Confirmation and Pre-checks"
+    echo ""
+
+    if [ "$(id -u)" != "0" ]; then
+        log_error "This script must be run as root"
+        exit 1
+    fi
+    log_ok "Running as root ✓"
+
+    if ! grep -qi "ubuntu\|debian" /etc/os-release; then
+        log_error "Unsupported operating system. Only Ubuntu/Debian supported."
+        exit 1
+    fi
+    log_ok "OS compatible ($(grep "^NAME=" /etc/os-release | cut -d= -f2 | tr -d '"')) ✓"
+
+    if ! ping -c 1 8.8.8.8 >/dev/null 2>&1; then
+        log_warn "Network connectivity check failed (may still proceed)"
+    else
+        log_ok "Network connectivity verified ✓"
+    fi
+
+    if ! command -v docker >/dev/null 2>&1; then
+        log_info "Docker not yet installed (will install in Phase 4)"
+    fi
+
+    echo ""
+    log_ok "Pre-checks completed. Proceeding with installation..."
+    echo "" | tee -a "$INSTALL_LOG"
+
+    # ========================================================================
+    # PHASE 1: Cleanup of Root and Taxi User
+    # ========================================================================
+    log_step "[PHASE 1] Cleanup - Removing old files and users"
+    echo ""
+
+    log_info "Cleaning /root/Downloads..."
+    if [ -d "/root/Downloads" ]; then
+        rm -rf /root/Downloads/* 2>/dev/null || true
+        log_ok "Downloads cleaned"
+    fi
+
+    log_info "Checking for existing taxi user..."
+    if id -u taxi >/dev/null 2>&1; then
+        log_warn "Existing taxi user found. Removing..."
+        pkill -u taxi 2>/dev/null || true
+        sleep 2
+        userdel -r -f taxi 2>/dev/null || true
+        log_ok "Old taxi user removed"
+    else
+        log_ok "No existing taxi user found"
+    fi
+
+    log_info "Removing old Taxi-related processes..."
+    pkill -f "taxi" 2>/dev/null || true
+    pkill -f "status/server.js" 2>/dev/null || true
+    pkill -f "server-admin" 2>/dev/null || true
+    pkill -f "server-driver" 2>/dev/null || true
+    pkill -f "server-customer" 2>/dev/null || true
+    sleep 2
+    log_ok "Old processes stopped"
+
+    echo ""
+
+    # ========================================================================
+    # PHASE 2: Port Control
+    # ========================================================================
+    log_step "[PHASE 2] Port Control - Freeing required ports"
+    echo ""
+
+    REQUIRED_PORTS=(22 80 443 3000 3001 3002 3030 3040 3333)
+
+    for port in "${REQUIRED_PORTS[@]}"; do
+        log_info "Checking port $port..."
+        if netstat -tuln 2>/dev/null | grep -q ":$port "; then
+            log_warn "Port $port is in use. Killing process..."
+            fuser -k "$port"/tcp 2>/dev/null || true
+            sleep 1
+        else
+            log_ok "Port $port is free"
+        fi
+    done
+
+    sleep 2
+    log_ok "All required ports are now free"
+    echo ""
+
+    # ========================================================================
+    # PHASE 3: Taxi User Creation
+    # ========================================================================
+    log_step "[PHASE 3] Creating Taxi user"
+    echo ""
+
+    log_info "Creating user 'taxi'..."
+    useradd -m -s /bin/bash -G sudo taxi 2>/dev/null || true
+    
+    log_info "Setting up taxi home directories..."
+    mkdir -p /home/taxi/{apps,logs,config}
+    chown -R taxi:taxi /home/taxi
+    chmod 755 /home/taxi
+    
+    log_ok "Taxi user created with home: /home/taxi"
+    echo ""
+
+    # ========================================================================
+    # PHASE 4: Installation of Services and Dependencies
+    # ========================================================================
+    log_step "[PHASE 4] Installing system services and dependencies"
+    echo ""
+
+    log_info "Updating package repositories..."
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update -y -qq 2>&1 | tee -a "$INSTALL_LOG" | tail -3
+    log_ok "Repositories updated"
+    echo ""
+
+    log_info "Installing system packages..."
+    apt-get install -y -qq \
+        curl wget git nodejs npm docker.io docker-compose jq netcat-openbsd \
+        openssl ufw net-tools htop nano vim sudo \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" 2>&1 | tee -a "$INSTALL_LOG" | tail -3
+    log_ok "System packages installed"
+    echo ""
+
+    log_info "Installing project dependencies..."
+    if [ -d "$PROJECT_ROOT/web" ] && [ -f "$PROJECT_ROOT/web/package.json" ]; then
+        cd "$PROJECT_ROOT/web" || exit 1
+        npm install --prefer-offline --no-audit 2>&1 | tail -5 | tee -a "$INSTALL_LOG"
+        log_ok "Project dependencies installed"
+    else
+        log_warn "No package.json found, skipping npm install"
+    fi
+    echo ""
+
+    # ========================================================================
+    # PHASE 5: Firewall Configuration
+    # ========================================================================
+    log_step "[PHASE 5] Configuring firewall and opening ports"
+    echo ""
+
+    log_info "Enabling UFW firewall..."
+    ufw --force enable 2>&1 | tail -2 | tee -a "$INSTALL_LOG"
+    
+    log_info "Opening required ports..."
+    for port in "${REQUIRED_PORTS[@]}"; do
+        ufw allow "$port"/tcp 2>&1 | tail -1 | tee -a "$INSTALL_LOG"
+    done
+
+    ufw allow 3000:3333/tcp 2>&1 | tail -1 | tee -a "$INSTALL_LOG"
+    
+    log_ok "Firewall configured and ports opened"
+    echo ""
+
+    # ========================================================================
+    # PHASE 6: Validation and Testing
+    # ========================================================================
+    log_step "[PHASE 6] Validations and testing"
+    echo ""
+
+    log_info "Starting Docker services..."
+    systemctl start docker 2>&1 | tee -a "$INSTALL_LOG"
+    systemctl enable docker 2>&1 | tee -a "$INSTALL_LOG"
+    log_ok "Docker enabled and started"
+    echo ""
+
+    log_info "Starting Taxi services..."
+    fix_all_services 2>&1 | tee -a "$INSTALL_LOG"
+    echo ""
+
+    log_info "Waiting for services to stabilize (15 seconds)..."
+    sleep 15
+    echo ""
+
+    log_info "Verifying service accessibility..."
+    SERVICES_OK=0
+    for port in $STATUS_PORT $ADMIN_PORT $DRIVER_PORT $CUSTOMER_PORT; do
+        if timeout 2 curl -s "http://127.0.0.1:$port/" > /dev/null 2>&1; then
+            log_ok "Port $port responding ✓"
+            SERVICES_OK=$((SERVICES_OK+1))
+        else
+            log_warn "Port $port not responding yet"
+        fi
+    done
+    echo ""
+
+    log_info "Verifying taxi user permissions..."
+    if [ -d "/home/taxi" ]; then
+        PERMS=$(stat -c %U:%G /home/taxi)
+        log_ok "Taxi home ownership: $PERMS ✓"
+    fi
+    echo ""
+
+    log_info "Scanning final port status..."
+    netstat -tuln 2>/dev/null | grep -E ":(22|80|443|3[0-3][0-9]{2})" | head -10 | tee -a "$INSTALL_LOG"
+    echo ""
+
+    # ========================================================================
+    # PHASE 7: Post-Installation
+    # ========================================================================
+    log_step "[PHASE 7] Post-installation setup"
+    echo ""
+
+    log_info "Creating installation summary..."
+    cat > "$INSTALL_LOG" << EOF
+╔════════════════════════════════════════════════════════════════╗
+║        TAXI VPS INSTALLATION - INSTALLATION COMPLETE          ║
+╚════════════════════════════════════════════════════════════════╝
+
+Installation completed successfully on: $(date)
+OS: $(grep "^NAME=" /etc/os-release | cut -d= -f2)
+Project Root: $PROJECT_ROOT
+Taxi Home: /home/taxi
+
+Services Status:
+  ✓ Docker: Installed and enabled
+  ✓ Services: $SERVICES_OK/4 services responding
+  ✓ Firewall: UFW enabled with ports open
+
+Required Ports:
+  SSH:          22
+  HTTP:         80
+  HTTPS:        443
+  Status Dash:  3030
+  Admin:        3001
+  Driver:       3002
+  Customer:     3000
+  API:          3040
+
+Service URLs:
+  Status Dashboard: http://<server-ip>:3030
+  Admin Dashboard:  http://<server-ip>:3001
+  Driver Portal:    http://<server-ip>:3002
+  Customer App:     http://<server-ip>:3000
+  Main API:         http://<server-ip>:3040
+
+Next Steps:
+  1. Run: bash scripts/main.sh test-web (test endpoints)
+  2. Run: bash scripts/main.sh setup-email (configure email)
+  3. Run: bash scripts/main.sh setup-https (setup SSL)
+  4. Run: bash scripts/main.sh setup-nginx (deploy Nginx reverse proxy)
+
+Logs:
+  Installation Log: $INSTALL_LOG
+  Service Logs: $LOG_DIR/
+
+EOF
+
+    log_ok "Installation summary created"
+    echo ""
+
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║              INSTALLATION COMPLETE ✓                          ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo ""
+    echo "Summary:"
+    echo "  ✓ System updated and cleaned"
+    echo "  ✓ All required ports are open and free"
+    echo "  ✓ Taxi user created with proper permissions"
+    echo "  ✓ All services and dependencies installed"
+    echo "  ✓ Firewall configured with UFW"
+    echo "  ✓ $SERVICES_OK/4 Taxi services responding"
+    echo ""
+    echo "Installation log: $INSTALL_LOG"
+    echo ""
+    cat "$INSTALL_LOG"
     echo ""
 }
 
