@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Enhanced Status Dashboard Server with Custom Email Server
+ * Enhanced Status Dashboard Server with Email & API Integration
  * Features:
  * - System monitoring
- * - Custom email server (self-hosted)
+ * - Email configuration & testing
  * - API forms for maps, services, etc.
  * - Configuration management
  */
@@ -14,9 +14,13 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Load custom email server
-const CustomEmailServer = require('../api/custom-email-server');
-let emailServer;
+// Try to load nodemailer, but don't fail if missing
+let nodemailer;
+try {
+    nodemailer = require('nodemailer');
+} catch (err) {
+    console.warn('[WARN] nodemailer not installed. Email functionality disabled.');
+}
 
 const app = express();
 const PORT = process.env.STATUS_PORT || 8080;
@@ -33,42 +37,31 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 const statusDir = path.join(__dirname);
 app.use(express.static(statusDir));
 
-// Initialize custom email server
-function initializeEmailServer() {
-    try {
-        const config = {
-            serverName: 'Swift Cab Mail Server',
-            domain: process.env.MAIL_DOMAIN || 'swiftcab.local',
-            fromEmail: process.env.FROM_EMAIL || 'noreply@swiftcab.local',
-            fromName: 'Swift Cab',
-            enableQueue: true,
-            enableLogging: true
-        };
-        
-        emailServer = new CustomEmailServer(config);
-        console.log('[OK] Custom Email Server initialized');
-        console.log('[INFO] Domain:', config.domain);
-        console.log('[INFO] From Email:', config.fromEmail);
-        return emailServer;
-    } catch (err) {
-        console.error('[ERROR] Failed to initialize email server:', err.message);
-        return null;
-    }
-}
-
 // Initialize default email config
 function initializeEmailConfig() {
     const defaultConfig = {
         email: {
-            provider: 'custom',
-            custom: {
-                serverName: 'Swift Cab Mail Server',
-                domain: 'swiftcab.local',
-                fromEmail: 'noreply@swiftcab.local',
-                fromName: 'Swift Cab',
-                port: 25,
-                enableTLS: false,
-                status: 'running'
+            provider: 'smtp',
+            smtp: {
+                host: 'smtp.gmail.com',
+                port: 587,
+                secure: false,
+                auth: {
+                    user: 'your-email@gmail.com',
+                    pass: 'your-app-password'
+                },
+                from: 'noreply@yourcompany.com',
+                replyTo: 'support@yourcompany.com'
+            },
+            sendgrid: {
+                apiKey: 'your-sendgrid-api-key',
+                fromEmail: 'noreply@yourcompany.com',
+                fromName: 'Swift Cab'
+            },
+            mailgun: {
+                apiKey: 'your-mailgun-api-key',
+                domain: 'mg.yourcompany.com',
+                fromEmail: 'noreply@yourcompany.com'
             }
         },
         services: {
@@ -195,33 +188,54 @@ app.get('/api/services', async (req, res) => {
 
 // API: Get email configuration
 app.get('/api/email/config', (req, res) => {
-    if (!emailServer) {
-        return res.json({ provider: 'custom', status: 'initializing' });
-    }
-    
-    const stats = emailServer.getStats();
-    res.json({
-        provider: 'custom',
-        custom: stats.config,
-        status: stats.status,
-        totalSent: stats.totalSent,
-        totalFailed: stats.totalFailed
-    });
+    const config = loadConfig();
+    // Don't send sensitive data
+    const safeConfig = {
+        provider: config.email.provider,
+        smtp: {
+            host: config.email.smtp.host,
+            port: config.email.smtp.port,
+            secure: config.email.smtp.secure,
+            from: config.email.smtp.from,
+            replyTo: config.email.smtp.replyTo,
+            auth: {
+                user: config.email.smtp.auth.user
+            }
+        },
+        sendgrid: {
+            fromEmail: config.email.sendgrid.fromEmail,
+            fromName: config.email.sendgrid.fromName
+        },
+        mailgun: {
+            domain: config.email.mailgun.domain,
+            fromEmail: config.email.mailgun.fromEmail
+        }
+    };
+    res.json(safeConfig);
 });
 
 // API: Update email configuration
 app.post('/api/email/config', (req, res) => {
     try {
-        // For custom server, settings are limited
         const config = loadConfig();
         
-        if (req.body.custom) {
-            config.email.custom = { ...config.email.custom, ...req.body.custom };
-            config.email.provider = 'custom';
+        if (req.body.smtp) {
+            config.email.smtp = { ...config.email.smtp, ...req.body.smtp };
+            config.email.provider = 'smtp';
+        }
+        
+        if (req.body.sendgrid) {
+            config.email.sendgrid = { ...config.email.sendgrid, ...req.body.sendgrid };
+            config.email.provider = 'sendgrid';
+        }
+        
+        if (req.body.mailgun) {
+            config.email.mailgun = { ...config.email.mailgun, ...req.body.mailgun };
+            config.email.provider = 'mailgun';
         }
         
         if (saveConfig(config)) {
-            res.json({ success: true, message: 'Custom email server configuration updated' });
+            res.json({ success: true, message: 'Email configuration updated' });
         } else {
             res.status(500).json({ success: false, message: 'Failed to save configuration' });
         }
@@ -230,147 +244,78 @@ app.post('/api/email/config', (req, res) => {
     }
 });
 
-// API: Test email with custom server
+// API: Test email
 app.post('/api/email/test', async (req, res) => {
     try {
-        if (!emailServer) {
-            return res.status(503).json({ 
-                success: false, 
-                message: 'Custom email server not initialized' 
-            });
+        if (!nodemailer) {
+            return res.status(503).json({ success: false, message: 'Email service not available. Please install nodemailer.' });
         }
 
-        const { to, subject, html, templateName, templateData } = req.body;
-
-        if (!to) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Missing required field: to' 
-            });
-        }
-
-        let result;
-
-        // Send using template if provided
-        if (templateName && templateData) {
-            result = await emailServer.sendTemplate(templateName, {
-                ...templateData,
-                to: to
-            });
-        } else {
-            // Send custom email
-            result = await emailServer.send({
-                to: to,
-                subject: subject || 'Test Email',
-                html: html || '<p>This is a test email from Swift Cab.</p>'
-            });
-        }
-
-        if (result.success) {
-            res.json({ 
-                success: true, 
-                message: 'Email sent successfully',
-                emailId: result.emailId
-            });
-        } else {
-            res.status(500).json({ 
-                success: false, 
-                message: result.error || 'Failed to send email'
-            });
-        }
-    } catch (err) {
-        res.status(400).json({ success: false, message: err.message });
-    }
-});
-
-// API: Health check
-app.get('/api/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        memory: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
-        uptime: process.uptime(),
-        services: [
-            { name: 'Admin Server', port: 3001 },
-            { name: 'Customer Server', port: 3002 },
-            { name: 'Driver Server', port: 3003 },
-            { name: 'Status Dashboard', port: 8080 }
-        ]
-    });
-});
-
-// API: Get all services
-app.get('/api/services', (req, res) => {
-    res.json({
-        services: [
-            { name: 'Admin Server', port: 3001 },
-            { name: 'Customer Server', port: 3002 },
-            { name: 'Driver Server', port: 3003 },
-            { name: 'Status Dashboard', port: 8080 }
-        ]
-    });
-});
-
-// API: Get services configuration
-app.get('/api/services/config', (req, res) => {
-    const config = loadConfig();
-    res.json(config.services || {});
-});
-
-// API: Update services configuration
-app.post('/api/services/config', (req, res) => {
-    try {
         const config = loadConfig();
-        
-        if (req.body.maps) {
-            config.services.maps = { ...config.services.maps, ...req.body.maps };
-        }
-        
-        if (req.body.sms) {
-            config.services.sms = { ...config.services.sms, ...req.body.sms };
-        }
-        
-        if (req.body.payment) {
-            config.services.payment = { ...config.services.payment, ...req.body.payment };
-        }
-        
-        if (saveConfig(config)) {
-            res.json({ success: true, message: 'Services configuration updated' });
-        } else {
-            res.status(500).json({ success: false, message: 'Failed to save configuration' });
-        }
-    } catch (err) {
-        res.status(400).json({ success: false, message: err.message });
-    }
-});
+        const { to, subject, message } = req.body;
 
-// API: Test maps service
-app.post('/api/maps/test', async (req, res) => {
-    try {
-        const config = loadConfig();
-        const { origin, destination } = req.body;
-
-        if (!origin || !destination) {
-            return res.status(400).json({ success: false, message: 'Missing required fields: origin, destination' });
+        if (!to || !subject || !message) {
+            return res.status(400).json({ success: false, message: 'Missing required fields: to, subject, message' });
         }
 
-        if (!config.services.maps.enabled) {
-            return res.status(400).json({ success: false, message: 'Maps service is not enabled' });
+        let transporter;
+
+        if (config.email.provider === 'smtp') {
+            transporter = nodemailer.createTransport({
+                host: config.email.smtp.host,
+                port: config.email.smtp.port,
+                secure: config.email.smtp.secure,
+                auth: {
+                    user: config.email.smtp.auth.user,
+                    pass: config.email.smtp.auth.pass
+                }
+            });
+        } else if (config.email.provider === 'sendgrid') {
+            transporter = nodemailer.createTransport({
+                host: 'smtp.sendgrid.net',
+                port: 587,
+                auth: {
+                    user: 'apikey',
+                    pass: config.email.sendgrid.apiKey
+                }
+            });
+        } else if (config.email.provider === 'mailgun') {
+            transporter = nodemailer.createTransport({
+                host: `smtp.mailgun.org`,
+                port: 587,
+                auth: {
+                    user: `postmaster@${config.email.mailgun.domain}`,
+                    pass: config.email.mailgun.apiKey
+                }
+            });
         }
 
-        // Simulate route calculation (would be real API call in production)
+        const getFromEmail = () => {
+            if (config.email.provider === 'smtp') return config.email.smtp.from;
+            if (config.email.provider === 'sendgrid') return config.email.sendgrid.fromEmail;
+            if (config.email.provider === 'mailgun') return config.email.mailgun.fromEmail;
+            return 'noreply@example.com';
+        };
+
+        const mailOptions = {
+            from: getFromEmail(),
+            to: to,
+            subject: subject,
+            html: `<p>${message}</p><p><br/><small>Test email sent from Swift Cab Status Dashboard</small></p>`
+        };
+
+        const info = await transporter.sendMail(mailOptions);
         res.json({
             success: true,
-            data: {
-                origin: origin,
-                destination: destination,
-                distance: '5.2 km',
-                duration: '12 mins',
-                status: 'OK'
-            },
-            message: 'Route calculated successfully'
+            message: 'Test email sent successfully',
+            messageId: info.messageId
         });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('[ERR] Email error:', err);
+        res.status(500).json({
+            success: false,
+            message: `Failed to send email: ${err.message}`
+        });
     }
 });
 
@@ -438,18 +383,12 @@ app.post('/api/maps/test', async (req, res) => {
     }
 });
 
-// Initialize email server and start dashboard
+// Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`[OK] Status Dashboard running on http://0.0.0.0:${PORT}`);
     console.log(`[INFO] VPS IP: ${VPS_IP}`);
     console.log(`[INFO] Configuration file: ${CONFIG_FILE}`);
-    console.log(`[INFO] Email Server: Custom (Self-Hosted)`);
-    
-    // Initialize custom email server
-    emailServer = initializeEmailServer();
-    if (emailServer) {
-        console.log(`[INFO] API Endpoints: /api/email/config, /api/email/test, /api/services/config, /api/maps/test`);
-    }
+    console.log(`[INFO] API Endpoints: /api/email/config, /api/email/test, /api/services/config, /api/maps/test`);
 });
 
 process.on('SIGINT', () => {

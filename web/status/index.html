@@ -726,60 +726,24 @@
             <div class="section">
                 <div class="section-title">
                     <i class="fas fa-envelope"></i>
-                    Custom Email Server Configuration
+                    Email Configuration
                 </div>
 
                 <div id="emailAlert"></div>
 
-                <!-- Custom Server Info -->
-                <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 10px 0;">🚀 Swift Cab Mail Server</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div>
-                            <div style="opacity: 0.9; font-size: 12px;">Server Status</div>
-                            <div style="font-weight: 600; font-size: 16px;">✓ Running</div>
+                <!-- Provider Selection -->
+                <div style="margin-bottom: 25px;">
+                    <label style="font-weight: 600; margin-bottom: 15px; display: block;">Select Email Provider:</label>
+                    <div class="provider-options">
+                        <div class="provider-btn active" onclick="selectEmailProvider('smtp', event)">
+                            <i class="fas fa-server" style="margin-right: 8px;"></i>SMTP
                         </div>
-                        <div>
-                            <div style="opacity: 0.9; font-size: 12px;">Domain</div>
-                            <div style="font-weight: 600; font-size: 14px;" id="customDomain">swiftcab.local</div>
+                        <div class="provider-btn" onclick="selectEmailProvider('sendgrid', event)">
+                            <i class="fas fa-envelope" style="margin-right: 8px;"></i>SendGrid
                         </div>
-                        <div>
-                            <div style="opacity: 0.9; font-size: 12px;">From Email</div>
-                            <div style="font-weight: 600; font-size: 14px;" id="customFromEmail">noreply@swiftcab.local</div>
+                        <div class="provider-btn" onclick="selectEmailProvider('mailgun', event)">
+                            <i class="fas fa-envelope" style="margin-right: 8px;"></i>Mailgun
                         </div>
-                        <div>
-                            <div style="opacity: 0.9; font-size: 12px;">Total Sent</div>
-                            <div style="font-weight: 600; font-size: 16px;" id="customTotalSent">0</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Custom Server Configuration -->
-                <div style="background: #f3f4f6; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
-                    <h3 style="margin: 0 0 15px 0; color: var(--dark);">Server Settings</h3>
-                    <div class="form-group">
-                        <label>Server Name</label>
-                        <input type="text" id="customServerName" value="Swift Cab Mail Server" readonly style="background: white;">
-                    </div>
-                    <div class="form-group">
-                        <label>Domain</label>
-                        <input type="text" id="customMailDomain" placeholder="swiftcab.local" value="swiftcab.local">
-                    </div>
-                    <div class="form-group">
-                        <label>From Email Address</label>
-                        <input type="email" id="customMailEmail" placeholder="noreply@swiftcab.local" value="noreply@swiftcab.local">
-                    </div>
-                    <div class="form-group">
-                        <label>From Display Name</label>
-                        <input type="text" id="customMailName" placeholder="Swift Cab" value="Swift Cab">
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-success" onclick="saveCustomEmailConfig()">
-                            <i class="fas fa-save"></i> Save Settings
-                        </button>
-                        <button class="btn btn-primary" onclick="testCustomEmail()">
-                            <i class="fas fa-flask"></i> Test Server
-                        </button>
                     </div>
                 </div>
 
@@ -787,72 +751,6 @@
 
                 <!-- SMTP Configuration -->
                 <div id="smtpConfig" class="provider-config">
-
-                <!-- Send Test Email -->
-                <h3 style="margin: 25px 0 15px 0; color: var(--dark);">📧 Send Test Email</h3>
-                <div style="background: #f3f4f6; padding: 20px; border-radius: 10px;">
-                    <div class="form-group">
-                        <label>Recipient Email</label>
-                        <input type="email" id="testEmail" placeholder="test@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label>Subject</label>
-                        <input type="text" id="testSubject" value="Test Email from Swift Cab">
-                    </div>
-                    <div class="form-group">
-                        <label>Message</label>
-                        <textarea id="testMessage">This is a test email from the Swift Cab custom email server.</textarea>
-                    </div>
-                    <button class="btn btn-primary" onclick="sendTestEmail()">
-                        <i class="fas fa-paper-plane"></i> Send Test Email
-                    </button>
-                </div>
-
-                <!-- Email Templates -->
-                <h3 style="margin: 25px 0 15px 0; color: var(--dark);">📋 Available Email Templates</h3>
-                <div class="info-grid">
-                    <div class="info-box">
-                        <div class="info-box-title">👋 Welcome Email</div>
-                        <div class="info-box-content">
-                            Sent to new users upon registration
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-box-title">🎫 Booking Confirmation</div>
-                        <div class="info-box-content">
-                            Confirms ride bookings with details
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-box-title">🔑 Password Reset</div>
-                        <div class="info-box-content">
-                            Secure password reset links
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-box-title">🔐 OTP Verification</div>
-                        <div class="info-box-content">
-                            One-time passwords for 2FA
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-box-title">✓ Trip Completed</div>
-                        <div class="info-box-content">
-                            Trip summary and rating requests
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <div class="info-box-title">📢 Admin Notifications</div>
-                        <div class="info-box-content">
-                            System alerts and reports
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Old provider configs (hidden for reference) -->
-        <div id="smtpConfig" class="hidden" style="display: none;">
                     <h3 style="margin-bottom: 20px;">SMTP Configuration</h3>
                     <div class="form-group">
                         <label>SMTP Host (e.g., smtp.gmail.com)</label>
@@ -880,7 +778,7 @@
                 </div>
 
                 <!-- SendGrid Configuration -->
-                <div id="sendgridConfig" class="hidden" style="display: none;">
+                <div id="sendgridConfig" class="provider-config hidden">
                     <h3 style="margin-bottom: 20px;">SendGrid Configuration</h3>
                     <div class="form-group">
                         <label>API Key</label>
@@ -897,7 +795,7 @@
                 </div>
 
                 <!-- Mailgun Configuration -->
-                <div id="mailgunConfig" class="hidden" style="display: none;">
+                <div id="mailgunConfig" class="provider-config hidden">
                     <h3 style="margin-bottom: 20px;">Mailgun Configuration</h3>
                     <div class="form-group">
                         <label>API Key</label>
@@ -923,6 +821,26 @@
                 </div>
 
                 <div class="divider"></div>
+
+                <!-- Test Email -->
+                <div style="margin-top: 25px;">
+                    <h3 style="margin-bottom: 20px;">Send Test Email</h3>
+                    <div class="form-group">
+                        <label>Recipient Email</label>
+                        <input type="email" id="testEmail" placeholder="test@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <input type="text" id="testSubject" value="Test Email from Swift Cab">
+                    </div>
+                    <div class="form-group">
+                        <label>Message</label>
+                        <textarea id="testMessage">This is a test email from Swift Cab Dashboard.</textarea>
+                    </div>
+                    <button class="btn btn-primary" onclick="sendTestEmail()">
+                        <i class="fas fa-paper-plane"></i> Send Test Email
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1251,88 +1169,43 @@
                 const response = await fetch('/api/email/config');
                 const data = await response.json();
                 
-                if (data.provider === 'custom' && data.custom) {
-                    document.getElementById('customDomain').textContent = data.custom.domain || 'swiftcab.local';
-                    document.getElementById('customFromEmail').textContent = data.custom.fromEmail || 'noreply@swiftcab.local';
-                    document.getElementById('customTotalSent').textContent = data.totalSent || '0';
-                    document.getElementById('customMailDomain').value = data.custom.domain || 'swiftcab.local';
-                    document.getElementById('customMailEmail').value = data.custom.fromEmail || 'noreply@swiftcab.local';
+                if (data.provider === 'smtp' && data.smtp) {
+                    document.getElementById('smtpHost').value = data.smtp.host || '';
+                    document.getElementById('smtpPort').value = data.smtp.port || 587;
+                    document.getElementById('smtpEmail').value = data.smtp.auth?.user || '';
+                    document.getElementById('smtpSecure').value = data.smtp.secure !== false;
                 }
                 
-                document.getElementById('emailProvider').textContent = data.provider?.toUpperCase() || 'CUSTOM';
-                document.getElementById('emailProviderInfo').textContent = data.provider?.toUpperCase() || 'Custom';
-                document.getElementById('emailStatusInfo').textContent = data.status === 'running' ? 'Active' : 'Initializing';
-                document.getElementById('emailStatusInfo').style.color = data.status === 'running' ? 'var(--success)' : 'var(--warning)';
+                if (data.provider === 'sendgrid' && data.sendgrid) {
+                    document.getElementById('sendgridKey').value = '***' + (data.sendgrid.apiKey?.slice(-10) || '');
+                    document.getElementById('sendgridEmail').value = data.sendgrid.from || '';
+                }
+                
+                if (data.provider === 'mailgun' && data.mailgun) {
+                    document.getElementById('mailgunKey').value = '***' + (data.mailgun.apiKey?.slice(-10) || '');
+                    document.getElementById('mailgunDomain').value = data.mailgun.domain || '';
+                    document.getElementById('mailgunEmail').value = data.mailgun.from || '';
+                }
+                
+                document.getElementById('emailProvider').textContent = data.provider?.toUpperCase() || 'None';
             } catch (err) {
                 console.error('Error loading email config:', err);
             }
         }
 
-        // Save Custom Email Server Config
-        async function saveCustomEmailConfig() {
-            const alert = document.getElementById('emailAlert');
-            
-            try {
-                const config = {
-                    custom: {
-                        domain: document.getElementById('customMailDomain').value,
-                        fromEmail: document.getElementById('customMailEmail').value,
-                        fromName: document.getElementById('customMailName').value
-                    }
-                };
-                
-                const response = await fetch('/api/email/config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
-                
-                if (response.ok) {
-                    showAlert(alert, 'Custom email server configuration saved!', 'success');
-                    loadEmailConfig(); // Reload to show updates
-                } else {
-                    showAlert(alert, 'Error saving configuration', 'danger');
-                }
-            } catch (err) {
-                showAlert(alert, 'Error: ' + err.message, 'danger');
-            }
-        }
-
-        // Test Custom Email Server
-        async function testCustomEmail() {
-            const alert = document.getElementById('emailAlert');
-            
-            try {
-                showAlert(alert, 'Testing custom email server...', 'warning');
-                
-                const response = await fetch('/api/email/config');
-                const data = await response.json();
-                
-                // Send test email
-                const testResponse = await fetch('/api/email/test', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        to: document.getElementById('testEmail').value || 'admin@swiftcab.local',
-                        subject: 'Custom Email Server Test',
-                        html: '<h1>Email Server Test</h1><p>Your custom email server is working correctly!</p>'
-                    })
-                });
-                
-                if (testResponse.ok) {
-                    showAlert(alert, 'Custom email server is operational! Test email queued for sending.', 'success');
-                } else {
-                    showAlert(alert, 'Failed to test email server', 'danger');
-                }
-            } catch (err) {
-                showAlert(alert, 'Error: ' + err.message, 'danger');
-            }
-        }
-
-        // Save Email Config (Legacy)
+        // Save Email Config
         async function saveEmailConfig() {
-            await saveCustomEmailConfig();
-        }
+            const alert = document.getElementById('emailAlert');
+            
+            try {
+                const provider = document.querySelector('.provider-btn.active').textContent.trim().toLowerCase();
+                let config = { provider };
+                
+                if (provider === 'smtp') {
+                    config.smtp = {
+                        host: document.getElementById('smtpHost').value,
+                        port: parseInt(document.getElementById('smtpPort').value),
+                        auth: {
                             user: document.getElementById('smtpEmail').value,
                             pass: document.getElementById('smtpPassword').value
                         },
