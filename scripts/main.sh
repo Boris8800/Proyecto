@@ -1350,47 +1350,6 @@ demo_magic_links() {
 # ============================================================================
 # MENUS
 # ============================================================================
-show_primary_menu() {
-    clear
-    detect_os_info
-    echo "===================================================="
-    echo "        VPS TAXI SYSTEM – MAIN MENU"
-    echo "===================================================="
-    echo ""
-    echo "System Check:"
-    echo "- Detecting Linux distribution..."
-    echo "- Supported systems:"
-    echo "  • Ubuntu (18.04 / 20.04 / 22.04 / 24.04)"
-    echo "  • Debian (10 / 11 / 12)"
-    echo ""
-    echo "If an unsupported distribution is detected,"
-    echo "the installer will stop automatically."
-    echo ""
-    echo "Detected OS:"
-    echo "→ Distribution  : $OS_NAME"
-    echo "→ Version       : $OS_VERSION"
-    echo "→ Package Manager: $PKG_MANAGER"
-    echo ""
-    echo "Please choose one of the following options:"
-    echo "----------------------------------------------------"
-    echo "[1] FULL CLEAN INSTALL (RECOMMENDED)"
-    echo "  - Remove old downloads"
-    echo "  - Kill Taxi processes"
-    echo "  - Remove/create taxi user"
-    echo "  - Fresh install"
-    echo ""
-    echo "[2] UPDATE EXISTING TAXI USER"
-    echo "  - Keep taxi user"
-    echo "  - Update services"
-    echo ""
-    echo "[3] TESTS & ERROR DIAGNOSTICS"
-    echo "  - Verify OS, permissions, ports, services"
-    echo ""
-    echo "[4] EXIT"
-    echo ""
-    echo -n "Enter your choice [1-4]: "
-}
-
 show_advanced_menu() {
     clear
     detect_os_info
@@ -1449,44 +1408,29 @@ case "$1" in
     manage-dashboards) manage_dashboards ;;
     demo-magic-links) demo_magic_links ;;
     *)
-        # Primary menu
+        # Advanced menu only, default to option 7 after 30s
         while true; do
-            show_primary_menu
-            if ! read -r primary_choice; then
-                exit 1
+            show_advanced_menu
+            if ! read -t 30 -r adv_choice; then
+                adv_choice=7
             fi
-            case $primary_choice in
-                1) full_clean_install; echo ""; read -rp "Press Enter to continue..." ;;
-                2) update_existing_taxi_user; echo ""; read -rp "Press Enter to continue..." ;;
-                3) run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
-                4) exit 0 ;;
+            case $adv_choice in
+                1) run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
+                2) start_monitoring ;;
+                3) fix_status_dashboard; echo ""; read -rp "Press Enter to continue..." ;;
+                4) fix_all_services; echo ""; read -rp "Press Enter to continue..." ;;
+                5) manage_dashboards; echo ""; read -rp "Press Enter to continue..." ;;
+                6) deploy_vps; echo ""; read -rp "Press Enter to continue..." ;;
+                7) install_system; echo ""; read -rp "Press Enter to continue..." ;;
+                8) setup_email; echo ""; read -rp "Press Enter to continue..." ;;
+                9) setup_https; echo ""; read -rp "Press Enter to continue..." ;;
+                10) setup_nginx; echo ""; read -rp "Press Enter to continue..." ;;
+                11) test_web; echo ""; read -rp "Press Enter to continue..." ;;
+                12) test_security; echo ""; read -rp "Press Enter to continue..." ;;
+                13) demo_magic_links; echo ""; read -rp "Press Enter to continue..." ;;
+                14) exit 0 ;;
                 *) echo "Invalid option. Please try again."; sleep 1 ;;
             esac
-
-            # After primary choice, show advanced menu with 30s default to option 7
-            while true; do
-                show_advanced_menu
-                if ! read -t 30 -r adv_choice; then
-                    adv_choice=7
-                fi
-                case $adv_choice in
-                    1) run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
-                    2) start_monitoring ;;
-                    3) fix_status_dashboard; echo ""; read -rp "Press Enter to continue..." ;;
-                    4) fix_all_services; echo ""; read -rp "Press Enter to continue..." ;;
-                    5) manage_dashboards; echo ""; read -rp "Press Enter to continue..." ;;
-                    6) deploy_vps; echo ""; read -rp "Press Enter to continue..." ;;
-                    7) install_system; echo ""; read -rp "Press Enter to continue..." ;;
-                    8) setup_email; echo ""; read -rp "Press Enter to continue..." ;;
-                    9) setup_https; echo ""; read -rp "Press Enter to continue..." ;;
-                    10) setup_nginx; echo ""; read -rp "Press Enter to continue..." ;;
-                    11) test_web; echo ""; read -rp "Press Enter to continue..." ;;
-                    12) test_security; echo ""; read -rp "Press Enter to continue..." ;;
-                    13) demo_magic_links; echo ""; read -rp "Press Enter to continue..." ;;
-                    14) exit 0 ;;
-                    *) echo "Invalid option. Please try again."; sleep 1 ;;
-                esac
-            done
         done
         ;;
 esac
