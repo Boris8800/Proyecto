@@ -47,6 +47,9 @@ const SERVICES_CONFIG = path.join(__dirname, '../..', 'config', 'services-config
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Trust proxy - important for VPS with reverse proxy (nginx)
+app.set('trust proxy', 1);
+
 // Session configuration with secure defaults
 app.use(session({
     secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
