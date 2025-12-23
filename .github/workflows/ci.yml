@@ -15,21 +15,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y shellcheck
-    - name: Syntax Check - Main Script
-      run: bash -n scripts/1-main.sh
-    - name: Syntax Check - VPS Setup Scripts
-      run: |
-        bash -n scripts/vps-complete-setup.sh
-        bash -n scripts/3-vps-setup.sh
-        bash -n scripts/4-vps-deploy.sh
-        bash -n scripts/vps-manage.sh
-    - name: ShellCheck - Main Deployment Scripts
-      run: |
-        shellcheck -x scripts/1-main.sh
-        shellcheck -x scripts/vps-complete-setup.sh
-        shellcheck -x scripts/3-vps-setup.sh
-        shellcheck -x scripts/4-vps-deploy.sh
-        shellcheck -x scripts/vps-manage.sh
+    - name: Syntax Check - Consolidated Main Script
+      run: bash -n scripts/main.sh
+    - name: ShellCheck - Consolidated Main Script
+      run: shellcheck -x scripts/main.sh
     - name: ShellCheck - Library Files
       run: |
         shellcheck -x scripts/lib/common.sh
