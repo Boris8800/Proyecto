@@ -1408,29 +1408,33 @@ case "$1" in
     manage-dashboards) manage_dashboards ;;
     demo-magic-links) demo_magic_links ;;
     *)
-        # Advanced menu only, default to option 7 after 30s
-        while true; do
-            show_advanced_menu
-            if ! read -t 30 -r adv_choice; then
-                adv_choice=7
-            fi
-            case $adv_choice in
-                1) run_diagnostics; echo ""; read -rp "Press Enter to continue..." ;;
-                2) start_monitoring ;;
-                3) fix_status_dashboard; echo ""; read -rp "Press Enter to continue..." ;;
-                4) fix_all_services; echo ""; read -rp "Press Enter to continue..." ;;
-                5) manage_dashboards; echo ""; read -rp "Press Enter to continue..." ;;
-                6) deploy_vps; echo ""; read -rp "Press Enter to continue..." ;;
-                7) install_system; echo ""; read -rp "Press Enter to continue..." ;;
-                8) setup_email; echo ""; read -rp "Press Enter to continue..." ;;
-                9) setup_https; echo ""; read -rp "Press Enter to continue..." ;;
-                10) setup_nginx; echo ""; read -rp "Press Enter to continue..." ;;
-                11) test_web; echo ""; read -rp "Press Enter to continue..." ;;
-                12) test_security; echo ""; read -rp "Press Enter to continue..." ;;
-                13) demo_magic_links; echo ""; read -rp "Press Enter to continue..." ;;
-                14) exit 0 ;;
-                *) echo "Invalid option. Please try again."; sleep 1 ;;
-            esac
-        done
+        # Advanced menu only, default to option 7 after 30s (single run then exit)
+        show_advanced_menu
+        if ! read -t 30 -r adv_choice; then
+            adv_choice=7
+        fi
+        case $adv_choice in
+            1) run_diagnostics ;;
+            2) start_monitoring ;;
+            3) fix_status_dashboard ;;
+            4) fix_all_services ;;
+            5) manage_dashboards ;;
+            6) deploy_vps ;;
+            7) install_system ;;
+            8) setup_email ;;
+            9) setup_https ;;
+            10) setup_nginx ;;
+            11) test_web ;;
+            12) test_security ;;
+            13) demo_magic_links ;;
+            14) exit 0 ;;
+            *) echo "Invalid option." ;;
+        esac
+
+        # Always run full diagnostics at the end of the interactive session
+        echo ""
+        echo "Running post-action diagnostics..."
+        run_diagnostics
+        echo ""  
         ;;
 esac
