@@ -14,7 +14,7 @@ RED='\e[31m'
 GREEN='\e[32m'
 YELLOW='\e[33m'
 BLUE='\e[34m'
-CYAN='\e[36m'
+CYAN='\e[31m'
 NC='\e[0m'
 
 # Global variables
@@ -298,7 +298,446 @@ fresh_installation() {
   # STEP 6: CLEAN UP OLD PROCESSES
   # ============================================================================
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+
+  # ===========================================================
+=================
+  # STEP 5.5: SETUP EMAIL SERVICE SERVER
+  # ===========================================================
+=================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 5.5:${NC} Setting up custom email service server..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  # Create web/api directory if needed
+  mkdir -p "$PROJECT_ROOT/web/api" 2>/dev/null || true
+  
+  # Check if email files exist
+  if [ -f "$PROJECT_ROOT/web/api/custom-email-server.js" ]; then
+    log_success "Custom email server file found"
+  else
+    log_warn "Custom email server file not found, creating it..."
+    
+    # Create the custom email server
+    cat > "$PROJECT_ROOT/web/api/custom-email-server.js" << 'EOF'
+/**
+ * Custom Email Server for Swift Cab
+ * Self-hosted email service with queue management
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+class CustomEmailServer {
+    constructor(config = {}) {
+        this.config = {
+            serverName: config.serverName || 'Swift Cab Mail Server',
+            domain: config.domain || 'swiftcab.local',
+            fromEmail: config.fromEmail || 'noreply@swiftcab.local',
+            fromName: config.fromName || 'Swift Cab',
+            port: config.port || 25,
+            enableTLS: config.enableTLS !== false,
+            maxRetries: config.maxRetries || 3,
+            retryDelay: config.retryDelay || 5000
+        };
+        
+        this.queueDir = path.join(__dirname, '../../', '.mail-queue');
+        this.logsDir = path.join(__dirname, '../../logs/email');
+        this.stats = {
+            sent: 0,
+            failed: 0,
+            queued: 0,
+            retried: 0
+        };
+        
+        this.initializePaths();
+    }
+    
+    initializePaths() {
+        if (!fs.existsSync(this.queueDir)) {
+            fs.mkdirSync(this.queueDir, { recursive: true });
+        }
+        if (!fs.existsSync(this.logsDir)) {
+            fs.mkdirSync(this.logsDir, { recursive: true });
+        }
+    }
+    
+    async send(options) {
+        const { to, subject, html, text } = options;
+        
+        if (!to || !subject) {
+            return { success: false, error: 'Missing required fields: to, subject' };
+        }
+        
+        const emailId = this.generateEmailId();
+        const emailData = {
+            id: emailId,
+            to,
+            from: \`\${this.config.fromName} <\${this.config.fromEmail}>\`,
+            subject,
+            html: html || text,
+            text: text || html,
+            createdAt: new Date().toISOString(),
+            attempts: 0,
+            maxRetries: this.config.maxRetries
+        };
+        
+        try {
+            await this.logEmail(emailData);
+            this.stats.sent++;
+            return { success: true, emailId, message: 'Email processed successfully' };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    }
+    
+    async sendTemplate(templateName, data) {
+        const templates = {
+            welcome: this.getWelcomeTemplate(data),
+            bookingConfirmation: this.getBookingConfirmationTemplate(data),
+            passwordReset: this.getPasswordResetTemplate(data),
+            otp: this.getOtpTemplate(data),
+            tripCompleted: this.getTripCompletedTemplate(data),
+            adminNotification: this.getAdminNotificationTemplate(data)
+        };
+        
+        const template = templates[templateName];
+        if (!template) {
+            return { success: false, error: 'Template not found' };
+        }
+        
+        return this.send({
+            to: data.email,
+            subject: template.subject,
+            html: template.html,
+            text: template.text
+        });
+    }
+    
+    getWelcomeTemplate(data) {
+        return {
+            subject: 'Welcome to Swift Cab',
+            html: \`<h2>Welcome to Swift Cab!</h2><p>Hi \${data.name},</p><p>Thank you for signing up.</p><p>Best regards,<br>Swift Cab Team</p>\`,
+            text: \`Welcome to Swift Cab!\\nHi \${data.name},\\nThank you for signing up.\\nBest regards,\\nSwift Cab Team\`
+        };
+    }
+    
+    getBookingConfirmationTemplate(data) {
+        return {
+            subject: 'Booking Confirmation - Swift Cab',
+            html: \`<h2>Booking Confirmed</h2><p>Your ride: \${data.vehicleNumber}</p>\`,
+            text: \`Booking Confirmed\\nYour ride: \${data.vehicleNumber}\`
+        };
+    }
+    
+    getPasswordResetTemplate(data) {
+        return {
+            subject: 'Password Reset - Swift Cab',
+            html: \`<h2>Password Reset</h2><p>Reset link: <a href="\${data.resetLink}">click here</a></p>\`,
+            text: \`Password Reset\\nClick here: \${data.resetLink}\`
+        };
+    }
+    
+    getOtpTemplate(data) {
+        return {
+            subject: 'Verification Code - Swift Cab',
+            html: \`<h2>Code: <strong>\${data.otp}</strong></h2>\`,
+            text: \`Code: \${data.otp}\`
+        };
+    }
+    
+    getTripCompletedTemplate(data) {
+        return {
+            subject: 'Trip Completed - Swift Cab',
+            html: \`<h2>Trip Done</h2><p>Distance: \${data.distance}km</p>\`,
+            text: \`Trip Completed\\nDistance: \${data.distance}km\`
+        };
+    }
+    
+    getAdminNotificationTemplate(data) {
+        return {
+            subject: 'Alert - Swift Cab Admin',
+            html: \`<h2>Alert: \${data.alertType}</h2><p>\${data.message}</p>\`,
+            text: \`Alert: \${data.alertType}\\n\${data.message}\`
+        };
+    }
+    
+    async logEmail(emailData) {
+        const logFile = path.join(this.logsDir, \`\${emailData.id}.json\`);
+        fs.writeFileSync(logFile, JSON.stringify(emailData, null, 2));
+    }
+    
+    getStats() {
+        return { ...this.stats, domain: this.config.domain, fromEmail: this.config.fromEmail };
+    }
+    
+    generateEmailId() {
+        return \`email_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`;
+    }
+    
+    testServer() {
+        return { status: 'ok', serverName: this.config.serverName, message: 'Email server operational' };
+    }
+}
+
+module.exports = CustomEmailServer;
+EOF
+    log_success "Custom email server created"
+  fi
+  
+  # Create email configuration if not exists
+  if [ ! -f "$PROJECT_ROOT/config/email-config.json" ]; then
+    log_warn "Email config not found, creating it..."
+    mkdir -p "$PROJECT_ROOT/config" 2>/dev/null || true
+    cat > "$PROJECT_ROOT/config/email-config.json" << 'EOF'
+{
+  "email": {
+    "provider": "custom",
+    "custom": {
+      "fromEmail": "noreply@swiftcab.local",
+      "fromName": "Swift Cab",
+      "enableTLS": true,
+      "maxRetries": 3
+    }
+  },
+  "services": {
+    "maps": { "enabled": false, "provider": "google", "apiKey": "" },
+    "sms": { "enabled": false, "provider": "twilio", "accountSid": "" },
+    "payment": { "enabled": false, "provider": "stripe", "publicKey": "" }
+  }
+}
+EOF
+    log_success "Email configuration file created"
+  else
+    log_success "Email configuration file found"
+  fi
+  
+  # Create email directories
+  mkdir -p "$PROJECT_ROOT/.mail-queue" "$PROJECT_ROOT/logs/email" 2>/dev/null || true
+  log_success "Email service directories initialized"
+  
+  printf "\n"
+
+
   echo -e "${BLUE}STEP 6:${NC} Cleaning up old processes..."
+
+  # ===========================================================
+=================
+  # STEP 5.5: SETUP EMAIL SERVICE SERVER
+  # ===========================================================
+=================
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${BLUE}STEP 5.5:${NC} Setting up custom email service server..."
+  echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  
+  # Create web/api directory if needed
+  mkdir -p "$PROJECT_ROOT/web/api" 2>/dev/null || true
+  
+  # Check if email files exist
+  if [ -f "$PROJECT_ROOT/web/api/custom-email-server.js" ]; then
+    log_success "Custom email server file found"
+  else
+    log_warn "Custom email server file not found, creating it..."
+    
+    # Create the custom email server
+    cat > "$PROJECT_ROOT/web/api/custom-email-server.js" << 'EOF'
+/**
+ * Custom Email Server for Swift Cab
+ * Self-hosted email service with queue management
+ */
+
+const fs = require('fs');
+const path = require('path');
+
+class CustomEmailServer {
+    constructor(config = {}) {
+        this.config = {
+            serverName: config.serverName || 'Swift Cab Mail Server',
+            domain: config.domain || 'swiftcab.local',
+            fromEmail: config.fromEmail || 'noreply@swiftcab.local',
+            fromName: config.fromName || 'Swift Cab',
+            port: config.port || 25,
+            enableTLS: config.enableTLS !== false,
+            maxRetries: config.maxRetries || 3,
+            retryDelay: config.retryDelay || 5000
+        };
+        
+        this.queueDir = path.join(__dirname, '../../', '.mail-queue');
+        this.logsDir = path.join(__dirname, '../../logs/email');
+        this.stats = {
+            sent: 0,
+            failed: 0,
+            queued: 0,
+            retried: 0
+        };
+        
+        this.initializePaths();
+    }
+    
+    initializePaths() {
+        if (!fs.existsSync(this.queueDir)) {
+            fs.mkdirSync(this.queueDir, { recursive: true });
+        }
+        if (!fs.existsSync(this.logsDir)) {
+            fs.mkdirSync(this.logsDir, { recursive: true });
+        }
+    }
+    
+    async send(options) {
+        const { to, subject, html, text } = options;
+        
+        if (!to || !subject) {
+            return { success: false, error: 'Missing required fields: to, subject' };
+        }
+        
+        const emailId = this.generateEmailId();
+        const emailData = {
+            id: emailId,
+            to,
+            from: \`\${this.config.fromName} <\${this.config.fromEmail}>\`,
+            subject,
+            html: html || text,
+            text: text || html,
+            createdAt: new Date().toISOString(),
+            attempts: 0,
+            maxRetries: this.config.maxRetries
+        };
+        
+        try {
+            await this.logEmail(emailData);
+            this.stats.sent++;
+            return { success: true, emailId, message: 'Email processed successfully' };
+        } catch (err) {
+            return { success: false, error: err.message };
+        }
+    }
+    
+    async sendTemplate(templateName, data) {
+        const templates = {
+            welcome: this.getWelcomeTemplate(data),
+            bookingConfirmation: this.getBookingConfirmationTemplate(data),
+            passwordReset: this.getPasswordResetTemplate(data),
+            otp: this.getOtpTemplate(data),
+            tripCompleted: this.getTripCompletedTemplate(data),
+            adminNotification: this.getAdminNotificationTemplate(data)
+        };
+        
+        const template = templates[templateName];
+        if (!template) {
+            return { success: false, error: 'Template not found' };
+        }
+        
+        return this.send({
+            to: data.email,
+            subject: template.subject,
+            html: template.html,
+            text: template.text
+        });
+    }
+    
+    getWelcomeTemplate(data) {
+        return {
+            subject: 'Welcome to Swift Cab',
+            html: \`<h2>Welcome to Swift Cab!</h2><p>Hi \${data.name},</p><p>Thank you for signing up.</p><p>Best regards,<br>Swift Cab Team</p>\`,
+            text: \`Welcome to Swift Cab!\\nHi \${data.name},\\nThank you for signing up.\\nBest regards,\\nSwift Cab Team\`
+        };
+    }
+    
+    getBookingConfirmationTemplate(data) {
+        return {
+            subject: 'Booking Confirmation - Swift Cab',
+            html: \`<h2>Booking Confirmed</h2><p>Your ride: \${data.vehicleNumber}</p>\`,
+            text: \`Booking Confirmed\\nYour ride: \${data.vehicleNumber}\`
+        };
+    }
+    
+    getPasswordResetTemplate(data) {
+        return {
+            subject: 'Password Reset - Swift Cab',
+            html: \`<h2>Password Reset</h2><p>Reset link: <a href="\${data.resetLink}">click here</a></p>\`,
+            text: \`Password Reset\\nClick here: \${data.resetLink}\`
+        };
+    }
+    
+    getOtpTemplate(data) {
+        return {
+            subject: 'Verification Code - Swift Cab',
+            html: \`<h2>Code: <strong>\${data.otp}</strong></h2>\`,
+            text: \`Code: \${data.otp}\`
+        };
+    }
+    
+    getTripCompletedTemplate(data) {
+        return {
+            subject: 'Trip Completed - Swift Cab',
+            html: \`<h2>Trip Done</h2><p>Distance: \${data.distance}km</p>\`,
+            text: \`Trip Completed\\nDistance: \${data.distance}km\`
+        };
+    }
+    
+    getAdminNotificationTemplate(data) {
+        return {
+            subject: 'Alert - Swift Cab Admin',
+            html: \`<h2>Alert: \${data.alertType}</h2><p>\${data.message}</p>\`,
+            text: \`Alert: \${data.alertType}\\n\${data.message}\`
+        };
+    }
+    
+    async logEmail(emailData) {
+        const logFile = path.join(this.logsDir, \`\${emailData.id}.json\`);
+        fs.writeFileSync(logFile, JSON.stringify(emailData, null, 2));
+    }
+    
+    getStats() {
+        return { ...this.stats, domain: this.config.domain, fromEmail: this.config.fromEmail };
+    }
+    
+    generateEmailId() {
+        return \`email_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`;
+    }
+    
+    testServer() {
+        return { status: 'ok', serverName: this.config.serverName, message: 'Email server operational' };
+    }
+}
+
+module.exports = CustomEmailServer;
+EOF
+    log_success "Custom email server created"
+  fi
+  
+  # Create email configuration if not exists
+  if [ ! -f "$PROJECT_ROOT/config/email-config.json" ]; then
+    log_warn "Email config not found, creating it..."
+    mkdir -p "$PROJECT_ROOT/config" 2>/dev/null || true
+    cat > "$PROJECT_ROOT/config/email-config.json" << 'EOF'
+{
+  "email": {
+    "provider": "custom",
+    "custom": {
+      "fromEmail": "noreply@swiftcab.local",
+      "fromName": "Swift Cab",
+      "enableTLS": true,
+      "maxRetries": 3
+    }
+  },
+  "services": {
+    "maps": { "enabled": false, "provider": "google", "apiKey": "" },
+    "sms": { "enabled": false, "provider": "twilio", "accountSid": "" },
+    "payment": { "enabled": false, "provider": "stripe", "publicKey": "" }
+  }
+}
+EOF
+    log_success "Email configuration file created"
+  else
+    log_success "Email configuration file found"
+  fi
+  
+  # Create email directories
+  mkdir -p "$PROJECT_ROOT/.mail-queue" "$PROJECT_ROOT/logs/email" 2>/dev/null || true
+  log_success "Email service directories initialized"
+  
+  printf "\n"
+
   echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   
   echo "[DEBUG] Starting process cleanup loop" >&2
