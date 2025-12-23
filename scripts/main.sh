@@ -409,7 +409,7 @@ fix_all_services() {
 
     echo ""
     echo "Listening Ports:"
-    netstat -tuln 2>/dev/null | grep -E "(3001|3002|3030|3040|3333)" | awk '{print $4}' | sort -u | while read port; do
+    netstat -tuln 2>/dev/null | grep -E "(3001|3002|3030|3040|3333)" | awk '{print $4}' | sort -u | while read -r port; do
         echo "  ✓ $port"
     done
 
