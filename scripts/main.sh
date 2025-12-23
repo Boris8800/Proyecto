@@ -713,7 +713,16 @@ install_system() {
     log_step "[PHASE 2] Port Control - Freeing required ports"
     echo ""
 
-    REQUIRED_PORTS=(22 80 443 3000 3001 3002 3030 3040 3333)
+    # Only check these ports (NOT SSH port 22)
+    REQUIRED_PORTS=(80 443 3000 3001 3002 3030 3040 3333)
+
+    log_info "Verifying SSH port 22 is accessible (will NOT kill)..."
+    if netstat -tuln 2>/dev/null | grep -q ":22 "; then
+        log_ok "Port 22 (SSH) is open and accessible ✓"
+    else
+        log_warn "Port 22 (SSH) may not be responding - review firewall"
+    fi
+    echo ""
 
     for port in "${REQUIRED_PORTS[@]}"; do
         log_info "Checking port $port..."
