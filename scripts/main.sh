@@ -631,25 +631,16 @@ install_system() {
     echo ""
     echo "This action CANNOT be undone."
     echo ""
+    
+    read -p "Do you want to continue? (yes/no): " -r CONTINUE_CHOICE
+    if [ "$CONTINUE_CHOICE" != "yes" ] && [ "$CONTINUE_CHOICE" != "y" ] && [ "$CONTINUE_CHOICE" != "Y" ] && [ "$CONTINUE_CHOICE" != "YES" ]; then
+        log_warn "Installation cancelled by user"
+        exit 0
+    fi
+    echo ""
+    
     log_warn "Installation will begin in 30 seconds. Press Ctrl+C to cancel..."
     sleep 30
-    echo ""
-    
-    # Final confirmation prompt
-    echo -e "${RED}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${RED}║  FINAL CONFIRMATION REQUIRED                                  ║${NC}"
-    echo -e "${RED}║  Type 'yes' to proceed or 'no' to cancel                      ║${NC}"
-    echo -e "${RED}╚════════════════════════════════════════════════════════════════╝${NC}"
-    echo ""
-    read -p "Are you absolutely sure? (type 'yes' or 'no'): " -r CONFIRM
-    echo ""
-    
-    if [ "$CONFIRM" != "yes" ]; then
-        log_warn "Installation cancelled by user"
-        return 1
-    fi
-    
-    log_ok "Proceeding with installation..."
     echo ""
 
     # ========================================================================
